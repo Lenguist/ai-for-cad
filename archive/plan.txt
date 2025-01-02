@@ -1,0 +1,25 @@
+Quadrupled robot
+
+Uses this battery:
+
+And 8 of these motors:
+
+
+The robot will consist of a baseplate that a battery will be mounted on using a battery mount, 4 motors will be mounted on using specific motor mounts
+
+then to each of the mottors an upper leg piece will be attached that is also a mount for the next motor 
+
+then to the net motor the bottom piece will be attached.
+
+So list of parts to cad:
+
+Input parts:
+battery
+motor
+
+Other parts:
+battery mount
+lower leg piece
+upper leg piece
+motor-baseplate mount
+baseplate

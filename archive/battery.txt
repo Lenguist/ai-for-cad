@@ -1,0 +1,63 @@
+The TalentCell Rechargeable 3000mAh DC 12V/5V USB Battery Pack (Model: YB1203000-USB) has the following specifications:
+
+Dimensions: Approximately 25 mm x 65 mm x 105 mm (0.94 inches x 2.48 inches x 4.13 inches) 
+DUAL CAMERA
+
+Weight: About 190 grams (6.7 ounces) 
+TALENTCELL
+
+Capacity: 11.1V 3000mAh 
+TALENTCELL
+
+Input: 12.6V/3A Max 
+TALENTCELL
+
+Outputs:
+
+12V DC Output: Voltage range is 12.6V to 9V, with a maximum current of 3A 
+TALENTCELL
+5V USB Output: Maximum current of 2A 
+TALENTCELL
+Charging Time: Approximately 6 hours using the included 12.6V/0.5A AC/DC charger 
+TALENTCELL
+
+Additional Features:
+
+Multi-LED indicator with 5 LEDs displaying battery percentage 
+TALENTCELL
+Supports over-charge/discharge, over-voltage, over-current, and short circuit protection 
+TALENTCELL
+This battery pack is compatible with various devices, including LED strip lights, CCTV cameras, IP cameras, LED panels, amplifiers, modems, and smartphones. 
+TALENTCELL
+
+
+Here’s a detailed description of the TalentCell Rechargeable 3000mAh DC 12V/5V USB Battery Pack (Model: YB1203000-USB) for CAD modeling:
+
+General Shape and Dimensions:
+Form Factor: The battery has a rectangular box-like shape with smooth edges and a flat base. Its approximate dimensions are 105mm x 65mm x 25mm.
+Material: The casing is made of durable black plastic with a matte finish.
+Design Features: There is a slightly curved contour pattern on the top surface for aesthetics.
+Features:
+LED Indicators:
+
+On the top face, there are 5 small LED lights positioned in a straight line, likely green when powered on. These lights indicate the battery's charge status.
+Ports and Switch:
+
+On one of the shorter sides (front face), there are three main components:
+A cylindrical DC input port (to the left).
+A rectangular USB-A port in the middle.
+A small rocker switch (labeled "I" for on and "O" for off) on the right.
+Flat Surfaces:
+
+The bottom is entirely flat to rest on surfaces without rocking or tilting.
+The sides and edges are simple, smooth, and unadorned.
+Thickness:
+
+The thickness is consistent at around 25mm, with no bulges or additional projections beyond the ports and switch.
+Notes for CAD:
+Ports: Model the USB and DC ports with approximate standard dimensions:
+USB-A: 14.5mm x 6mm.
+DC Port: Circular with a diameter of approximately 5.5mm.
+LED Lights: Place them in a straight line on the top surface, evenly spaced.
+Switch: Position the rocker switch flush with the surface, on the right of the front face.
+This description should be sufficient to recreate an accurate 3D model of the battery in CAD software.

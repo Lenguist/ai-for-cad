@@ -1,0 +1,31 @@
+// Define the overall dimensions
+box main_body = box(105, 65, 25);
+main_body = fillet(main_body, 2);
+
+// Define the USB port
+box usb_port = box(14.5, 6, 1.5);
+usb_port = translate(usb_port, 65/2, -30, 25/2);
+
+// Define the DC port
+cylinder dc_port = cylinder(5.5/2, 1.5);
+dc_port = translate(dc_port, 65/2 - 10, -30, 25/2);
+
+// Define the switch
+box switch = box(6, 10, 2);
+switch = translate(switch, 65/2 + 10, -30, 25/2);
+
+// Define the LED lights
+cylinder led[5];
+for(int i = 0; i < 5; i++) {
+    led[i] = cylinder(1, 0.5);
+    led[i] = translate(led[i], 15 + i * 15, 0, 25 - 1);
+}
+
+// Combine all the elements
+main_body = main_body - usb_port - dc_port - switch;
+for(int i = 0; i < 5; i++) {
+    main_body = main_body - led[i];
+}
+
+// Create the final output
+stl("battery.stl", main_body);
