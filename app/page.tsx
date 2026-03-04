@@ -1,5 +1,48 @@
 import Link from "next/link";
 
+const PRELIMINARY_RESULTS = [
+  {
+    rank: 1,
+    model: "Claude Opus 4.6",
+    type: "baseline" as const,
+    stl_pct: 80,
+    syntax_pct: 100,
+    latency: "8.6s",
+    prompts: "16 / 20",
+    note: "Best syntax validity. Fastest LLM.",
+  },
+  {
+    rank: 2,
+    model: "Zoo ML-ephant",
+    type: "commercial" as const,
+    stl_pct: 80,
+    syntax_pct: 80,
+    latency: "64.8s",
+    prompts: "16 / 20",
+    note: "Matches Claude quality. Slow API.",
+  },
+  {
+    rank: 3,
+    model: "GPT-5",
+    type: "baseline" as const,
+    stl_pct: 70,
+    syntax_pct: 70,
+    latency: "23.3s",
+    prompts: "14 / 20",
+    note: "Drops on harder tiers.",
+  },
+  {
+    rank: 4,
+    model: "Gemini 2.5 Flash",
+    type: "baseline" as const,
+    stl_pct: 35,
+    syntax_pct: 35,
+    latency: "—",
+    prompts: "7 / 20",
+    note: "Rate-limited (free tier). Not model quality.",
+  },
+];
+
 const MODELS = [
   // Academic
   {
@@ -840,6 +883,95 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Preliminary Results */}
+      <section
+        style={{
+          padding: "80px 24px",
+          borderTop: "1px solid var(--border)",
+        }}
+      >
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 12 }}>
+            <h2 style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", margin: 0 }}>
+              Preliminary results
+            </h2>
+            <span style={{
+              fontSize: 11, padding: "4px 10px", borderRadius: 5,
+              background: "rgba(251, 191, 36, 0.12)", color: "#fbbf24",
+              fontWeight: 700, letterSpacing: "0.06em",
+            }}>
+              EARLY DATA · 2026-03-03
+            </span>
+          </div>
+          <p style={{ color: "var(--muted)", marginBottom: 40, fontSize: 16 }}>
+            20 prompts across 4 difficulty tiers. Metric: % of prompts that produced
+            a valid, executable 3D part. Full leaderboard launching soon.
+          </p>
+
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["Rank", "Model", "Type", "Valid STL", "Syntax OK", "Avg Latency", "Prompts passed", "Notes"].map((h) => (
+                    <th key={h} style={{
+                      textAlign: "left", padding: "10px 14px",
+                      color: "var(--muted)", fontWeight: 600,
+                      fontFamily: "var(--font-geist-mono), monospace", fontSize: 11,
+                      letterSpacing: "0.06em", whiteSpace: "nowrap",
+                    }}>{h.toUpperCase()}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PRELIMINARY_RESULTS.map((row) => {
+                  const s = TYPE_STYLES[row.type];
+                  const barColor = row.stl_pct >= 75 ? "#4ade80" : row.stl_pct >= 50 ? "#fbbf24" : "#f87171";
+                  return (
+                    <tr key={row.model} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "14px 14px", color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
+                        #{row.rank}
+                      </td>
+                      <td style={{ padding: "14px 14px", fontWeight: 700 }}>{row.model}</td>
+                      <td style={{ padding: "14px 14px" }}>
+                        <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 5, background: s.bg, color: s.color, fontWeight: 600 }}>
+                          {s.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 60, height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${row.stl_pct}%`, height: "100%", background: barColor, borderRadius: 3 }} />
+                          </div>
+                          <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 13, color: barColor, fontWeight: 700 }}>
+                            {row.stl_pct}%
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "14px 14px", fontFamily: "var(--font-geist-mono), monospace", color: "var(--muted)" }}>
+                        {row.syntax_pct}%
+                      </td>
+                      <td style={{ padding: "14px 14px", fontFamily: "var(--font-geist-mono), monospace", color: "var(--muted)" }}>
+                        {row.latency}
+                      </td>
+                      <td style={{ padding: "14px 14px", fontFamily: "var(--font-geist-mono), monospace", color: "var(--muted)" }}>
+                        {row.prompts}
+                      </td>
+                      <td style={{ padding: "14px 14px", color: "var(--muted)", fontSize: 13 }}>{row.note}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <p style={{ marginTop: 20, fontSize: 13, color: "var(--muted)" }}>
+            These are <strong style={{ color: "var(--foreground)" }}>API-only baseline results</strong> on 20 prompts.
+            Full benchmark (200 prompts, 13+ models including academic open-source models)
+            is in progress. Gemini result reflects free-tier rate limiting, not model quality.
+          </p>
         </div>
       </section>
 

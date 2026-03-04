@@ -182,17 +182,4 @@ def validate_zoo_stl(stl_b64: Optional[str], step_b64: Optional[str],
         "stl_size_bytes": len(stl_bytes),
     }
 
-    # Optional: basic mesh check with trimesh (skip silently if unavailable)
-    try:
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            import trimesh
-        mesh = trimesh.load(str(stl_out), force="mesh")
-        data["trimesh_watertight"] = bool(mesh.is_watertight)
-        data["trimesh_volume_mm3"] = round(float(mesh.volume), 3)
-        data["trimesh_faces"] = len(mesh.faces)
-    except Exception:
-        pass  # trimesh unavailable or incompatible — STL file still saved
-
     return data

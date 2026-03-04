@@ -86,8 +86,8 @@ def extract_code(text: str) -> str:
 
 # ── GPT-4o ────────────────────────────────────────────────────────────────
 
-class GPT4oModel:
-    model_id = "gpt-4o"
+class GPT5Model:
+    model_id = "gpt-5"
     output_type = "cadquery"
 
     def __init__(self):
@@ -104,13 +104,12 @@ class GPT4oModel:
         t0 = time.time()
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-5",
                 messages=[
                     {"role": "system", "content": CADQUERY_SYSTEM_PROMPT},
                     {"role": "user", "content": prompt},
                 ],
-                temperature=0.1,
-                max_tokens=2048,
+                max_completion_tokens=2048,
             )
             result.raw_response = response.choices[0].message.content
             result.code = extract_code(result.raw_response)
@@ -125,7 +124,7 @@ class GPT4oModel:
 # ── Claude Sonnet ─────────────────────────────────────────────────────────
 
 class ClaudeModel:
-    model_id = "claude-sonnet-4-6"
+    model_id = "claude-opus-4-6"
     output_type = "cadquery"
 
     def __init__(self):
@@ -142,7 +141,7 @@ class ClaudeModel:
         t0 = time.time()
         try:
             response = self.client.messages.create(
-                model="claude-sonnet-4-6",
+                model="claude-opus-4-6",
                 max_tokens=2048,
                 system=CADQUERY_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": prompt}],
@@ -160,18 +159,15 @@ class ClaudeModel:
 # ── Gemini 2.0 Flash ──────────────────────────────────────────────────────
 
 class GeminiModel:
-    model_id = "gemini-2.0-flash"
+    model_id = "gemini-2.5-flash"
     output_type = "cadquery"
 
     def __init__(self):
-        import google.generativeai as genai
-        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-        self.model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=CADQUERY_SYSTEM_PROMPT,
-        )
+        from google import genai
+        self.client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
     def generate(self, prompt_id: str, prompt: str) -> GenerationResult:
+        from google.genai import types
         result = GenerationResult(
             model_id=self.model_id,
             prompt_id=prompt_id,
@@ -180,9 +176,14 @@ class GeminiModel:
         )
         t0 = time.time()
         try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config={"temperature": 0.1, "max_output_tokens": 2048},
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=CADQUERY_SYSTEM_PROMPT,
+                    temperature=0.1,
+                    max_output_tokens=2048,
+                ),
             )
             result.raw_response = response.text
             result.code = extract_code(result.raw_response)
@@ -302,9 +303,9 @@ class ZooModel:
 # ── Model registry ────────────────────────────────────────────────────────
 
 ALL_MODELS = {
-    "gpt-4o": GPT4oModel,
-    "claude-sonnet-4-6": ClaudeModel,
-    "gemini-2.0-flash": GeminiModel,
+    "gpt-5": GPT5Model,
+    "claude-opus-4-6": ClaudeModel,
+    "gemini-2.5-flash": GeminiModel,
     "zoo-ml-ephant": ZooModel,
 }
 
@@ -316,9 +317,9 @@ def load_available_models() -> dict:
     """
     available = {}
     key_map = {
-        "gpt-4o": "OPENAI_API_KEY",
-        "claude-sonnet-4-6": "ANTHROPIC_API_KEY",
-        "gemini-2.0-flash": "GOOGLE_API_KEY",
+        "gpt-5": "OPENAI_API_KEY",
+        "claude-opus-4-6": "ANTHROPIC_API_KEY",
+        "gemini-2.5-flash": "GOOGLE_API_KEY",
         "zoo-ml-ephant": "ZOO_API_TOKEN",
     }
     for model_id, cls in ALL_MODELS.items():

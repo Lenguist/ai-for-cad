@@ -1,0 +1,74 @@
+CAD Arena — Session Log
+Date: 2026-03-03
+========================================
+
+WHAT WE DID TODAY
+-----------------
+
+1. RESEARCH
+   - Explored existing repository: 173 papers cataloged, 60 companies, full report
+   - Searched online for existing AI-CAD benchmarks
+   - Confirmed: NO arena-style benchmark exists for parametric CAD (clear gap)
+   - Closest things: 3D Arena (meshes only), Text2CAD (no live leaderboard)
+   - Output: benchmark/01-landscape-research.md, benchmark/02-benchmark-strategy.md
+
+2. WEBSITE (CAD Arena landing page)
+   - Built Next.js 16 + Tailwind v4 landing page
+   - Dark blueprint theme (navy #080c14, blue accent #3b82f6)
+   - Sections: hero, stats bar, how it works, 13 model cards, 4-tier prompt preview,
+     why it matters, paper CTA
+   - Deployed to Vercel (moved from website/ subdir to repo root)
+   - File: app/page.tsx
+
+3. MODEL COMPUTE RESEARCH
+   - Researched all 12+ text-to-CAD models for VRAM, weights, reproducibility
+   - 7 models runnable today with public weights
+   - 5 models blocked (no public weights): CAD-GPT, CAD-Llama, ReCAD, CAD-MLLM,
+     CAD-Coder (NeurIPS text version)
+   - Output: benchmark/03-models-compute.md
+
+4. EVAL PIPELINE (Phase 1 — API models)
+   - Built Python pipeline: eval/prompts.py, models.py, execute.py, run.py, analyze.py
+   - 20 benchmark prompts across 4 difficulty tiers
+   - API clients: GPT-5, Claude Opus 4.6, Gemini 2.5 Flash, Zoo ML-ephant
+   - CadQuery subprocess execution + STL export
+   - Results saved to eval/results/<run_id>/
+
+5. BENCHMARK RUN — RESULTS
+   Run ID: 20260303_210402
+   20 prompts × 4 models = 80 generations
+
+   Model              API     STL Exported   Avg Latency
+   ─────────────────────────────────────────────────────
+   Claude Opus 4.6    20/20   16/20 (80%)    8.6s
+   GPT-5              20/20   14/20 (70%)    23.3s
+   Zoo ML-ephant      16/20   16/20 (80%)    64.8s
+   Gemini 2.5 Flash    7/20    7/20 (35%)    rate-limited
+
+   Key findings:
+   - Claude is fastest + most reliable
+   - Zoo matches quality but 8× slower
+   - Gemini blocked by free-tier quota (not model quality)
+   - Tier 4 (complex parts) hard for everyone — validates difficulty tiers
+
+API KEYS STORED (in eval/.env — gitignored)
+-------------------------------------------
+OPENAI_API_KEY     = sk-proj-cmBy7... (GPT-5)
+ANTHROPIC_API_KEY  = sk-ant-api03... (Claude Opus 4.6)
+GOOGLE_API_KEY     = AIzaSyDT3O7... (Gemini)
+ZOO_API_TOKEN      = api-82b8df... (Zoo ML-ephant)
+
+NEXT STEPS
+----------
+1. Fix Gemini rate limiting (retry-with-backoff)
+2. Update website with preliminary results leaderboard section
+3. Add per-tier breakdown to analyze.py
+4. Run self-hosted models on cloud GPU (Text2CAD, FlexCAD, CADFusion)
+5. Add Chamfer Distance metric against ground truth STEPs
+6. Register cadarena.dev domain (Porkbun ~$10.98/yr)
+7. Set up Cloudflare Email Routing for contact@cadarena.dev
+8. Write NeurIPS 2026 benchmark paper
+
+REPO
+----
+https://github.com/Lenguist/ai-for-cad

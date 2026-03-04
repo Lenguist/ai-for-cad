@@ -6,7 +6,11 @@ node_modules/
 
 # Eval pipeline
 eval/.env
-eval/results/*/
+eval/results/**/*.stl
+eval/results/**/*.step
+eval/results/**/*.gltf
+eval/results/**/_runner.py
+eval/results/**/*.py
 
 # Python
 __pycache__/

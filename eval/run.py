@@ -148,7 +148,7 @@ def main():
             if not args.no_execute and not gen.error:
                 if gen.output_type == "cadquery" and gen.code:
                     exec_result = validate_cadquery(
-                        gen.code, model_dir, pid, timeout=45
+                        gen.code, model_dir, pid, timeout=120
                     )
                 elif gen.output_type == "zoo_stl":
                     stl_b64  = gen.metadata.get("stl_bytes")
