@@ -257,16 +257,32 @@ class ZooModel:
 
                 if status == "completed":
                     # outputs is a dict of filename -> base64-encoded bytes
+                    # Zoo returns: source.stl, source.step, source.gltf
                     outputs = status_data.get("outputs", {})
-                    stl_key = next((k for k in outputs if k.endswith(".stl")), None)
+
+                    def _b64decode(s: str) -> bytes:
+                        """Decode base64, handling URL-safe encoding and missing padding."""
+                        s = s.replace("-", "+").replace("_", "/")
+                        s += "=" * (-len(s) % 4)
+                        return base64.b64decode(s)
+
+                    import base64
+                    stl_key  = next((k for k in outputs if k.endswith(".stl")),  None)
+                    step_key = next((k for k in outputs if k.endswith(".step")), None)
+
                     if stl_key:
-                        import base64
-                        stl_bytes = base64.b64decode(outputs[stl_key])
+                        stl_bytes = _b64decode(outputs[stl_key])
                         result.metadata["stl_bytes_len"] = len(stl_bytes)
-                        result.metadata["stl_bytes"] = outputs[stl_key]  # keep b64
+                        result.metadata["stl_bytes"] = base64.b64encode(stl_bytes).decode()
                         result.code = f"# Zoo API output — STL ({len(stl_bytes)} bytes)"
-                    else:
-                        result.error = f"No STL in outputs: {list(outputs.keys())}"
+                    if step_key:
+                        step_bytes = _b64decode(outputs[step_key])
+                        result.metadata["step_bytes_len"] = len(step_bytes)
+                        result.metadata["step_bytes"] = base64.b64encode(step_bytes).decode()
+                        if not stl_key:
+                            result.code = f"# Zoo API output — STEP ({len(step_bytes)} bytes)"
+                    if not stl_key and not step_key:
+                        result.error = f"No STL/STEP in outputs: {list(outputs.keys())}"
                     break
                 elif status in ("failed", "cancelled"):
                     result.error = f"Job {status}: {status_data.get('error', 'unknown')}"

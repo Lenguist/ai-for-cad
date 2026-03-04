@@ -151,8 +151,9 @@ def main():
                         gen.code, model_dir, pid, timeout=45
                     )
                 elif gen.output_type == "zoo_stl":
-                    stl_b64 = gen.metadata.get("stl_bytes")
-                    exec_result = validate_zoo_stl(stl_b64, model_dir, pid)
+                    stl_b64  = gen.metadata.get("stl_bytes")
+                    step_b64 = gen.metadata.get("step_bytes")
+                    exec_result = validate_zoo_stl(stl_b64, step_b64, model_dir, pid)
 
             row["exec_result"] = exec_result
 
