@@ -4,6 +4,10 @@ node_modules/
 .env.local
 .env
 
+# Eval pipeline
+eval/.env
+eval/results/*/
+
 # Python
 __pycache__/
 *.pyc
