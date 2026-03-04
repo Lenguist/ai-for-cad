@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #080c14;
+  --foreground: #e8edf5;
+  --accent: #3b82f6;
+  --accent-dim: #1d4ed8;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --muted: #8b9ab5;
+  --border: #1e2a3d;
+  --card: #0d1525;
+  --card-hover: #111e33;
+  --tag-academic: #1a3a2a;
+  --tag-academic-text: #4ade80;
+  --tag-commercial: #2a1a3a;
+  --tag-commercial-text: #c084fc;
+  --tag-baseline: #2a2410;
+  --tag-baseline-text: #fbbf24;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-card: var(--card);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Blueprint grid background for hero */
+.blueprint-bg {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}

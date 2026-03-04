@@ -1,0 +1,21 @@
+# Next.js
+website/.next/
+website/node_modules/
+website/.env.local
+website/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+
+# macOS
+.DS_Store
+
+# Papers (large PDFs tracked separately)
+feb8/papers/*.pdf
