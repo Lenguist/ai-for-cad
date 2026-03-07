@@ -408,7 +408,8 @@ export default function Home() {
             <a
               href="#models"
               style={{
-                background: "rgba(255,255,255,0.9)",\n                color: "#3568a0",
+                background: "rgba(255,255,255,0.9)",
+                color: "#3568a0",
                 padding: "12px 28px",
                 borderRadius: 8,
                 textDecoration: "none",
