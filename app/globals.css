@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #080c14;
-  --foreground: #e8edf5;
-  --accent: #3b82f6;
-  --accent-dim: #1d4ed8;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --muted: #8b9ab5;
-  --border: #1e2a3d;
-  --card: #0d1525;
-  --card-hover: #111e33;
-  --tag-academic: #1a3a2a;
-  --tag-academic-text: #4ade80;
-  --tag-commercial: #2a1a3a;
-  --tag-commercial-text: #c084fc;
-  --tag-baseline: #2a2410;
-  --tag-baseline-text: #fbbf24;
+  --background: #4a80b4;
+  --foreground: #ffffff;
+  --accent: #ffffff;
+  --accent-dim: rgba(255,255,255,0.6);
+  --accent-glow: rgba(255,255,255,0.08);
+  --muted: rgba(255,255,255,0.6);
+  --border: rgba(255,255,255,0.18);
+  --card: rgba(0,0,0,0.1);
+  --card-hover: rgba(0,0,0,0.16);
+  --tag-academic: rgba(255,255,255,0.12);
+  --tag-academic-text: rgba(255,255,255,0.9);
+  --tag-commercial: rgba(255,255,255,0.12);
+  --tag-commercial-text: rgba(255,255,255,0.9);
+  --tag-baseline: rgba(255,255,255,0.12);
+  --tag-baseline-text: rgba(255,255,255,0.9);
 }
 
 @theme inline {
@@ -40,7 +40,7 @@ body {
 /* Blueprint grid background for hero */
 .blueprint-bg {
   background-image:
-    linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
   background-size: 40px 40px;
 }

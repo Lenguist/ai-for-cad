@@ -246,7 +246,7 @@ export default function Home() {
           top: 0,
           zIndex: 50,
           backdropFilter: "blur(12px)",
-          background: "rgba(8, 12, 20, 0.85)",
+          background: "rgba(55, 105, 160, 0.92)",
         }}
       >
         <div
@@ -277,7 +277,7 @@ export default function Home() {
                 fontSize: 11,
                 padding: "2px 8px",
                 borderRadius: 4,
-                background: "rgba(59, 130, 246, 0.15)",
+                background: "rgba(255,255,255,0.12)",
                 color: "var(--accent)",
                 fontWeight: 600,
                 letterSpacing: "0.05em",
@@ -336,7 +336,7 @@ export default function Home() {
             width: 600,
             height: 400,
             background:
-              "radial-gradient(ellipse, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+              "radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 70%)",
             pointerEvents: "none",
           }}
         />
@@ -353,9 +353,9 @@ export default function Home() {
               letterSpacing: "0.08em",
               marginBottom: 28,
               padding: "6px 14px",
-              border: "1px solid rgba(59, 130, 246, 0.3)",
+              border: "1px solid rgba(255,255,255,0.35)",
               borderRadius: 20,
-              background: "rgba(59, 130, 246, 0.07)",
+              background: "rgba(255,255,255,0.1)",
             }}
           >
             <span
@@ -408,8 +408,7 @@ export default function Home() {
             <a
               href="#models"
               style={{
-                background: "var(--accent)",
-                color: "#fff",
+                background: "rgba(255,255,255,0.9)",\n                color: "#3568a0",
                 padding: "12px 28px",
                 borderRadius: 8,
                 textDecoration: "none",
@@ -764,8 +763,8 @@ export default function Home() {
             style={{
               marginTop: 32,
               padding: 20,
-              background: "rgba(59, 130, 246, 0.06)",
-              border: "1px solid rgba(59, 130, 246, 0.2)",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.2)",
               borderRadius: 10,
               fontSize: 14,
               color: "var(--muted)",
@@ -900,7 +899,7 @@ export default function Home() {
             </h2>
             <span style={{
               fontSize: 11, padding: "4px 10px", borderRadius: 5,
-              background: "rgba(251, 191, 36, 0.12)", color: "#fbbf24",
+              background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)",
               fontWeight: 700, letterSpacing: "0.06em",
             }}>
               EARLY DATA · 2026-03-03
@@ -928,7 +927,7 @@ export default function Home() {
               <tbody>
                 {PRELIMINARY_RESULTS.map((row) => {
                   const s = TYPE_STYLES[row.type];
-                  const barColor = row.stl_pct >= 75 ? "#4ade80" : row.stl_pct >= 50 ? "#fbbf24" : "#f87171";
+                  const barColor = row.stl_pct >= 75 ? "rgba(255,255,255,0.95)" : row.stl_pct >= 50 ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.4)";
                   return (
                     <tr key={row.model} style={{ borderBottom: "1px solid var(--border)" }}>
                       <td style={{ padding: "14px 14px", color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
@@ -1125,8 +1124,8 @@ export default function Home() {
               href="mailto:contact@cadarena.ai"
               style={{
                 display: "inline-block",
-                background: "var(--accent)",
-                color: "#fff",
+                background: "rgba(255,255,255,0.9)",
+                color: "#3568a0",
                 padding: "12px 32px",
                 borderRadius: 8,
                 textDecoration: "none",
