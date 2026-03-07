@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distributed Training Review - Technical Interview Prep</title>
+<style>
+  @media print {
+    body { font-size: 11pt; }
+    .no-print { display: none; }
+    pre { page-break-inside: avoid; }
+    h2 { page-break-after: avoid; }
+    h3 { page-break-after: avoid; }
+  }
+
+  :root {
+    --bg: #4a80b4;
+    --bg-surface: rgba(0,0,0,0.12);
+    --bg-raised: rgba(0,0,0,0.18);
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,0.65);
+    --accent: #ffffff;
+    --border: rgba(255,255,255,0.18);
+    --border-strong: rgba(255,255,255,0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+    color: var(--text);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    line-height: 1.75;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 56px 48px;
+    font-size: 0.875rem;
+  }
+
+  /* --- Email context --- */
+  .email-context {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid rgba(255,255,255,0.7);
+    padding: 20px 24px;
+    margin-bottom: 36px;
+    font-size: 0.9em;
+    color: var(--text-dim);
+  }
+  .email-context strong { color: var(--text); }
+  .email-context p { margin-bottom: 6px; }
+  .email-context ol { margin: 10px 0 10px 20px; }
+  .email-context ol li { margin-bottom: 4px; }
+
+  .user-prompt {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-dim);
+    padding: 12px 20px;
+    margin-bottom: 28px;
+    font-size: 0.88em;
+    font-style: italic;
+    color: var(--text-dim);
+  }
+
+  /* --- Headings --- */
+  h1 {
+    font-size: 1.5em;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.9em;
+    margin-bottom: 40px;
+  }
+
+  h2 {
+    font-size: 0.95em;
+    color: var(--text);
+    margin: 52px 0 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-strong);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  h3 {
+    font-size: 0.9em;
+    color: var(--text);
+    margin: 28px 0 10px;
+    letter-spacing: 0.06em;
+    opacity: 0.9;
+  }
+
+  h4 {
+    font-size: 0.82em;
+    color: var(--text-dim);
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* --- Body text --- */
+  p { margin-bottom: 12px; color: rgba(255,255,255,0.88); }
+  strong { color: var(--text); font-weight: 700; }
+
+  /* --- Code blocks --- */
+  pre {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: rgba(255,255,255,0.9);
+  }
+
+  code {
+    font-size: 0.9em;
+    background: var(--bg-raised);
+    padding: 2px 5px;
+    color: var(--text);
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* --- Lists --- */
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 5px; color: rgba(255,255,255,0.88); }
+
+  /* --- Table --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.875em;
+  }
+  th {
+    background: var(--bg-raised);
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.82em;
+  }
+  td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    color: rgba(255,255,255,0.88);
+  }
+  tr:nth-child(even) td { background: rgba(0,0,0,0.08); }
+
+  /* --- Dividers --- */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border-strong);
+    margin: 52px 0;
+  }
+
+  /* --- Topics section --- */
+  .topics-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    margin: 20px 0 32px;
+  }
+  .topics-section h3 {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-top: 22px;
+  }
+  .topics-section h3:first-child { margin-top: 0; }
+  .topics-section ul { margin-left: 16px; }
+
+  /* --- Callout boxes --- */
+  .callout {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,255,255,0.6);
+    padding: 12px 20px;
+    margin: 16px 0;
+    color: var(--text-dim);
+  }
+
+  .callout-warn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,220,100,0.6);
+    padding: 12px 20px;
+    margin: 16px 0;
+    color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+
+<!-- Email Context -->
+<div class="email-context">
+  <p><strong>From:</strong> Sabri Eyuboglu</p>
+  <p><strong>Date:</strong> Fri, Feb 6</p>
+  <p><strong>To:</strong> Maksym, Jack</p>
+  <p style="margin-top:10px;">Hi Maksym,<br>
+  Great speaking today &mdash; as mentioned on the call, we'd love to move forward with a technical interview with Jack.</p>
+  <p>For context, our full process looks like:</p>
+  <ol>
+    <li><strong>Virtual technical interviews.</strong> 2&ndash;3 technical interviews, each ~1 hour (mix of ML systems / GPU + distributed systems fundamentals, plus general software engineering).</li>
+    <li><strong>Reference checks.</strong> After the first technical, we'll ask for a few technical references.</li>
+    <li><strong>Onsite work trial in SF.</strong> A 2-day onsite work trial in San Francisco to work closely with the team.</li>
+  </ol>
+</div>
+
+<div class="user-prompt">
+  "Give me a list of topics, and then subtopics. Don't go too deep. I will later select which topics/subtopics I feel weakest at."
+</div>
+
+<!-- Topic Overview -->
+<div class="topics-section">
+  <h3>ML Systems / GPU Topics</h3>
+  <h4>GPU Architecture &amp; Programming</h4>
+  <ul>
+    <li>CUDA programming model (kernels, threads, blocks, grids)</li>
+    <li>Memory hierarchy (global, shared, registers, L1/L2 cache)</li>
+    <li>Memory coalescing and access patterns</li>
+    <li>Warp execution and divergence</li>
+    <li>Occupancy and resource utilization</li>
+  </ul>
+  <h4>GPU Performance Optimization</h4>
+  <ul>
+    <li>Kernel optimization techniques</li>
+    <li>Memory bandwidth vs compute bound analysis</li>
+    <li>Tensor cores and mixed precision</li>
+    <li>Profiling tools (nsys, ncu)</li>
+    <li>Common bottlenecks and how to identify them</li>
+  </ul>
+  <h4>ML Systems Infrastructure</h4>
+  <ul>
+    <li>Batching and throughput optimization</li>
+    <li>Model serving architectures</li>
+    <li>Quantization techniques (int8, fp16, etc.)</li>
+    <li>KV cache management</li>
+    <li>Attention mechanism optimizations</li>
+  </ul>
+  <h4>AI Hardware Acceleration</h4>
+  <ul>
+    <li>Custom kernels for transformers</li>
+    <li>Flash Attention concepts</li>
+    <li>Fused operations</li>
+    <li>Memory-efficient implementations</li>
+  </ul>
+
+  <h3>Distributed Systems Topics</h3>
+  <h4>Distributed Training</h4>
+  <ul>
+    <li>Data parallelism vs model parallelism</li>
+    <li>Pipeline parallelism</li>
+    <li>Tensor parallelism</li>
+    <li>All-reduce and collective communication</li>
+    <li>Gradient accumulation</li>
+  </ul>
+  <h4>Networking &amp; Communication</h4>
+  <ul>
+    <li>Network topologies for ML (NVLink, InfiniBand)</li>
+    <li>Communication primitives (all-reduce, all-gather, reduce-scatter)</li>
+    <li>Overlap of computation and communication</li>
+    <li>Bandwidth and latency considerations</li>
+  </ul>
+  <h4>System Design</h4>
+  <ul>
+    <li>Fault tolerance and checkpointing</li>
+    <li>Load balancing</li>
+    <li>Resource scheduling</li>
+    <li>Multi-tenancy considerations</li>
+  </ul>
+
+  <h3>General Software Engineering</h3>
+  <h4>Data Structures &amp; Algorithms</h4>
+  <ul>
+    <li>Common patterns for performance-critical code</li>
+    <li>Cache-friendly data structures</li>
+    <li>Lock-free programming basics</li>
+  </ul>
+  <h4>Python/C++ Performance</h4>
+  <ul>
+    <li>Python-C++ integration (pybind11, etc.)</li>
+    <li>Profiling Python code</li>
+    <li>JIT compilation concepts</li>
+  </ul>
+  <h4>Debugging &amp; Optimization</h4>
+  <ul>
+    <li>Performance debugging methodology</li>
+    <li>Benchmarking best practices</li>
+    <li>Understanding performance metrics</li>
+  </ul>
+</div>
+
+<hr>
+
+<div class="user-prompt">
+  "Give exhaustive review list with everything explained in simple terms on distributed training. Explained to someone who has no background in it. Long, detailed, and with examples."
+</div>
+
+<h1>Complete Guide to Distributed Training</h1>
+<p class="subtitle">From Zero to Hero</p>
+
+<!-- Part 1 -->
+<h2>Part 1: Why Distributed Training Exists</h2>
+
+<h3>The Fundamental Problem</h3>
+<p>Imagine you're training GPT-4. It has 1.76 trillion parameters. Each parameter is a number (usually stored as a 32-bit float = 4 bytes).</p>
+<p><strong>Just storing the model weights:</strong></p>
+<pre>1.76 trillion &times; 4 bytes = 7 terabytes</pre>
+<p>But training needs more than just weights:</p>
+<pre>Weights:          7 TB
+Gradients:        7 TB
+Optimizer states: 14 TB  (Adam keeps 2 copies)
+Total:           ~28 TB of memory</pre>
+<p><strong>Problem:</strong> A single H100 GPU has 80 GB of memory. You'd need ~350 GPUs just to hold everything in memory, let alone actually train!</p>
+
+<h3>The Three Goals of Distribution</h3>
+<ul>
+  <li><strong>Model Parallelism:</strong> Split the model across GPUs because it's too big for one</li>
+  <li><strong>Data Parallelism:</strong> Train on more data simultaneously to speed up training</li>
+  <li><strong>Pipeline Parallelism:</strong> Keep all GPUs busy all the time (no idle waiting)</li>
+</ul>
+
+<!-- Part 2 -->
+<h2>Part 2: Data Parallelism (The Simplest Approach)</h2>
+
+<h3>Basic Concept</h3>
+<p><strong>Analogy:</strong> Imagine 4 students grading the same essay. Each student:</p>
+<ol>
+  <li>Gets a copy of the rubric (model weights)</li>
+  <li>Grades different parts of the essay (different data batches)</li>
+  <li>Compares notes and updates the rubric together (synchronize gradients)</li>
+  <li>Repeats with next essay</li>
+</ol>
+
+<h3>How It Works Step-by-Step</h3>
+<p><strong>Setup</strong> (before training starts):</p>
+<pre>GPU 0: Copy of full model (7 TB)
+GPU 1: Copy of full model (7 TB)
+GPU 2: Copy of full model (7 TB)
+GPU 3: Copy of full model (7 TB)</pre>
+
+<p><strong>Training iteration:</strong></p>
+<pre><strong>1. Forward Pass</strong> (each GPU independently):
+   GPU 0: Processes batch of 32 images (cats)
+   GPU 1: Processes batch of 32 images (dogs)
+   GPU 2: Processes batch of 32 images (birds)
+   GPU 3: Processes batch of 32 images (fish)
+
+<strong>2. Backward Pass</strong> (each GPU independently):
+   GPU 0: Computes gradients from its batch
+   GPU 1: Computes gradients from its batch
+   GPU 2: Computes gradients from its batch
+   GPU 3: Computes gradients from its batch
+
+<strong>3. Synchronization</strong> (GPUs communicate):
+   All GPUs share their gradients and compute the average
+   This is called "All-Reduce"
+
+<strong>4. Update</strong> (each GPU independently):
+   Each GPU updates its copy of the model with averaged gradients
+   All models are now identical again</pre>
+
+<h3>The All-Reduce Operation</h3>
+<p><strong>What is it?</strong> A communication pattern where every GPU needs to know the sum (or average) of values from all GPUs.</p>
+<pre>GPU 0 computed: gradient = 5
+GPU 1 computed: gradient = 3
+GPU 2 computed: gradient = 7
+GPU 3 computed: gradient = 1
+
+After All-Reduce:
+All GPUs have: average gradient = (5+3+7+1)/4 = 4</pre>
+
+<p><strong>Naive approach (slow):</strong></p>
+<pre>GPU 0 sends to GPU 1, GPU 2, GPU 3
+GPU 1 sends to GPU 0, GPU 2, GPU 3
+...
+Total messages: 12
+Time complexity: O(N) where N = number of GPUs</pre>
+
+<p><strong>Ring All-Reduce (smart, what everyone uses):</strong></p>
+<pre>Arrange GPUs in a ring: 0 &rarr; 1 &rarr; 2 &rarr; 3 &rarr; 0
+
+Phase 1 (Reduce-Scatter): Pass partial sums around ring
+Phase 2 (All-Gather):     Pass final results around ring
+
+Total messages: 2(N-1)
+Time complexity: O(1) regardless of number of GPUs!</pre>
+
+<h3>Data Parallelism Variants</h3>
+
+<h4>Synchronous Data Parallelism (most common)</h4>
+<p>All GPUs wait for each other after each batch. Guarantees all models stay in sync. Like students waiting for everyone to finish grading before discussing.</p>
+
+<h4>Asynchronous Data Parallelism</h4>
+<p>GPUs update a central parameter server independently. Faster but can be unstable (some gradients might be stale). Like students submitting rubric updates without waiting for others.</p>
+
+<h4>Gradient Accumulation</h4>
+<p>Run multiple forward/backward passes before synchronizing. Simulates larger batch sizes without more memory.</p>
+<pre>for micro_batch in [batch1, batch2, batch3, batch4]:
+    loss = forward(micro_batch)
+    gradients += backward(loss)  # accumulate, don't update yet
+
+# Now synchronize and update once
+all_reduce(gradients)
+update_weights(gradients)</pre>
+
+<!-- Part 3 -->
+<h2>Part 3: Model Parallelism (When Model Doesn't Fit)</h2>
+
+<h3>The Problem Data Parallelism Doesn't Solve</h3>
+<p>With data parallelism, every GPU needs a full copy of the model. If the model is 28 TB and you have 80 GB GPUs, you still can't train!</p>
+
+<h3>Tensor Parallelism (Horizontal Splitting)</h3>
+<p><strong>Analogy:</strong> Imagine a giant Excel spreadsheet that's too big for one computer screen. You split it vertically so each screen shows different columns, but all screens show the same rows simultaneously.</p>
+
+<p><strong>How it works for a matrix multiplication:</strong></p>
+<pre><strong>Normal computation (single GPU):</strong>
+# Input: X with shape [batch_size, input_dim]
+# Weight: W with shape [input_dim, output_dim]
+# Output: Y = X @ W
+Y = X @ W
+
+<strong>Tensor parallelism (2 GPUs):</strong>
+# Split weight matrix W vertically:
+# GPU 0 gets W[:, :output_dim/2]  (left half)
+# GPU 1 gets W[:, output_dim/2:]  (right half)
+
+# Both GPUs get full input X
+GPU_0: Y_left  = X @ W_left   # produces left half of output
+GPU_1: Y_right = X @ W_right  # produces right half of output
+
+# Final output is concatenated: Y = [Y_left | Y_right]</pre>
+
+<p><strong>Real Example &mdash; Transformer MLP Layer:</strong></p>
+<pre>Original (single GPU):
+X [batch=4, seq=512, dim=4096]
+    &darr;
+W1 [4096, 16384]  &larr; 67M parameters
+    &darr;
+Activation [batch=4, seq=512, dim=16384]
+    &darr;
+W2 [16384, 4096]  &larr; 67M parameters
+    &darr;
+Output [batch=4, seq=512, dim=4096]
+
+Tensor Parallel (2 GPUs):
+GPU 0 gets W1_left [4096, 8192] and W2_top [8192, 4096]
+GPU 1 gets W1_right [4096, 8192] and W2_bottom [8192, 4096]
+
+Communication needed:
+- After W1: Concatenate left and right halves
+- After W2: Sum contributions from both GPUs</pre>
+
+<p><strong>Attention Mechanism with Tensor Parallelism:</strong></p>
+<pre>Original attention (single GPU):
+Q, K, V = X @ W_Q, X @ W_K, X @ W_V  # each W is [4096, 4096]
+Attention = softmax(Q @ K^T / &radic;d) @ V
+
+With 4 GPUs (splitting attention heads):
+GPU 0: Handles heads 0-7    (8 heads)
+GPU 1: Handles heads 8-15   (8 heads)
+GPU 2: Handles heads 16-23  (8 heads)
+GPU 3: Handles heads 24-31  (8 heads)
+
+Each GPU:
+- Stores 1/4 of W_Q, W_K, W_V weights
+- Computes attention for its heads independently
+- At the end, all-gather to combine results</pre>
+
+<h3>Pipeline Parallelism (Vertical Splitting)</h3>
+<p><strong>Analogy:</strong> An assembly line for building cars. Station 1 builds the chassis, Station 2 adds the engine, Station 3 adds the body, Station 4 adds the interior. Each station (GPU) specializes in one part.</p>
+
+<pre><strong>Simple Example &mdash; 4 Layer Model on 4 GPUs:</strong>
+GPU 0: Layer 1 (embedding + first transformer block)
+GPU 1: Layer 2 (second transformer block)
+GPU 2: Layer 3 (third transformer block)
+GPU 3: Layer 4 (output layer + loss)
+
+Timeline <em>without</em> pipelining (inefficient):
+Time &rarr;
+GPU 0: [Process batch 1] [idle] [idle] [idle] [Process batch 2] ...
+GPU 1: [idle] [Process batch 1] [idle] [idle] [idle] ...
+GPU 2: [idle] [idle] [Process batch 1] [idle] [idle] ...
+GPU 3: [idle] [idle] [idle] [Process batch 1] [idle] ...
+
+Problem: 75% of time, GPUs are idle!</pre>
+
+<h3>GPipe (Google's Pipeline Parallelism)</h3>
+<p><strong>The Solution:</strong> Process multiple mini-batches simultaneously, like a real assembly line.</p>
+<pre>Split each batch into 4 micro-batches
+
+Timeline with pipelining:
+Time &rarr;     mb1    mb2    mb3    mb4    mb1    mb2    mb3    mb4
+GPU 0:     [F1]   [F2]   [F3]   [F4]   [B1]   [B2]   [B3]   [B4]
+GPU 1:     [idle] [F1]   [F2]   [F3]   [F4]   [B1]   [B2]   [B3]
+GPU 2:     [idle] [idle] [F1]   [F2]   [F3]   [F4]   [B1]   [B2]
+GPU 3:     [idle] [idle] [idle] [F1]   [F2]   [F3]   [F4]   [B1]
+
+F = Forward pass, B = Backward pass, mb = micro-batch
+
+After warmup, all GPUs are busy!
+Efficiency = 4/(4+3) = 57%  (with 4 micro-batches)
+With 8 micro-batches:  8/(8+3)  = 73%
+With 16 micro-batches: 16/(16+3) = 84%</pre>
+
+<div class="callout-warn">
+  <strong>Memory Trade-off:</strong> More micro-batches = better GPU utilization, but need to store activations for each micro-batch. This can use a lot of memory!
+</div>
+
+<h3>PipeDream (Microsoft's Improvement)</h3>
+<p><strong>The Innovation:</strong> Don't wait for all forward passes to finish before starting backward passes.</p>
+<pre>Timeline:
+Time &rarr;
+GPU 0:  1F  2F  3F  4F  1B  2B  3B  4B  5F  6F  ...
+GPU 1:  --  1F  2F  3F  4F  1B  2B  3B  4B  5F  ...
+GPU 2:  --  --  1F  2F  3F  4F  1B  2B  3B  4B  ...
+GPU 3:  --  --  --  1F  2F  3F  4F  1B  2B  3B  ...
+
+Reaches steady state faster!</pre>
+
+<p><strong>The Weight Version Problem:</strong></p>
+<pre>Micro-batch 1 forward uses weight version W_0
+By the time micro-batch 1 backward runs, weights updated to W_3
+Gradient is "stale" &mdash; computed for old weights!
+
+Solution: Keep multiple weight versions in memory
+Trade memory for correctness</pre>
+
+<!-- Part 4 -->
+<h2>Part 4: Advanced Parallelism Strategies</h2>
+
+<h3>3D Parallelism (Megatron-LM)</h3>
+<p><strong>The Idea:</strong> Combine all three types of parallelism!</p>
+
+<pre><strong>Example Configuration for GPT-175B on 1024 GPUs:</strong>
+Total GPUs: 1024
+Arranged as: 8 (pipeline) &times; 8 (tensor) &times; 16 (data)
+
+Within each slice (64 GPUs = 8 pipeline &times; 8 tensor):
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxgr;
+&boxv;  Layer 1:     [GPU 0-7]  (tensor)  &boxv;  &larr; Pipeline stage 0
+&boxvr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxgr;
+&boxv;  Layer 2-3:   [GPU 8-15]           &boxv;  &larr; Pipeline stage 1
+&boxvr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxgr;
+&boxv;  ...                               &boxv;
+&boxvr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxgr;
+&boxv;  Layer 14-15: [GPU 56-63]          &boxv;  &larr; Pipeline stage 7
+&boxdl;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxgl;
+
+Each layer's weights split across 8 GPUs (tensor parallel)
+16 identical slices running data parallelism</pre>
+
+<p><strong>Communication patterns:</strong></p>
+<ol>
+  <li><strong>Within tensor parallel group</strong> (8 GPUs): Very frequent, needs fast interconnect (NVLink)</li>
+  <li><strong>Between pipeline stages:</strong> Less frequent, sends activations/gradients</li>
+  <li><strong>Across data parallel replicas</strong> (16 groups): Only at gradient sync time</li>
+</ol>
+
+<h3>ZeRO (Zero Redundancy Optimizer) &mdash; DeepSpeed</h3>
+<p><strong>The Key Insight:</strong> In data parallelism, we replicate everything. But do we need to?</p>
+
+<pre><strong>Traditional Data Parallelism Waste:</strong>
+4 GPUs, each stores:
+  Model weights:    7 TB
+  Gradients:        7 TB
+  Optimizer states: 14 TB
+  Total per GPU:    28 TB
+  Total across 4 GPUs: 112 TB
+
+But the gradients and optimizer states are identical after all-reduce!
+We're storing the same thing 4 times!</pre>
+
+<h4>ZeRO Stage 1: Partition Optimizer States</h4>
+<pre>Instead of each GPU storing all optimizer states:
+
+GPU 0: Stores optimizer states for parameters 0-25%
+GPU 1: Stores optimizer states for parameters 25-50%
+GPU 2: Stores optimizer states for parameters 50-75%
+GPU 3: Stores optimizer states for parameters 75-100%
+
+When updating weights:
+  GPU 0 updates its 25% and broadcasts to others
+  GPU 1 updates its 25% and broadcasts to others
+  ...
+
+Memory saved: 14 TB &rarr; 3.5 TB per GPU</pre>
+
+<h4>ZeRO Stage 2: Also Partition Gradients</h4>
+<pre>GPU 0: Stores gradients for parameters 0-25%
+GPU 1: Stores gradients for parameters 25-50%
+...
+
+During backward pass:
+  Compute all gradients locally
+  Reduce-scatter: each GPU gets average of its partition
+  Discard the rest
+
+Memory saved: (14 + 7) TB &rarr; (3.5 + 1.75) TB per GPU</pre>
+
+<h4>ZeRO Stage 3: Also Partition Model Weights</h4>
+<pre>GPU 0: Stores weights for parameters 0-25%
+GPU 1: Stores weights for parameters 25-50%
+...
+
+During forward pass:
+  Before computing layer L: all-gather weights for layer L
+  Compute layer L
+  Discard weights for layer L
+  Repeat for next layer
+
+Memory saved: 28 TB &rarr; 7 TB per GPU (4x reduction!)
+Extra cost: More communication (all-gather weights repeatedly)</pre>
+
+<h4>ZeRO-Infinity: Offload to CPU and NVMe</h4>
+<pre>GPU memory: Only what's actively being computed
+CPU memory: Recently used weights, optimizer states
+NVMe SSD:  Everything else
+
+Example &mdash; Training GPT-175B on a single GPU:
+  GPU (32 GB):    Current layer being computed
+  CPU RAM (512 GB): Next few layers + optimizer states
+  SSD (2 TB):    Rest of model
+
+Achieves: Training trillion parameter models on consumer hardware!
+Trade-off: Much slower, but makes impossible &rarr; possible</pre>
+
+<!-- Part 5 -->
+<h2>Part 5: Communication Primitives Deep Dive</h2>
+<p>All distributed training relies on GPUs talking to each other. Here are the fundamental operations:</p>
+
+<h3>Broadcast</h3>
+<pre>One GPU sends data to all others
+
+GPU 0: Has value X = 42    &rarr;  All GPUs have: X = 42
+GPU 1: Wants value X
+GPU 2: Wants value X
+GPU 3: Wants value X
+
+Used for: Sending initial weights, synchronizing randomness</pre>
+
+<h3>Reduce</h3>
+<pre>Combine values from all GPUs to one GPU
+
+GPU 0: X = 5  &boxh;&boxh;&boxh;&boxh;&boxgr;
+GPU 1: X = 3  &boxh;&boxh;&boxh;&boxh;&boxgr;  Reduce (sum) to GPU 0:
+GPU 2: X = 7  &boxh;&boxh;&boxh;&boxh;&boxgr;  GPU 0: X = 16
+GPU 3: X = 1  &boxh;&boxh;&boxh;&boxh;&boxgl;
+
+Used for: Collecting losses, aggregating metrics</pre>
+
+<h3>All-Reduce</h3>
+<pre>Reduce + Broadcast = Everyone gets the combined result
+
+Before:                    After all-reduce (sum):
+GPU 0: X = 5               GPU 0: X = 16
+GPU 1: X = 3               GPU 1: X = 16
+GPU 2: X = 7               GPU 2: X = 16
+GPU 3: X = 1               GPU 3: X = 16
+
+Used for: Gradient synchronization (most important!)</pre>
+
+<h3>Scatter</h3>
+<pre>Split data from one GPU to all GPUs
+
+GPU 0: [A, B, C, D]  &rarr;  GPU 0: [A]
+                          GPU 1: [B]
+                          GPU 2: [C]
+                          GPU 3: [D]
+
+Used for: Distributing data batches</pre>
+
+<h3>Gather</h3>
+<pre>Collect data from all GPUs to one GPU
+
+GPU 0: [A]  &rarr;  GPU 0: [A, B, C, D]
+GPU 1: [B]
+GPU 2: [C]
+GPU 3: [D]
+
+Used for: Collecting predictions, logging</pre>
+
+<h3>All-Gather</h3>
+<pre>Gather + Broadcast = Everyone gets all data
+
+Before:          After all-gather:
+GPU 0: [A]       GPU 0: [A, B, C, D]
+GPU 1: [B]       GPU 1: [A, B, C, D]
+GPU 2: [C]       GPU 2: [A, B, C, D]
+GPU 3: [D]       GPU 3: [A, B, C, D]
+
+Used for: ZeRO Stage 3 weight gathering, tensor parallelism</pre>
+
+<h3>Reduce-Scatter</h3>
+<pre>Reduce + Scatter = Each GPU gets a piece of the sum
+
+Before:                       After reduce-scatter (sum):
+GPU 0: [5, 3, 7, 1]          GPU 0: [8]   (5+2+1+0)
+GPU 1: [2, 4, 6, 8]          GPU 1: [10]  (3+4+1+2)
+GPU 2: [1, 1, 1, 1]          GPU 2: [18]  (7+6+1+4)
+GPU 3: [0, 2, 4, 6]          GPU 3: [15]  (1+8+1+6)
+
+Used for: ZeRO optimizer state updates, efficient gradient sync</pre>
+
+<!-- Part 6 -->
+<h2>Part 6: Network Topologies and Hardware</h2>
+
+<h3>Why Network Matters</h3>
+<pre>Training a layer:
+  Compute time:        10ms  (matrix multiply on GPU)
+  Communication time:  50ms  (send activations to next GPU)
+
+If communication is 5x slower than compute,
+your GPUs sit idle 83% of the time!</pre>
+
+<h3>GPU Interconnects</h3>
+
+<table>
+  <tr><th>Interconnect</th><th>Bandwidth</th><th>Use Case</th><th>Latency</th></tr>
+  <tr><td><strong>PCIe</strong></td><td>~16 GB/s</td><td>GPU &harr; CPU</td><td>~microseconds</td></tr>
+  <tr><td><strong>NVLink 4.0</strong></td><td>~600 GB/s</td><td>GPU &harr; GPU (within node)</td><td>~nanoseconds</td></tr>
+  <tr><td><strong>InfiniBand HDR</strong></td><td>~200 GB/s</td><td>Node &harr; Node</td><td>~1 &mu;s</td></tr>
+</table>
+<p>NVLink is <strong>37x faster</strong> than PCIe!</p>
+
+<h3>Network Topologies</h3>
+
+<h4>Fully Connected (ideal but expensive)</h4>
+<pre>Every GPU directly connected to every other.
+Works great up to ~8 GPUs (single server with NVLink).
+Beyond that: too expensive, physically impossible.</pre>
+
+<h4>Ring Topology (most common)</h4>
+<pre>GPU 0 &rarr; GPU 1 &rarr; GPU 2 &rarr; GPU 3 &rarr; GPU 0
+
+Advantages:  Simple, cheap. All-reduce in constant time. Each GPU only needs 2 connections.
+Disadvantages: Single point of failure. Not great for non-all-reduce operations.</pre>
+
+<h4>Tree Topology</h4>
+<pre>          GPU 0
+         &frasl;     &bsol;
+    GPU 1       GPU 2
+   &frasl;    &bsol;     &frasl;    &bsol;
+ GPU 3  GPU 4 GPU 5  GPU 6
+
+Advantages:  Great for broadcast/reduce. Logarithmic depth.
+Disadvantages: Root can be bottleneck. All-reduce slower than ring.</pre>
+
+<h4>Torus/Mesh (high-end clusters)</h4>
+<pre>2D Torus (edges wrap around):
+GPU 0 &mdash; GPU 1 &mdash; GPU 2 &mdash; GPU 3
+  |       |       |       |
+GPU 4 &mdash; GPU 5 &mdash; GPU 6 &mdash; GPU 7
+  |       |       |       |
+GPU 8 &mdash; GPU 9 &mdash; GPU10 &mdash; GPU11
+
+Advantages:  Multiple paths, resilient, great bisection bandwidth.
+Disadvantages: Complex, expensive, harder to program.</pre>
+
+<!-- Part 7 -->
+<h2>Part 7: Fault Tolerance and Checkpointing</h2>
+
+<h3>Why Failures Matter</h3>
+<pre>Training GPT-4:
+  25,000 GPUs for 100 days
+  If each GPU has 0.1% daily failure rate:
+    Expected failures per day: 25,000 &times; 0.001 = 25 failures/day
+    Will definitely experience failures!</pre>
+
+<h3>Checkpointing Strategies</h3>
+
+<h4>Naive Checkpointing</h4>
+<pre>for epoch in range(100):
+    for batch in dataloader:
+        train_step(batch)
+
+    save_checkpoint({
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'epoch': epoch
+    })
+
+Problem: If training fails mid-epoch, lose all progress since last checkpoint
+Size: Full model state might be 28 TB!
+Time: Saving 28 TB takes ~5 minutes on fast storage</pre>
+
+<h4>Incremental Checkpointing</h4>
+<pre>checkpoint_every_n_steps = 100
+
+for step in range(total_steps):
+    train_step()
+    if step % checkpoint_every_n_steps == 0:
+        save_checkpoint(step)
+
+Advantages:    Lose at most 100 steps of work
+Disadvantages: More frequent I/O, potential slowdown</pre>
+
+<h4>Asynchronous Checkpointing</h4>
+<pre>Main training thread:
+  Step 1000: Train &rarr; Trigger checkpoint (non-blocking)
+  Step 1001: Train...
+  Step 1002: Train...
+
+Background thread:
+  Copying model state to CPU...
+  Writing to disk...
+  Done!
+
+GPUs keep training while checkpoint happens.
+Needs extra CPU RAM to hold copy.</pre>
+
+<h4>Distributed Checkpointing (for large models)</h4>
+<pre>With ZeRO Stage 3, each GPU only has part of the model.
+
+Option 1 (Centralized): Gather everything to one node, save.
+  Problem: Aggregator needs 28 TB RAM, slow.
+
+Option 2 (Distributed): Each GPU saves its partition.
+  GPU 0 saves partition_0.pt (7 TB)
+  GPU 1 saves partition_1.pt (7 TB)
+  ...
+  Faster (parallel I/O) but more complex to manage.</pre>
+
+<h3>Handling Failures</h3>
+
+<h4>Automatic Fault Detection</h4>
+<pre>class FaultTolerantTrainer:
+    def train(self):
+        while True:
+            try:
+                for batch in dataloader:
+                    loss = train_step(batch)
+            except RuntimeError as e:
+                if "CUDA error" in str(e):
+                    self.handle_gpu_failure()
+                elif "NCCL" in str(e):
+                    self.handle_network_failure()
+
+    def handle_gpu_failure(self):
+        # 1. Mark failed GPU as dead
+        # 2. Load last checkpoint
+        # 3. Redistribute work among remaining GPUs
+        # 4. Resume training</pre>
+
+<h4>Elastic Training</h4>
+<pre>Start training with 100 GPUs
+GPU 47 fails &rarr; System detects failure
+Checkpoint current state &rarr; Restart with 99 GPUs
+Redistribute work &rarr; Continue from checkpoint
+
+Can even add GPUs dynamically if more become available!</pre>
+
+<h3>Gradient Checkpointing (different thing!)</h3>
+<div class="callout-warn">
+  <strong>Note:</strong> This is about saving <em>memory</em>, not saving to disk.
+</div>
+<pre>Normal training:
+  Forward: Store all activations (needed for backward)
+  Memory: O(number of layers)
+
+Gradient checkpointing:
+  Forward: Only store checkpoints every N layers
+  Backward: Recompute missing activations on-the-fly
+  Memory: O(&radic;(number of layers))
+
+Example with 12 layers:
+  Normal:              Store activations for L1, L2, ..., L12 (12 items)
+  Checkpoint every 4:  Store L4, L8, L12 (3 items)
+
+  When computing gradients for L2:
+    Re-run forward from checkpoint L4 &rarr; L1, L2
+    Use those activations for backward, then discard
+
+Trade-off: 33% more computation, but saves tons of memory!</pre>
+
+<!-- Part 8 -->
+<h2>Part 8: Practical Considerations</h2>
+
+<h3>Batch Size and Learning Rate</h3>
+<pre><strong>Scaling Rule:</strong>
+Original:    1 GPU, batch size 32, learning rate 0.001
+With 4 GPUs: effective batch size = 4 &times; 32 = 128
+
+Need to scale learning rate!
+Common rule: LR scales linearly with batch size
+New learning rate: 0.001 &times; 4 = 0.004
+
+Why? Larger batches &rarr; less noisy gradients &rarr; can take bigger steps</pre>
+
+<pre><strong>Warmup:</strong>
+# Don't immediately use large learning rate
+# Gradually increase from 0 to target
+
+for step in range(warmup_steps):
+    lr = target_lr * (step / warmup_steps)
+
+# After warmup, use normal schedule (e.g. cosine)
+
+Why warmup? At start, model is random, large LR causes instability</pre>
+
+<h3>Gradient Clipping</h3>
+<pre><strong>The Problem:</strong>
+Occasionally get very large gradients (exploding gradients)
+gradient norm = 1000 (normal is ~1)
+Update: weights += -0.001 &times; 1000 = weights - 1
+Model diverges!
+
+<strong>The Solution:</strong>
+max_norm = 1.0
+total_norm = sqrt(sum(grad**2 for all grads))
+
+if total_norm > max_norm:
+    scaling_factor = max_norm / total_norm
+    for grad in all_grads:
+        grad *= scaling_factor
+
+# Now total norm is exactly max_norm</pre>
+
+<h3>Mixed Precision Training</h3>
+<p><strong>The Idea:</strong> Use 16-bit floats (FP16) instead of 32-bit (FP32).</p>
+
+<table>
+  <tr><th>Benefit</th><th>Improvement</th></tr>
+  <tr><td>Memory</td><td>2x reduction (28 TB &rarr; 14 TB)</td></tr>
+  <tr><td>Compute</td><td>2-8x faster on modern GPUs</td></tr>
+  <tr><td>Bandwidth</td><td>2x less data to move around</td></tr>
+</table>
+
+<pre><strong>The Problem: Underflow</strong>
+FP16 range: ~6e-5 to 65,000
+FP32 range: ~1e-38 to 1e38
+
+Small gradients in FP16:
+  0.00001 in FP32 &rarr; 0 in FP16 (underflow!)
+  Important updates lost!</pre>
+
+<pre><strong>The Solution: Loss Scaling</strong>
+# Forward in FP16
+loss = model(input)            # loss might be 0.01
+
+# Scale loss before backward
+scaled_loss = loss * 1000      # now 10
+
+# Backward in FP16 (gradients also scaled by 1000)
+scaled_loss.backward()
+
+# Unscale gradients before optimizer step
+for param in model.parameters():
+    param.grad /= 1000
+
+# Update in FP32 (keep master weights in FP32)
+optimizer.step()
+model.fp16_weights = model.fp32_weights.half()</pre>
+
+<pre><strong>Dynamic Loss Scaling:</strong>
+scale = 2**16  # start high
+
+while training:
+    scaled_loss = loss * scale
+    scaled_loss.backward()
+
+    if has_inf_or_nan(gradients):
+        scale /= 2              # reduce scale
+        skip_this_step()
+        continue
+    else:
+        if last_N_steps_successful:
+            scale *= 2          # try increasing
+
+    gradients /= scale
+    optimizer.step()</pre>
+
+<h3>Load Balancing in Pipeline Parallelism</h3>
+<pre><strong>The Problem:</strong>
+GPU 0 (Embedding):     100ms  per micro-batch
+GPU 1 (Layers 1-10):   500ms  per micro-batch  &larr; BOTTLENECK
+GPU 2 (Layers 11-20):  300ms  per micro-batch
+GPU 3 (Output):        100ms  per micro-batch
+
+Overall throughput limited by slowest stage.
+
+<strong>Solution: Uneven Layer Distribution</strong>
+GPU 0: Embedding + Layers 1-3   (250ms)
+GPU 1: Layers 4-8               (250ms)
+GPU 2: Layers 9-15              (250ms)
+GPU 3: Layers 16-20 + Output    (250ms)
+
+Now balanced! Profile each layer first, then partition to equalize time.</pre>
+
+<!-- Part 9 -->
+<h2>Part 9: Real-World Training Configurations</h2>
+
+<table>
+  <tr>
+    <th>Model</th>
+    <th>Parameters</th>
+    <th>GPUs</th>
+    <th>Parallelism</th>
+    <th>Training Time</th>
+    <th>Est. Cost</th>
+  </tr>
+  <tr>
+    <td><strong>GPT-3</strong> (2020)</td>
+    <td>175B</td>
+    <td>10,000+ V100s</td>
+    <td>3D: 8 pipeline &times; 8 tensor &times; ~150 data</td>
+    <td>~1 month</td>
+    <td>~$4.6M</td>
+  </tr>
+  <tr>
+    <td><strong>Megatron-Turing NLG</strong> (2022)</td>
+    <td>530B</td>
+    <td>2,048 A100s</td>
+    <td>8 tensor &times; 32 pipeline &times; 8 data</td>
+    <td>~3 months</td>
+    <td>&mdash;</td>
+  </tr>
+  <tr>
+    <td><strong>GPT-4</strong> (2023, est.)</td>
+    <td>~1.76T</td>
+    <td>25,000+ A100/H100s</td>
+    <td>3D + ZeRO (16 tensor, 32-64 pipeline, ~50 data)</td>
+    <td>~100 days</td>
+    <td>$50-100M</td>
+  </tr>
+  <tr>
+    <td><strong>Llama 3.1 405B</strong> (2024)</td>
+    <td>405B</td>
+    <td>16,000 H100s</td>
+    <td>FSDP (ZeRO + data parallel), 16-way</td>
+    <td>&mdash;</td>
+    <td>~$30M</td>
+  </tr>
+</table>
+
+<!-- Part 10 -->
+<h2>Part 10: Common Pitfalls and Debugging</h2>
+
+<h3>Synchronization Bugs</h3>
+<pre><strong>BAD:</strong> Only GPU 0 does something
+if rank == 0:
+    data = load_data()
+# GPUs 1-3 don't have data! Will crash or hang
+
+<strong>GOOD:</strong> Everyone loads data (or broadcast)
+data = load_data()  # all GPUs execute
+
+# OR broadcast from GPU 0
+if rank == 0:
+    data = load_data()
+else:
+    data = None
+data = broadcast(data, src=0)</pre>
+
+<h3>Deadlocks</h3>
+<pre><strong>BAD:</strong> Conditional communication
+if rank == 0:
+    send_to_rank_1(data)
+if rank == 1:
+    recv_from_rank_0()
+# GPU 0 sends, but GPU 1 might not receive &rarr; deadlock
+
+<strong>GOOD:</strong> Symmetric communication
+if rank == 0:
+    send_to_rank_1(data)
+elif rank == 1:
+    data = recv_from_rank_0()</pre>
+
+<h3>Reproducibility</h3>
+<pre>def set_seed(seed, rank):
+    # Different seed per GPU for data sampling
+    random.seed(seed + rank)
+    np.random.seed(seed + rank)
+
+    # Same seed for model initialization
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)</pre>
+
+<h3>Performance Debugging</h3>
+<pre>with profiler.profile(
+    activities=[
+        profiler.ProfilerActivity.CPU,
+        profiler.ProfilerActivity.CUDA
+    ]
+) as prof:
+    train_step()
+
+print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+
+Common bottlenecks:
+  High "cuda wait"  &rarr; communication bottleneck
+  High "memcpy"     &rarr; too much CPU-GPU transfer
+  Unbalanced layers &rarr; pipeline imbalance</pre>
+
+<h3>Memory Debugging (OOM)</h3>
+<pre>torch.cuda.memory_summary()
+peak = torch.cuda.max_memory_allocated()
+torch.cuda.empty_cache()
+
+Common causes:
+  1. Activations too large      &rarr; use gradient checkpointing
+  2. Too many micro-batches     &rarr; reduce pipeline depth
+  3. Optimizer states           &rarr; use ZeRO
+  4. Gradients accumulating     &rarr; call optimizer.zero_grad()</pre>
+
+<hr>
+
+<h2>Summary: Decision Framework</h2>
+
+<table>
+  <tr><th>Scenario</th><th>Solution</th></tr>
+  <tr><td>Model fits in GPU, want faster training</td><td>Data Parallelism</td></tr>
+  <tr><td>Model too big for one GPU</td><td>Tensor or Pipeline Parallelism</td></tr>
+  <tr><td>Model WAY too big (100B+)</td><td>3D Parallelism (all three)</td></tr>
+  <tr><td>Limited GPU memory</td><td>ZeRO or Gradient Checkpointing</td></tr>
+  <tr><td>Small number of GPUs (1-8)</td><td>Data Parallel + DDP</td></tr>
+  <tr><td>Large GPU cluster (1000+)</td><td>3D Parallelism + ZeRO</td></tr>
+  <tr><td>Consumer hardware</td><td>ZeRO-Infinity (CPU/NVMe offload)</td></tr>
+  <tr><td>Research / experimentation</td><td>Data Parallel (simplest)</td></tr>
+  <tr><td>Production training</td><td>Whatever works + checkpointing</td></tr>
+</table>
+
+<div class="callout" style="margin-top: 32px;">
+  <strong>Key takeaway:</strong> It's all about trade-offs &mdash; memory vs speed vs complexity.
+</div>
+
+</body>
+</html>
