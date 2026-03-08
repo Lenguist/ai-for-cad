@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MODELS, TYPE_STYLES } from "./data/models";
 
 const PRELIMINARY_RESULTS = [
   {
@@ -43,128 +44,6 @@ const PRELIMINARY_RESULTS = [
   },
 ];
 
-const MODELS = [
-  // Academic
-  {
-    name: "Text2CAD",
-    year: "2024",
-    venue: "NeurIPS Spotlight",
-    type: "academic" as const,
-    input: "Text",
-    output: "CAD sequences",
-    note: "170K models, 4 abstraction levels",
-  },
-  {
-    name: "FlexCAD",
-    year: "2025",
-    venue: "ICLR",
-    type: "academic" as const,
-    input: "Text / multi-cond",
-    output: "CAD sequences",
-    note: "Unified controllable generation",
-  },
-  {
-    name: "CAD-Coder",
-    year: "2025",
-    venue: "arXiv",
-    type: "academic" as const,
-    input: "Text",
-    output: "CAD code",
-    note: "Chain-of-thought + geometric reward RL",
-  },
-  {
-    name: "Text-to-CadQuery",
-    year: "2025",
-    venue: "arXiv",
-    type: "academic" as const,
-    input: "Text",
-    output: "CadQuery Python",
-    note: "Self-correction: 53% → 85% exec success",
-  },
-  {
-    name: "CADFusion",
-    year: "2025",
-    venue: "arXiv",
-    type: "academic" as const,
-    input: "Text + visual feedback",
-    output: "CadQuery",
-    note: "Iterative visual refinement loop",
-  },
-  {
-    name: "CAD-GPT",
-    year: "2025",
-    venue: "arXiv",
-    type: "academic" as const,
-    input: "Text + image",
-    output: "CAD sequences",
-    note: "Spatial reasoning multimodal LLM",
-  },
-  {
-    name: "DeepCAD",
-    year: "2021",
-    venue: "ICCV",
-    type: "academic" as const,
-    input: "Unconditional",
-    output: "CAD sequences",
-    note: "Foundational baseline — 178K models",
-  },
-  // Commercial
-  {
-    name: "Zoo / ML-ephant",
-    year: "2025",
-    venue: "zoo.dev",
-    type: "commercial" as const,
-    input: "Text",
-    output: "STEP / STL / OBJ",
-    note: "$30M+ funded, public API",
-  },
-  {
-    name: "AdamCAD",
-    year: "2025",
-    venue: "YC W25",
-    type: "commercial" as const,
-    input: "Text",
-    output: "STEP",
-    note: "$4.1M seed, mech. engineering focus",
-  },
-  {
-    name: "CADGPT",
-    year: "2025",
-    venue: "cadgpt.ai",
-    type: "commercial" as const,
-    input: "Text",
-    output: "STEP",
-    note: "Commercial text-to-CAD API",
-  },
-  // LLM baselines
-  {
-    name: "GPT-4o (zero-shot)",
-    year: "2024",
-    venue: "OpenAI",
-    type: "baseline" as const,
-    input: "Text",
-    output: "OpenSCAD / CadQuery",
-    note: "93% invalid rate (Text2CAD eval)",
-  },
-  {
-    name: "Claude Sonnet (zero-shot)",
-    year: "2025",
-    venue: "Anthropic",
-    type: "baseline" as const,
-    input: "Text",
-    output: "CadQuery",
-    note: "Strong code model — untested on CAD",
-  },
-  {
-    name: "Gemini 2.0 (zero-shot)",
-    year: "2025",
-    venue: "Google",
-    type: "baseline" as const,
-    input: "Text",
-    output: "CadQuery",
-    note: "85% compile rate on CADPrompt",
-  },
-];
 
 const PROMPT_TIERS = [
   {
@@ -213,23 +92,6 @@ const PROMPT_TIERS = [
   },
 ];
 
-const TYPE_STYLES = {
-  academic: {
-    bg: "var(--tag-academic)",
-    color: "var(--tag-academic-text)",
-    label: "Academic",
-  },
-  commercial: {
-    bg: "var(--tag-commercial)",
-    color: "var(--tag-commercial-text)",
-    label: "Commercial",
-  },
-  baseline: {
-    bg: "var(--tag-baseline)",
-    color: "var(--tag-baseline-text)",
-    label: "LLM Baseline",
-  },
-};
 
 export default function Home() {
   const academicCount = MODELS.filter((m) => m.type === "academic").length;
@@ -287,7 +149,7 @@ export default function Home() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            {["Models", "Benchmark", "Paper"].map((item) => (
+            {["Models", "Benchmark", "Eval", "Paper"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
@@ -656,14 +518,19 @@ export default function Home() {
             {MODELS.map((model) => {
               const s = TYPE_STYLES[model.type];
               return (
-                <div
+                <Link
                   key={model.name}
+                  href={`/models/${model.slug}`}
                   style={{
                     background: "var(--card)",
                     border: "1px solid var(--border)",
                     borderRadius: 10,
                     padding: 22,
-                    transition: "border-color 0.2s",
+                    transition: "border-color 0.2s, background 0.2s",
+                    textDecoration: "none",
+                    color: "inherit",
+                    display: "block",
+                    cursor: "pointer",
                   }}
                 >
                   <div
@@ -755,7 +622,7 @@ export default function Home() {
                   >
                     {model.note}
                   </p>
-                </div>
+                </Link>
               );
             })}
           </div>

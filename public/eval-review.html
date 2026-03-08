@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Papers Evaluate Text-to-CAD — Review</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "SF Mono", "Fira Code", "Consolas", "Courier New", monospace;
+    background-color: #4a80b4;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.75;
+    font-size: 14px;
+  }
+
+  a { color: rgba(255,255,255,0.9); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { color: #ffffff; }
+
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(55,105,160,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.18);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  nav .brand { font-size: 18px; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: -0.02em; }
+  nav .back  { font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; }
+  nav .back:hover { color: #fff; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 56px 40px 96px; }
+
+  h1 { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .subtitle { color: rgba(255,255,255,0.55); font-size: 13px; margin-bottom: 48px; }
+
+  h2 {
+    font-size: 13px; font-weight: 700; color: #fff;
+    margin: 56px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.25);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  h3 { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); margin: 28px 0 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  p { margin-bottom: 14px; color: rgba(255,255,255,0.75); }
+
+  .toc {
+    background: rgba(0,0,0,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .toc h3 { margin-top: 0; color: rgba(255,255,255,0.45); }
+  .toc ol { padding-left: 20px; margin-top: 12px; }
+  .toc li { margin-bottom: 6px; font-size: 13px; }
+  .toc a { color: rgba(255,255,255,0.8); text-decoration: none; }
+  .toc a:hover { color: #fff; }
+
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; border: 1px solid rgba(255,255,255,0.18); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: rgba(0,0,0,0.15);
+    color: rgba(255,255,255,0.5);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 10px 14px; text-align: left; font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.1); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: rgba(0,0,0,0.06); }
+  tbody td { padding: 9px 14px; color: rgba(255,255,255,0.78); vertical-align: top; }
+  tbody td:first-child { color: #fff; font-weight: 600; }
+  .best { color: rgba(255,255,255,0.95) !important; font-weight: 700; }
+  .bad  { color: rgba(255,180,180,0.9) !important; }
+  .note { color: rgba(255,255,255,0.45) !important; font-style: italic; font-size: 12px; }
+
+  .paper-card {
+    background: rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-left: 3px solid rgba(255,255,255,0.3);
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .paper-card:hover { border-left-color: rgba(255,255,255,0.6); }
+  .paper-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .paper-title { font-size: 15px; font-weight: 700; color: #fff; }
+  .paper-meta { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+  .venue-badge {
+    flex-shrink: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 8px; margin-top: 2px;
+    background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .venue-iccv, .venue-neurips, .venue-iclr, .venue-cvpr,
+  .venue-aaai, .venue-arxiv, .venue-icml { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); }
+
+  .metrics-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .metric-pill {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.85);
+  }
+
+  .prompt-box {
+    background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.15);
+    border-left: 3px solid rgba(255,255,255,0.5);
+    padding: 14px 16px; margin: 10px 0;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.6;
+  }
+  .prompt-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+
+  .callout { padding: 16px 20px; margin: 20px 0; font-size: 14px; border: 1px solid rgba(255,255,255,0.15); }
+  .callout-blue   { background: rgba(0,0,0,0.12); border-left: 3px solid rgba(255,255,255,0.6); color: rgba(255,255,255,0.78); }
+  .callout-green  { background: rgba(0,0,0,0.12); border-left: 3px solid rgba(200,255,200,0.5); color: rgba(255,255,255,0.78); }
+  .callout-yellow { background: rgba(0,0,0,0.12); border-left: 3px solid rgba(255,220,100,0.6); color: rgba(255,255,255,0.78); }
+  .callout-red    { background: rgba(0,0,0,0.12); border-left: 3px solid rgba(255,150,150,0.6); color: rgba(255,255,255,0.78); }
+  .callout strong { color: #fff; }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.15); margin: 40px 0; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin: 20px 0; }
+  .summary-card { background: rgba(0,0,0,0.12); border: 1px solid rgba(255,255,255,0.18); padding: 16px 18px; }
+  .summary-num { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+  .summary-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .tag { font-size: 11px; padding: 3px 10px; border: 1px solid rgba(255,255,255,0.15); }
+  .tag-green { background: rgba(255,255,255,0.1); color: rgba(200,255,200,0.9); }
+  .tag-red   { background: rgba(255,255,255,0.1); color: rgba(255,180,180,0.9); }
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">CAD Arena</a>
+  <a class="back" href="/">← Back</a>
+</nav>
+<div class="container">
+
+<h1>How Papers Evaluate Text-to-CAD</h1>
+<p class="subtitle">Compiled from 173 papers in our database — what metrics each paper uses, what prompts they test, what datasets they evaluate on, and what "good" actually means · March 2026</p>
+
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#tldr">TL;DR — The 4 things every paper measures</a></li>
+    <li><a href="#metrics">All metrics defined</a></li>
+    <li><a href="#datasets">Evaluation datasets used</a></li>
+    <li><a href="#prompts">What prompts do papers test?</a></li>
+    <li><a href="#papers">Paper-by-paper breakdown</a></li>
+    <li><a href="#tables">The big comparison tables</a></li>
+    <li><a href="#good">What does "good" actually mean?</a></li>
+    <li><a href="#gaps">What no one measures yet</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="tldr">1. TL;DR — The 4 things every paper measures</h2>
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="summary-num">IR</div>
+    <div class="summary-label">Invalid Rate — % of outputs that fail to produce valid geometry at all</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-num">CD</div>
+    <div class="summary-label">Chamfer Distance — geometric distance between generated shape and ground truth (×10³)</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-num">COV</div>
+    <div class="summary-label">Coverage — % of reference shapes well-approximated by at least one generated shape</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-num">VLM</div>
+    <div class="summary-label">Visual score — a VLM (Gemini / LLaVA) rates the rendered output 0–10 or votes which is better</div>
+  </div>
+</div>
+
+<div class="callout callout-blue">
+  <strong>The field is split by output format.</strong> Papers generating <strong>command sequences</strong> (DeepCAD-style) use Command Accuracy + CD. Papers generating <strong>CadQuery/FreeCAD code</strong> use Invalid Rate + CD. Both converge on CD as the common currency — but CD requires ground truth geometry, which means you need a curated dataset of correct answers for every prompt.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="metrics">2. All Metrics Defined</h2>
+
+<h3>Geometry Quality</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>What it measures</th><th>Direction</th><th>Who uses it</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Chamfer Distance (CD)</strong></td>
+      <td>Average nearest-neighbor distance between two point clouds sampled from the generated and reference shapes. Reported as CD ×10³.</td>
+      <td>Lower = better</td>
+      <td>Almost everyone</td>
+    </tr>
+    <tr>
+      <td><strong>Hausdorff Distance</strong></td>
+      <td>Maximum nearest-neighbor distance (worst-case outlier). More sensitive to geometric errors than CD.</td>
+      <td>Lower = better</td>
+      <td>CADCodeVerify</td>
+    </tr>
+    <tr>
+      <td><strong>IoU</strong></td>
+      <td>Volumetric overlap between generated and reference shapes, computed by voxelizing both. 1.0 = perfect match.</td>
+      <td>Higher = better</td>
+      <td>CAD-Recode, CADCodeVerify</td>
+    </tr>
+    <tr>
+      <td><strong>IoGT</strong></td>
+      <td>IoU specifically measured against the ground truth shape (variant in CADCodeVerify).</td>
+      <td>Higher = better</td>
+      <td>CADCodeVerify (ICLR 2025)</td>
+    </tr>
+    <tr>
+      <td><strong>Point Cloud Distance</strong></td>
+      <td>Direct average distance between point clouds (non-symmetric variant of CD).</td>
+      <td>Lower = better</td>
+      <td>CADCodeVerify</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Validity / Executability</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>What it measures</th><th>Key numbers</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Invalid Rate (IR)</strong></td>
+      <td>% of outputs that fail to produce valid, non-degenerate geometry. The minimum bar — "did it even work."</td>
+      <td>GPT-4o zero-shot: 93%. Fine-tuned models: 1–7%.</td>
+    </tr>
+    <tr>
+      <td><strong>Compile / Parsing Rate</strong></td>
+      <td>% of generated code that executes without syntax or runtime error. Specific to code-gen papers.</td>
+      <td>CADCodeVerify: 96.5% with VLM feedback loop.</td>
+    </tr>
+    <tr>
+      <td><strong>Physical Validity (PV)</strong></td>
+      <td>% of outputs that produce a non-self-intersecting, watertight solid.</td>
+      <td>FlexCAD fine-tuned: 93.4%. GPT-4o raw: 48.9%.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>For Command Sequence Models Only (DeepCAD lineage)</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>What it measures</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Command Accuracy (ACC_cmd)</strong></td>
+      <td>% of generated commands matching the ground truth command type (line, arc, circle, extrude, etc.). DeepCAD achieves 99.50% on reconstruction.</td>
+    </tr>
+    <tr>
+      <td><strong>Parameter Accuracy (ACC_param)</strong></td>
+      <td>% of predicted parameters within tolerance η=3 out of 256 quantization levels. DeepCAD achieves 97.98%.</td>
+    </tr>
+    <tr>
+      <td><strong>Coverage (COV)</strong></td>
+      <td>% of reference shapes well-approximated by at least one generated shape. Measures diversity of the output distribution.</td>
+    </tr>
+    <tr>
+      <td><strong>Minimum Matching Distance (MMD)</strong></td>
+      <td>Average CD of each reference shape to its nearest generated shape. Measures fidelity.</td>
+    </tr>
+    <tr>
+      <td><strong>Jensen-Shannon Divergence (JSD)</strong></td>
+      <td>Distribution-level similarity between generated and reference point cloud distributions.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Visual / Perceptual</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Metric</th><th>What it measures</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>LVM / VLM Score (0–10)</strong></td>
+      <td>A vision-language model (LLaVA, Gemini) rates the rendered CAD output on shape quality, quantity, and visual fidelity vs the text prompt. Not standardized across papers.</td>
+      <td>CADFusion (LLaVA scorer), Text-to-CadQuery (Gemini)</td>
+    </tr>
+    <tr>
+      <td><strong>Gemini Visual Eval (%)</strong></td>
+      <td>Gemini is shown the rendered STL and the original text prompt, asked if they match. Binary pass/fail per example.</td>
+      <td>Text2CAD, Text-to-CadQuery</td>
+    </tr>
+    <tr>
+      <td><strong>Human Realism Score</strong></td>
+      <td>Human annotators rate whether generated shapes look like realistic mechanical parts (not a specific match).</td>
+      <td>FlexCAD: 42.1% best model vs 12.8% GPT-4o</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="datasets">3. Evaluation Datasets</h2>
+
+<p>There are really only 3 datasets that matter for text-to-CAD evaluation:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Dataset</th><th>Size</th><th>Source</th><th>Format</th><th>Papers that eval on it</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>DeepCAD dataset</strong></td>
+      <td>178,238 models</td>
+      <td>Onshape (real engineering CAD)</td>
+      <td>Command sequences (sketch + extrude)</td>
+      <td>DeepCAD, Text2CAD, CAD-GPT, CAD-Coder, CADFusion, FlexCAD, Text-to-CadQuery — basically everyone</td>
+    </tr>
+    <tr>
+      <td><strong>Text-annotated DeepCAD</strong></td>
+      <td>~20K text-CAD pairs</td>
+      <td>DeepCAD + VLM-generated captions (+ some human)</td>
+      <td>Sequences + text at 4 specificity levels</td>
+      <td>Text2CAD, Text-to-CadQuery, CADFusion</td>
+    </tr>
+    <tr>
+      <td><strong>Fusion 360 Gallery</strong></td>
+      <td>8,625 models</td>
+      <td>Autodesk</td>
+      <td>B-rep + mesh</td>
+      <td>CAD-Recode (secondary eval set)</td>
+    </tr>
+    <tr>
+      <td><strong>CC3D (real scans)</strong></td>
+      <td>Real-world point clouds</td>
+      <td>3D scans of physical objects</td>
+      <td>Point clouds</td>
+      <td>CAD-Recode — tests generalization to messy real-world data</td>
+    </tr>
+    <tr>
+      <td><strong>Custom hand-crafted benchmarks</strong></td>
+      <td>10–100 prompts</td>
+      <td>Paper authors</td>
+      <td>Text prompts</td>
+      <td>Kumar et al. 2026 (10 levels), CADCodeVerify (50 prompts), <strong>CAD Arena (our 20 prompts)</strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-yellow">
+  <strong>The big limitation of DeepCAD:</strong> Only sketch-and-extrude operations. No fillets, chamfers, sweeps, lofts, patterns. Every model evaluated on it is only tested on simple prismatic shapes. When CAD-Recode tests on real scans (CC3D), IoU drops from 92% → 74%. The standard benchmark is easier than real-world engineering.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="prompts">4. What Prompts Do Papers Actually Test?</h2>
+
+<h3>Text2CAD (NeurIPS 2024) — 4 abstraction levels per shape</h3>
+<p>Same shape described at 4 specificity levels. All 4 tested and reported separately. Key insight: detailed prompts score much better.</p>
+
+<div class="prompt-label">Level 1 — Abstract</div>
+<div class="prompt-box">"A mechanical bracket"</div>
+
+<div class="prompt-label">Level 2 — Simplified</div>
+<div class="prompt-box">"A rectangular bracket with a mounting hole"</div>
+
+<div class="prompt-label">Level 3 — Generalized geometric</div>
+<div class="prompt-box">"A flat rectangular plate with a circular hole centered near one end, used for mounting"</div>
+
+<div class="prompt-label">Level 4 — Detailed geometric (with dimensions)</div>
+<div class="prompt-box">"A rectangular extruded plate 80mm × 40mm × 5mm with a 10mm diameter circular hole centered 15mm from one end, with chamfered top edges at 45 degrees"</div>
+
+<p>Result: abstract prompts → 42.3% Gemini visual pass. Detailed prompts → 71.4%. More info = better output.</p>
+
+<h3>Kumar et al. 2026 — 10 complexity levels with GPT-4 + FreeCAD</h3>
+<p>Manual benchmark showing exactly where LLMs break down:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>#</th><th>Task</th><th>Result</th><th>Attempts</th><th>Time</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Basic cube 50mm</td><td class="best">✓ Success</td><td>1</td><td>19s</td></tr>
+    <tr><td>2</td><td>Cylinder r=25, h=60mm</td><td class="best">✓ Success</td><td>1</td><td>20s</td></tr>
+    <tr><td>3</td><td>Rectangular box with 5mm fillets</td><td class="best">✓ Success</td><td>2</td><td>42s</td></tr>
+    <tr><td>4</td><td>Boolean union (box + cylinder)</td><td class="best">✓ Success</td><td>1</td><td>22s</td></tr>
+    <tr><td>5</td><td>Box with cylindrical hole subtracted</td><td class="best">✓ Success</td><td>1</td><td>23s</td></tr>
+    <tr><td>6</td><td>Parametric plate with 4 corner holes</td><td class="best">✓ Success</td><td>1</td><td>28s</td></tr>
+    <tr><td>7</td><td>Parametric hinge with multiple constrained segments</td><td class="best">✓ Success</td><td>3</td><td>54s</td></tr>
+    <tr><td>8</td><td><strong>Involute gear, 20 teeth, module 2mm</strong></td><td class="bad">✗ FAILED</td><td>50 (max)</td><td>836s</td></tr>
+    <tr><td>9</td><td>L-plate with complex cutouts</td><td class="best">✓ Success</td><td>3</td><td>81s</td></tr>
+    <tr><td>10</td><td><strong>Fully constrained structural frame with ribs</strong></td><td class="bad">✗ FAILED</td><td>50 (max)</td><td>909s</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>CADCodeVerify (ICLR 2025) — 50 hand-crafted engineering prompts</h3>
+<div class="prompt-label">Simple end</div>
+<div class="prompt-box">"Generate a hollow cylinder with inner radius 15mm, outer radius 20mm, height 40mm"</div>
+<div class="prompt-label">Complex end</div>
+<div class="prompt-box">"Create a hexagonal bolt head with M10 thread specification, standard DIN933 dimensions, with a through-hole for the shaft"</div>
+
+<h3>CAD-GPT (AAAI 2025) — auto-generated from DeepCAD test shapes</h3>
+<p>VLMs (Gemini, LLaVA) generate text descriptions of test-set shapes automatically. Model must reconstruct those shapes from the descriptions. Ensures test distribution matches training distribution.</p>
+
+<div class="prompt-label">Example auto-generated description</div>
+<div class="prompt-box">"A symmetric part with two cylindrical protrusions on each side of a flat base, extruded 12 units tall, with a central rectangular slot running the full length"</div>
+
+<h3>CAD Arena (our benchmark) — 20 prompts across 4 tiers</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tier</th><th>Description</th><th>Example</th><th>Claude</th><th>GPT-5</th><th>Zoo</th></tr></thead>
+  <tbody>
+    <tr><td>T1 — Simple primitives</td><td>One shape</td><td>"A cube with side length 20mm"</td><td class="best">4/5</td><td class="best">5/5</td><td class="best">5/5</td></tr>
+    <tr><td>T2 — Single part + features</td><td>One shape with holes/fillets</td><td>"A cylinder with a centered through-hole"</td><td class="best">5/5</td><td>4/5</td><td>4/5</td></tr>
+    <tr><td>T3 — Multi-feature</td><td>Several operations combined</td><td>"An L-bracket with 3 mounting holes"</td><td>4/5</td><td>3/5</td><td class="best">5/5</td></tr>
+    <tr><td>T4 — Complex functional</td><td>Specialized geometry</td><td>"A spur gear with 24 teeth, module 2"</td><td>3/5</td><td>2/5</td><td>2/5</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="papers">5. Paper-by-Paper Breakdown</h2>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-iccv">ICCV 2021</span>
+    <div>
+      <div class="paper-title">DeepCAD — Deep Generative Network for CAD Models</div>
+      <div class="paper-meta">Wu et al. · arXiv:2105.09492</div>
+    </div>
+  </div>
+  <p>The foundational paper. Trains a Transformer autoencoder on 178K CAD command sequences from Onshape. Created the dataset and evaluation protocol the entire field uses.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">ACC_cmd</span><span class="metric-pill">ACC_param</span><span class="metric-pill">Chamfer Distance</span><span class="metric-pill">Invalid Rate</span><span class="metric-pill">Coverage</span><span class="metric-pill">MMD</span><span class="metric-pill">JSD</span>
+  </div>
+  <p><strong>Task:</strong> Autoencoding (encode → latent → decode) + unconditional generation. <strong>No text prompts.</strong></p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>ACC_cmd (%)</th><th>ACC_param (%)</th><th>Median CD (×10³)</th><th>IR (%)</th></tr></thead>
+    <tbody>
+      <tr><td class="best">DeepCAD + Augmentation</td><td class="best">99.50</td><td class="best">97.98</td><td class="best">0.752</td><td class="best">2.72</td></tr>
+      <tr><td>DeepCAD (no aug)</td><td>99.36</td><td>97.47</td><td>0.787</td><td>3.30</td></tr>
+      <tr><td>Alt-Regression baseline</td><td>—</td><td>—</td><td>2.142</td><td>4.32</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-blue">Also reports generation diversity: COV=78.13, JSD=3.76. "Comparable to point-cloud generative models while producing sharp, editable CAD." This is what every subsequent paper benchmarks against.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-neurips">NeurIPS 2024</span>
+    <div>
+      <div class="paper-title">Text2CAD — Sequential CAD Designs from Beginner-to-Expert Text</div>
+      <div class="paper-meta">Khan et al. · arXiv:2409.17106</div>
+    </div>
+  </div>
+  <p>First major text-to-CAD paper. 363M model generates DeepCAD command sequences from text. Created the text-annotated DeepCAD dataset (4 levels per shape) that subsequent papers reuse for direct comparison.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Median CD</span><span class="metric-pill">Mean CD</span><span class="metric-pill">Invalid Rate</span><span class="metric-pill">Gemini Visual Score (%)</span>
+  </div>
+  <p><strong>Gemini eval:</strong> Renders the STL, shows image + original text prompt to Gemini, asks "does this match?" Reports % pass per text abstraction level.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Prompt level</th><th>Median CD (×10³)</th><th>Mean CD</th><th>IR (%)</th><th>Gemini Visual (%)</th></tr></thead>
+    <tbody>
+      <tr><td>All levels combined</td><td>0.370</td><td>26.42</td><td>3.5</td><td>58.80</td></tr>
+      <tr><td>Abstract only</td><td class="bad">0.520</td><td>—</td><td class="bad">5.1</td><td class="bad">42.30</td></tr>
+      <tr><td>Detailed geometric</td><td class="best">0.280</td><td>—</td><td class="best">2.1</td><td class="best">71.40</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-yellow"><strong>Key finding:</strong> Detailed prompts (71.4% visual pass) vs abstract (42.3%). More spec = better output. Directly validates our 4-tier benchmark design.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-arxiv">arXiv 2025</span>
+    <div>
+      <div class="paper-title">Text-to-CadQuery — CadQuery Code Generation from Text</div>
+      <div class="paper-meta">arXiv:2505.06507</div>
+    </div>
+  </div>
+  <p>Qwen2.5-3B and CodeGPT-small (124M) generate CadQuery Python code instead of command sequences. Uses the same text-annotated DeepCAD test set as Text2CAD for direct comparison. Code generation wins at 10× fewer parameters.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Median CD</span><span class="metric-pill">Mean CD</span><span class="metric-pill">Invalid Rate</span><span class="metric-pill">Gemini Visual Score (%)</span>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Params</th><th>Median CD</th><th>Mean CD</th><th>IR (%)</th><th>Gemini Visual</th></tr></thead>
+    <tbody>
+      <tr><td class="best">Text-to-CadQuery (Qwen2.5-3B)</td><td>3B</td><td class="best">0.191</td><td>10.23</td><td>6.5</td><td class="best">69.3%</td></tr>
+      <tr><td>Text-to-CadQuery (CodeGPT-small)</td><td>124M</td><td>0.234</td><td>13.52</td><td>—</td><td>60.3%</td></tr>
+      <tr><td class="note">Text2CAD (command sequences, prior SOTA)</td><td>363M</td><td>0.370</td><td>26.42</td><td>3.5</td><td>58.8%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-green"><strong>Key finding:</strong> A 124M model generating CadQuery code beats a 363M model generating command sequences. CadQuery is the right output format — LLMs already know Python syntax from pre-training.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-arxiv">arXiv 2025</span>
+    <div>
+      <div class="paper-title">CAD-Coder — Chain-of-Thought + Geometric RL Reward</div>
+      <div class="paper-meta">arXiv:2505.19713</div>
+    </div>
+  </div>
+  <p>Qwen2.5-7B fine-tuned in two stages: SFT on text-code pairs, then GRPO (Group Relative Policy Optimization) with a geometric reward based on Chamfer Distance. Shows the single biggest performance jump in the field — 91% improvement from RL.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Mean CD</span><span class="metric-pill">Invalid Rate</span>
+  </div>
+  <p><strong>Reward design:</strong> Execute the generated code → compute CD vs ground truth → use CD as RL reward. Training cost: 146 hours on 8× A800 GPUs for GRPO stage.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Training regime</th><th>Mean CD (×10³)</th><th>IR (%)</th></tr></thead>
+    <tbody>
+      <tr><td class="bad">SFT only (no RL)</td><td class="bad">74.55</td><td>—</td></tr>
+      <tr><td class="best">SFT + GRPO (geometric reward)</td><td class="best">6.54</td><td class="best">1.45</td></tr>
+      <tr><td class="bad">GPT-4o zero-shot</td><td class="bad">133.52</td><td class="bad">93.0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-green"><strong>Key finding:</strong> GRPO reduces Mean CD 74.55 → 6.54 (91% improvement). RL with geometric feedback is the biggest lever in the field right now.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-icml">ICML 2025</span>
+    <div>
+      <div class="paper-title">CADFusion — Text-to-CAD with Iterative Visual Feedback Training</div>
+      <div class="paper-meta">Wang et al. · arXiv:2501.19054</div>
+    </div>
+  </div>
+  <p>LLaMA-3-8B with two alternating training stages: supervised learning on text-CAD pairs, then DPO with a VLM scorer (LLaVA) generating preference pairs. Alternates 5 iterations to prevent skill degradation.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">LVM Score (0–10)</span><span class="metric-pill">Mean CD</span><span class="metric-pill">Invalid Rate</span>
+  </div>
+  <p><strong>VLM scorer:</strong> LLaVA-OneVision-Qwen2-7B rates rendered outputs on shape quality, quantity, and distribution. ~1,500 preference pairs per DPO iteration from 1,000 prompts.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>LVM Score (/10)</th><th>Mean CD (×10³)</th><th>IR (%)</th></tr></thead>
+    <tbody>
+      <tr><td>VLM-annotated (no human captions)</td><td>6.56</td><td>—</td><td>—</td></tr>
+      <tr><td>Human-annotated SL only</td><td>7.69</td><td>—</td><td>—</td></tr>
+      <tr><td>CADFusion (SL + 1 VF iter)</td><td>8.28</td><td>—</td><td>—</td></tr>
+      <tr><td>CADFusion (SL + 3 VF iter)</td><td>8.76</td><td>—</td><td>—</td></tr>
+      <tr><td class="best">CADFusion (SL + 5 VF iter)</td><td class="best">8.96</td><td>19.89</td><td>6.20</td></tr>
+      <tr><td class="bad">GPT-4o zero-shot</td><td class="bad">5.13</td><td class="bad">133.52</td><td class="bad">93.0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-blue"><strong>Note on LVM Score:</strong> CADFusion uses this as primary metric (not CD) because CD doesn't capture "does it look right." The LVM scorer approximates human visual judgment and is more aligned with what users actually want.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-aaai">AAAI 2025</span>
+    <div>
+      <div class="paper-title">CAD-GPT — Multimodal LLM with Spatial Reasoning</div>
+      <div class="paper-meta">arXiv:2412.19663</div>
+    </div>
+  </div>
+  <p>LLaVA-1.5-7B augmented with spatial localization tokens (3D coordinates → 1D tokens). Takes image OR text as input. Key result: image-to-CAD is 3× easier than text-to-CAD.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Invalid Rate</span><span class="metric-pill">Median CD</span><span class="metric-pill">ACC_cmd</span><span class="metric-pill">ACC_param</span>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Input</th><th>IR (%)</th><th>Median CD (×10³)</th><th>ACC_cmd</th><th>ACC_param</th></tr></thead>
+    <tbody>
+      <tr><td class="best">CAD-GPT</td><td>Image</td><td class="best">1.61</td><td class="best">9.77</td><td class="best">99.21</td><td class="best">98.87</td></tr>
+      <tr><td>HNC-CAD (prior best)</td><td>Image</td><td>18.64</td><td>18.64</td><td>—</td><td>—</td></tr>
+      <tr><td class="bad">GPT-4 few-shot</td><td>Image</td><td class="bad">64.37</td><td class="bad">62.64</td><td>—</td><td>—</td></tr>
+      <tr><td>CAD-GPT</td><td>Text</td><td>7.43</td><td>28.33</td><td>98.73</td><td>98.12</td></tr>
+      <tr><td class="bad">GPT-4 few-shot</td><td>Text</td><td class="bad">76.97</td><td class="bad">187.52</td><td>—</td><td>—</td></tr>
+      <tr><td class="bad">LLaMA-3.1 few-shot</td><td>Text</td><td class="bad">98.68</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-yellow"><strong>Key finding:</strong> Image-to-CAD (CD=9.77) is 3× easier than text-to-CAD (CD=28.33). LLaMA-3.1 zero-shot: 98.68% IR — essentially always fails without fine-tuning.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-iccv">ICCV 2025</span>
+    <div>
+      <div class="paper-title">CAD-Recode — Reverse-Engineering CadQuery from Point Clouds</div>
+      <div class="paper-meta">Rukhovich et al. · arXiv:2412.14042</div>
+    </div>
+  </div>
+  <p>Different task: input = point cloud (from a scan), output = CadQuery code. Qwen2-1.5B + lightweight point cloud projector. Trained on 1M procedurally generated scripts (no human annotation). 10× improvement over prior methods.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Chamfer Distance</span><span class="metric-pill">IoU</span><span class="metric-pill">Invalid Rate</span>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Dataset</th><th>Mean CD</th><th>Median CD</th><th>IoU (%)</th><th>IR (%)</th></tr></thead>
+    <tbody>
+      <tr><td class="best">DeepCAD test</td><td class="best">0.30</td><td class="best">0.16</td><td class="best">92.0</td><td class="best">0.4</td></tr>
+      <tr><td>Fusion 360 test</td><td>0.35</td><td>0.15</td><td>87.8</td><td>0.5</td></tr>
+      <tr><td>CC3D (real scans)</td><td>0.76</td><td>0.31</td><td>74.2</td><td>0.3</td></tr>
+      <tr><td class="note">Prior SOTA (CAD-SIGNet)</td><td class="bad">3.33</td><td class="bad">2.36</td><td>81.5</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-green">10× improvement. Real scans drop IoU from 92% → 74% — real-world is harder but still impressive. Key insight: 1M synthetic CadQuery scripts (procedurally generated) can substitute for expensive human annotation.</div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-iclr">ICLR 2025</span>
+    <div>
+      <div class="paper-title">FlexCAD — Unified Controllable CAD Generation with Fine-Tuned LLMs</div>
+      <div class="paper-meta">Microsoft · arXiv:2411.05823</div>
+    </div>
+  </div>
+  <p>LLaMA-3-8B + LoRA, trained with hierarchy-aware masking. Can be conditioned at any level of the CAD hierarchy: sketch, extrusion, face, loop, or curve.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Coverage (COV)</span><span class="metric-pill">MMD</span><span class="metric-pill">JSD</span><span class="metric-pill">Physical Validity (PV)</span><span class="metric-pill">Human Realism Score</span>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>COV (%)</th><th>PV (%)</th><th>Human realism (%)</th></tr></thead>
+    <tbody>
+      <tr><td class="best">FlexCAD (extrusion-level)</td><td class="best">68.5</td><td>93.3</td><td>42.1</td></tr>
+      <tr><td>FlexCAD (sketch-level)</td><td>65.6</td><td class="best">93.4</td><td>39.6</td></tr>
+      <tr><td>SkexGen</td><td>55.2</td><td>72.6</td><td>21.3</td></tr>
+      <tr><td class="bad">GPT-4o (no fine-tune)</td><td class="bad">40.1</td><td class="bad">48.9</td><td class="bad">12.8</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="paper-card">
+  <div class="paper-header">
+    <span class="venue-badge venue-iclr">ICLR 2025</span>
+    <div>
+      <div class="paper-title">Generating CAD Code with VLMs — Automated Verification</div>
+      <div class="paper-meta">arXiv:2410.05340</div>
+    </div>
+  </div>
+  <p>GPT-4 generates CAD code (OpenSCAD), a VLM renders it and asks Yes/No verification questions, feeds corrective feedback back. Custom 50-prompt benchmark. Achieves within 5% of human-in-the-loop.</p>
+  <div class="metrics-row">
+    <span class="metric-pill">Compile Rate</span><span class="metric-pill">IoGT</span><span class="metric-pill">Point Cloud Distance</span><span class="metric-pill">Hausdorff Distance</span>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Method</th><th>Compile Rate (%)</th><th>IoGT</th><th>PC Distance</th><th>Hausdorff Dist</th></tr></thead>
+    <tbody>
+      <tr><td class="best">GPT-4 + CADCodeVerify</td><td class="best">96.5</td><td class="best">0.944</td><td class="best">0.127</td><td class="best">0.419</td></tr>
+      <tr><td>GPT-4 + 3D-Premise</td><td>91.0</td><td>0.921</td><td>0.137</td><td>0.452</td></tr>
+      <tr><td>GPT-4 (no refinement)</td><td>91.0</td><td>0.912</td><td>0.142</td><td>—</td></tr>
+      <tr><td class="note">Human-in-the-loop (upper bound)</td><td>—</td><td>—</td><td>0.120</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout callout-green">Automated VLM verification gets within 5% of a human reviewer. Loop: render → generate Yes/No questions → answer with chain-of-thought → fix code → repeat.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="tables">6. The Big Comparison Tables</h2>
+
+<h3>All text-to-CAD methods ranked by Median CD</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Rank</th><th>Method</th><th>Year</th><th>Output</th><th>Params</th><th>Median CD (×10³)</th><th>Mean CD</th><th>IR (%)</th><th>Visual</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="best">CAD-Coder (GRPO)</td><td>2025</td><td>CadQuery</td><td>7B</td><td class="best">~0.17</td><td class="best">6.54</td><td class="best">1.45</td><td>—</td></tr>
+    <tr><td>2</td><td>Text-to-CadQuery (Qwen2.5-3B)</td><td>2025</td><td>CadQuery</td><td>3B</td><td>0.191</td><td>10.23</td><td>6.5</td><td>69.3% Gemini</td></tr>
+    <tr><td>3</td><td>Text-to-CadQuery (CodeGPT-small)</td><td>2025</td><td>CadQuery</td><td>124M</td><td>0.234</td><td>13.52</td><td>—</td><td>60.3% Gemini</td></tr>
+    <tr><td>4</td><td>Text2CAD</td><td>2024</td><td>Cmd seq</td><td>363M</td><td>0.370</td><td>26.42</td><td>3.5</td><td>58.8% Gemini</td></tr>
+    <tr><td>5</td><td>CADFusion (5-iter DPO)</td><td>2025</td><td>Cmd seq</td><td>8B</td><td>—</td><td>19.89</td><td>6.2</td><td>8.96/10 LVM</td></tr>
+    <tr><td>6</td><td>CAD-GPT (text input)</td><td>2025</td><td>Cmd seq</td><td>7B</td><td>28.33</td><td>—</td><td>7.43</td><td>—</td></tr>
+    <tr><td>—</td><td class="bad">GPT-4o zero-shot</td><td>2024</td><td>Code</td><td>—</td><td>—</td><td class="bad">133.52</td><td class="bad">93.0</td><td>5.13/10 LVM</td></tr>
+    <tr><td>—</td><td class="bad">Claude-3.7 zero-shot</td><td>2025</td><td>Code</td><td>—</td><td>—</td><td class="bad">186.53</td><td class="bad">47.0</td><td>—</td></tr>
+    <tr><td>—</td><td class="bad">DeepSeek-V3 zero-shot</td><td>2025</td><td>Code</td><td>—</td><td>—</td><td class="bad">186.69</td><td class="bad">52.0</td><td>—</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>CAD Arena Run 1 (our data — 20 prompts × 4 models)</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Model</th><th>API calls</th><th>STL success</th><th>STL %</th><th>Avg latency</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td class="best">Claude Opus 4.6</td><td>20/20</td><td>16/20</td><td class="best">80%</td><td class="best">8.6s</td><td>Zero-shot, no fine-tuning</td></tr>
+    <tr><td class="best">Zoo ML-ephant</td><td>16/20</td><td>16/20</td><td class="best">80%</td><td>64.8s</td><td>Proprietary; returns STL directly</td></tr>
+    <tr><td>GPT-5</td><td>20/20</td><td>14/20</td><td>70%</td><td>23.3s</td><td>Zero-shot, no fine-tuning</td></tr>
+    <tr><td class="bad">Gemini 2.5 Flash</td><td>7/20</td><td>7/20</td><td class="bad">35%</td><td>~3s</td><td class="note">Rate limited — not model failure</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="callout callout-yellow">Our "STL %" = execution success rate = inverted Invalid Rate. We do NOT yet have Chamfer Distance — that requires ground truth STL files (Phase 3 in NEXT-STEPS.md).</div>
+
+<!-- ============================================================ -->
+<h2 id="good">7. What Does "Good" Actually Mean?</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Definition</th><th>How measured</th><th>Limitation</th></tr></thead>
+  <tbody>
+    <tr><td><strong>It executes</strong></td><td>Invalid Rate, Compile Rate</td><td>0% IR doesn't mean correct shapes</td></tr>
+    <tr><td><strong>Geometrically close to ground truth</strong></td><td>Chamfer Distance</td><td>Requires ground truth. Misses editability, intent, manufacturing.</td></tr>
+    <tr><td><strong>Visually matches the prompt</strong></td><td>VLM/Gemini score</td><td>Subjective, not standardized across papers</td></tr>
+    <tr><td><strong>Looks like a realistic part</strong></td><td>Human realism study</td><td>Expensive, high variance</td></tr>
+    <tr><td><strong>Correct operations in sequence</strong></td><td>ACC_cmd, ACC_param</td><td>Command-sequence models only</td></tr>
+    <tr><td><strong>Covers the design space</strong></td><td>COV, MMD, JSD</td><td>Diversity metric, not prompt-following accuracy</td></tr>
+  </tbody>
+</table>
+</div>
+
+<blockquote style="border-left: 3px solid #3b82f6; padding: 12px 20px; margin: 20px 0; color: #7a90b0; font-style: italic; background: #0d1625; border-radius: 0 8px 8px 0;">
+  "There is no agreed-upon benchmark for text-to-CAD. Chamfer Distance measures geometric similarity but not parametric editability, manufacturing feasibility, or constraint satisfaction." — LLM survey (Zhang et al., 2025) and GDL survey (Heidari &amp; Iosifidis, 2025), independently
+</blockquote>
+
+<p>Best current approach: combine <strong>low IR</strong> (it runs) + <strong>low CD</strong> (geometry matches) + <strong>high VLM score</strong> (looks right). No paper does all three perfectly — and none measure editability, manufacturability, or constraint correctness.</p>
+
+<!-- ============================================================ -->
+<h2 id="gaps">8. What No One Measures Yet</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Gap</th><th>Why it matters</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td><strong>No standard prompt set</strong></td><td>Every paper uses different prompts — results can't be directly compared across papers.</td><td>CAD Arena is designed to fix this.</td></tr>
+    <tr><td><strong>CD ≠ design quality</strong></td><td>Can have low CD but mechanically wrong shapes.</td><td>VLM scores used as proxy.</td></tr>
+    <tr><td><strong>No editability metric</strong></td><td>Core value of CAD is "change a dimension, model updates." Never tested.</td><td>Not measured anywhere.</td></tr>
+    <tr><td><strong>No manufacturing feasibility</strong></td><td>Generated parts often have impossible tolerances or non-machinable geometry.</td><td>Not measured anywhere.</td></tr>
+    <tr><td><strong>DeepCAD too simple</strong></td><td>Only sketch-and-extrude — not representative of real engineering parts.</td><td>CAD-Recode adds CC3D real scans.</td></tr>
+    <tr><td><strong>No assembly evaluation</strong></td><td>All eval is single-part. Real products are multi-part assemblies.</td><td>Not addressed by any paper.</td></tr>
+    <tr><td><strong>Human preference / Elo</strong></td><td>Most meaningful signal for "which model is better." What LLM Arena uses.</td><td>This is what the Arena page would provide.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="divider"></div>
+
+<h3>What CAD Arena has vs. what's missing</h3>
+<div class="tag-row">
+  <span class="tag tag-green">✓ Invalid Rate (execution success)</span>
+  <span class="tag tag-green">✓ 4-tier difficulty structure</span>
+  <span class="tag tag-green">✓ API vs academic model comparison</span>
+  <span class="tag tag-green">✓ Per-model, per-tier breakdown</span>
+  <span class="tag tag-red">✗ Chamfer Distance (needs ground truth STLs)</span>
+  <span class="tag tag-red">✗ VLM visual score (easy to add with Gemini)</span>
+  <span class="tag tag-red">✗ Human preference votes (the arena part)</span>
+  <span class="tag tag-red">✗ Editability / manufacturability metrics</span>
+</div>
+
+<p style="margin-top: 28px; color: #5a7498; font-size: 13px;">
+  Compiled from 173 papers in feb8/papers-database.md · Deep analysis in feb8/report.md · CAD Arena benchmark results from eval/results/20260303_210402 · March 2026
+</p>
+
+</div>
+</body>
+</html>
