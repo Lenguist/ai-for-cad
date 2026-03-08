@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Road to End-to-End AI for Mechanical Engineering — CAD Arena</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #4a80b4;
+    --text: #ffffff;
+    --muted: rgba(255,255,255,0.55);
+    --dim: rgba(255,255,255,0.35);
+    --border: rgba(255,255,255,0.18);
+    --border-strong: rgba(255,255,255,0.35);
+    --surface: rgba(0,0,0,0.12);
+    --surface-raised: rgba(0,0,0,0.18);
+  }
+
+  html {
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    height: 100%;
+  }
+
+  body {
+    font-family: "SF Mono", "Fira Code", "Consolas", "Courier New", monospace;
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100%;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(55,105,160,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  nav .brand { font-size: 16px; font-weight: 700; color: var(--text); text-decoration: none; }
+  nav .back  { font-size: 13px; color: var(--muted); text-decoration: none; }
+  nav .back:hover { color: var(--text); }
+
+  /* Slide progress dots */
+  .progress {
+    position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; z-index: 100;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active { background: rgba(255,255,255,0.9); transform: scale(1.4); }
+
+  /* Slides */
+  .slide {
+    scroll-snap-align: start;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    padding: 52px 0 0; /* account for nav */
+  }
+
+  .slide:nth-child(even) {
+    background-color: rgba(0,0,0,0.08);
+  }
+
+  .slide-inner {
+    max-width: 820px;
+    width: 100%;
+    padding: 0 48px;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .slide-inner.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Slide number */
+  .slide-num {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.14em;
+    margin-bottom: 20px;
+  }
+
+  /* Typography */
+  .slide h1 {
+    font-size: clamp(28px, 4.5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+  .slide h2 {
+    font-size: clamp(22px, 3.5vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .slide p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.8;
+    max-width: 620px;
+    margin-bottom: 14px;
+  }
+  .slide p.large {
+    font-size: 18px;
+    color: rgba(255,255,255,0.82);
+    line-height: 1.7;
+  }
+  .slide strong { color: var(--text); }
+  .accent { color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.4); }
+
+  /* Divider */
+  .rule {
+    width: 48px; height: 2px;
+    background: rgba(255,255,255,0.4);
+    margin-bottom: 28px;
+  }
+
+  /* Stack / list items */
+  .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .stack-item {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,255,255,0.25);
+  }
+  .stack-item.highlight { border-left-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.08); }
+  .stack-item .label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--muted); text-transform: uppercase;
+    min-width: 90px; padding-top: 1px;
+  }
+  .stack-item .val { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.55; }
+  .stack-item .status {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase;
+    white-space: nowrap; padding-left: 16px; padding-top: 1px;
+  }
+
+  /* Two columns */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .col-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 22px;
+  }
+  .col-card .col-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .col-card .col-val { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.6; }
+
+  /* Big stat */
+  .big-stat { display: flex; gap: 40px; margin-top: 32px; flex-wrap: wrap; }
+  .stat { }
+  .stat .num { font-size: 48px; font-weight: 800; color: var(--text); letter-spacing: -0.03em; line-height: 1; }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Progress bar */
+  .bar-row { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+  .bar-item {}
+  .bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: rgba(255,255,255,0.75); }
+  .bar-track { height: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.12); }
+  .bar-fill { height: 100%; background: rgba(255,255,255,0.6); }
+  .bar-fill.low { background: rgba(255,180,180,0.6); }
+  .bar-fill.mid { background: rgba(255,220,140,0.6); }
+  .bar-fill.high { background: rgba(200,255,200,0.6); }
+
+  /* Quote / callout */
+  .callout {
+    border-left: 3px solid rgba(255,255,255,0.5);
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(255,255,255,0.5);
+    margin-top: 24px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1.7;
+  }
+  .callout strong { color: var(--text); }
+
+  /* CTA */
+  .cta-row { display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap; }
+  .btn {
+    padding: 11px 24px; font-size: 13px; font-weight: 700;
+    text-decoration: none; font-family: inherit; cursor: pointer;
+    border: none;
+  }
+  .btn-primary { background: rgba(255,255,255,0.9); color: #3568a0; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,0.35); }
+  .btn:hover { opacity: 0.85; }
+
+  /* Arrow scroll hint */
+  .scroll-hint {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    color: var(--dim); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+  .scroll-hint svg { opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="/">CAD Arena</a>
+  <a class="back" href="/">← Back</a>
+</nav>
+
+<div class="progress" id="progress"></div>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 1 — TITLE -->
+<section class="slide" id="slide-0">
+  <div class="slide-inner">
+    <div class="slide-num">00 / 08 &nbsp;·&nbsp; VISION</div>
+    <h1>The road to end&#8209;to&#8209;end AI<br>for mechanical engineering</h1>
+    <div class="rule"></div>
+    <p class="large">We have geometry generators. We have simulation tools. We have optimization algorithms. <strong>None of them talk to each other.</strong> This is what needs to change.</p>
+  </div>
+  <div class="scroll-hint">
+    scroll
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M3 8l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 2 — TODAY -->
+<section class="slide" id="slide-1">
+  <div class="slide-inner">
+    <div class="slide-num">01 / 08 &nbsp;·&nbsp; THE PROBLEM</div>
+    <h2>Today, every step still needs a human</h2>
+    <p>The mechanical engineering loop hasn't fundamentally changed in 40 years. An expert sits at every handoff.</p>
+    <div class="stack">
+      <div class="stack-item">
+        <span class="label">Concept</span>
+        <span class="val">Engineer manually describes requirements — dimensions, loads, constraints</span>
+        <span class="status">Human</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">CAD</span>
+        <span class="val">Expert models the geometry by hand — hours to weeks per part</span>
+        <span class="status">Human</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">Simulation</span>
+        <span class="val">FEA/CFD setup, meshing, boundary conditions — specialist required</span>
+        <span class="status">Human</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">DFM Review</span>
+        <span class="val">Manufacturing engineer checks tolerances, undercuts, wall thickness</span>
+        <span class="status">Human</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">Iteration</span>
+        <span class="val">Repeat from CAD step — typically 5–20 cycles before sign-off</span>
+        <span class="status">Human</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 3 — AI ARRIVING -->
+<section class="slide" id="slide-2">
+  <div class="slide-inner">
+    <div class="slide-num">02 / 08 &nbsp;·&nbsp; WHERE WE ARE</div>
+    <h2>AI is arriving — but in isolated islands</h2>
+    <p>Each layer is getting AI tooling independently. Nothing connects top to bottom.</p>
+    <div class="stack" style="margin-top:16px;">
+      <div class="stack-item highlight">
+        <span class="label">Text → CAD</span>
+        <span class="val">13+ models exist. Results are inconsistent. No benchmark. <strong>This is where we're focused.</strong></span>
+        <span class="status">Active now</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">CAD → Sim</span>
+        <span class="val">Autodesk Fusion AI, Ansys AI, SimScale — AI-assisted setup but not end-to-end</span>
+        <span class="status">Early</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">Topo Opt</span>
+        <span class="val">Generative design (Fusion 360, nTopology) — well-established but siloed</span>
+        <span class="status">Mature</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">DFM</span>
+        <span class="val">Rule-based tools exist (Boothroyd Dewhurst, DFMPro) — not AI-native</span>
+        <span class="status">Pre-AI</span>
+      </div>
+      <div class="stack-item">
+        <span class="label">Assembly</span>
+        <span class="val">No meaningful AI for multi-part assembly generation yet</span>
+        <span class="status">Unsolved</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 4 — BENCHMARK GAP -->
+<section class="slide" id="slide-3">
+  <div class="slide-inner">
+    <div class="slide-num">03 / 08 &nbsp;·&nbsp; THE CORE PROBLEM</div>
+    <h2>You can't improve what<br>you can't measure</h2>
+    <div class="rule"></div>
+    <p class="large">The text-to-CAD field has 13+ competing models, four different output formats, and no shared benchmark. <strong>Papers can't be compared. Progress is invisible.</strong></p>
+
+    <div class="cols" style="margin-top:28px;">
+      <div class="col-card">
+        <div class="col-label">What exists today</div>
+        <div class="col-val">Static paper benchmarks. Each paper tests on its own dataset with its own metrics. Results die with the paper.</div>
+      </div>
+      <div class="col-card">
+        <div class="col-label">What's needed</div>
+        <div class="col-val">A living leaderboard. Fixed prompt set. Automatic metrics + human preference votes. New models can submit anytime.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px;">
+      <strong>"Lack of comprehensive evaluation frameworks"</strong> — identified as the field's most critical gap in the 2025 LLMs for CAD survey (173 papers reviewed).
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 5 — CAPABILITY STACK -->
+<section class="slide" id="slide-4">
+  <div class="slide-inner">
+    <div class="slide-num">04 / 08 &nbsp;·&nbsp; THE STACK</div>
+    <h2>What full-stack AI for mechanical<br>engineering actually requires</h2>
+    <div class="bar-row">
+      <div class="bar-item">
+        <div class="bar-label"><span>L1 · Valid geometry from text</span><span>~80% solved</span></div>
+        <div class="bar-track"><div class="bar-fill high" style="width:80%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-label"><span>L2 · Dimensional accuracy + constraints</span><span>~35% solved</span></div>
+        <div class="bar-track"><div class="bar-fill mid" style="width:35%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-label"><span>L3 · Manufacturability (DFM-aware output)</span><span>~5% solved</span></div>
+        <div class="bar-track"><div class="bar-fill low" style="width:5%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-label"><span>L4 · Physics-valid under load</span><span>~10% solved</span></div>
+        <div class="bar-track"><div class="bar-fill low" style="width:10%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-label"><span>L5 · Multi-part assemblies</span><span>~2% solved</span></div>
+        <div class="bar-track"><div class="bar-fill low" style="width:2%"></div></div>
+      </div>
+      <div class="bar-item">
+        <div class="bar-label"><span>L6 · Full product from specification</span><span>0% solved</span></div>
+        <div class="bar-track"><div class="bar-fill low" style="width:1%"></div></div>
+      </div>
+    </div>
+    <p style="margin-top:18px; font-size:12px;">Estimates based on current SOTA across 173 papers reviewed. L1 validity = best models achieve ~80–93% on simple shapes.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 6 — MISSING PIECES -->
+<section class="slide" id="slide-5">
+  <div class="slide-inner">
+    <div class="slide-num">05 / 08 &nbsp;·&nbsp; MISSING PIECES</div>
+    <h2>The three gaps nobody has closed</h2>
+    <div class="stack" style="margin-top:24px;">
+      <div class="stack-item highlight">
+        <span class="label">Manufacturability</span>
+        <span class="val">No model checks if a generated part can actually be made. Wall thickness, undercuts, tolerances, process-specific constraints — all ignored. A generated part that looks correct may be physically impossible to manufacture.</span>
+      </div>
+      <div class="stack-item highlight">
+        <span class="label">Cross-model eval</span>
+        <span class="val">Sequence-based models (Text2CAD), code-based (CAD-Coder), B-rep direct (BrepGen) — never compared on the same benchmark. We don't know which paradigm wins or when.</span>
+      </div>
+      <div class="stack-item highlight">
+        <span class="label">Academic vs commercial</span>
+        <span class="val">Zoo, AdamCAD, CADGPT have never appeared in any academic benchmark table. Academic SOTA models are never in commercial comparisons. Nobody has done both.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 7 — CAD ARENA -->
+<section class="slide" id="slide-6">
+  <div class="slide-inner">
+    <div class="slide-num">06 / 08 &nbsp;·&nbsp; CAD ARENA</div>
+    <h2>The benchmark that drives progress</h2>
+    <p>The history of ML is clear: ImageNet didn't just measure vision, it created it. SWE-bench didn't just measure coding agents, it shaped their development. <strong>A good benchmark is a forcing function.</strong></p>
+    <div class="big-stat">
+      <div class="stat">
+        <div class="num">200</div>
+        <div class="lbl">benchmark prompts</div>
+      </div>
+      <div class="stat">
+        <div class="num">13+</div>
+        <div class="lbl">models evaluated</div>
+      </div>
+      <div class="stat">
+        <div class="num">4</div>
+        <div class="lbl">difficulty tiers</div>
+      </div>
+      <div class="stat">
+        <div class="num">∞</div>
+        <div class="lbl">open submissions</div>
+      </div>
+    </div>
+    <div class="callout">
+      First benchmark to compare <strong>academic and commercial models side by side</strong> on the same fixed prompt set. Automatic validity + geometry metrics. Human preference voting. Living leaderboard.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ SLIDE 8 — VISION -->
+<section class="slide" id="slide-7">
+  <div class="slide-inner">
+    <div class="slide-num">07 / 08 &nbsp;·&nbsp; THE VISION</div>
+    <h2>Where this ends up</h2>
+    <div class="rule"></div>
+    <p class="large" style="max-width:680px;">A mechanical engineer describes what they need in plain language. The system generates geometry, checks it against manufacturing constraints, runs simulation, optimizes the design, and outputs a production-ready file.</p>
+    <p style="margin-top:16px;"><strong>Not a CAD copilot. A CAD engineer.</strong></p>
+    <p>We're at step one: getting geometry generation right and measurable. But step one has to be done properly for the rest to follow.</p>
+    <div class="cta-row">
+      <a href="/" class="btn btn-primary">See the benchmark →</a>
+      <a href="/eval-review.html" class="btn btn-secondary">How we evaluate</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const progressEl = document.getElementById('progress');
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => slides[i].scrollIntoView({ behavior: 'smooth' });
+    progressEl.appendChild(dot);
+  });
+
+  const dots = document.querySelectorAll('.dot');
+
+  // Intersection observer for fade-in + active dot
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelector('.slide-inner')?.classList.add('visible');
+        const idx = Array.from(slides).indexOf(entry.target);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

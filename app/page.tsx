@@ -149,7 +149,7 @@ export default function Home() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-            {["Models", "Benchmark", "Eval", "Paper"].map((item) => (
+            {["Models", "Benchmark", "Eval", "Vision", "Paper"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
