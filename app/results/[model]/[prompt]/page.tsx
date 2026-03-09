@@ -8,9 +8,10 @@ const MODEL_LABELS: Record<string, string> = {
   "zoo-ml-ephant": "Zoo ML-ephant",
   "gemini-2.5-flash": "Gemini 2.5 Flash",
   "gpt-5": "GPT-5",
+  "text2cadquery-qwen": "Text2CadQuery (Qwen 3B)",
 };
 
-const MODELS = ["claude-opus-4-6", "zoo-ml-ephant", "gemini-2.5-flash", "gpt-5"];
+const MODELS = ["claude-opus-4-6", "zoo-ml-ephant", "gemini-2.5-flash", "gpt-5", "text2cadquery-qwen"];
 const TIER_LABELS = ["", "Basic primitives", "Multi-feature parts", "Assemblies", "Complex geometry"];
 
 export function generateStaticParams() {
@@ -145,7 +146,7 @@ export default async function ResultDetailPage({
             <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em", marginBottom: 14 }}>
               COMPARE · SAME PROMPT
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
               {otherResults.map((or) => (
                 <Link
                   key={or.model_id}

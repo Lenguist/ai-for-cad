@@ -6,9 +6,18 @@ const MODEL_LABELS: Record<string, string> = {
   "zoo-ml-ephant": "Zoo ML-ephant",
   "gemini-2.5-flash": "Gemini 2.5 Flash",
   "gpt-5": "GPT-5",
+  "text2cadquery-qwen": "Text2CadQuery (Qwen 3B)",
 };
 
-const MODELS = ["claude-opus-4-6", "zoo-ml-ephant", "gemini-2.5-flash", "gpt-5"];
+const MODEL_TAGS: Record<string, string> = {
+  "claude-opus-4-6": "LLM Baseline",
+  "zoo-ml-ephant": "Commercial",
+  "gemini-2.5-flash": "LLM Baseline",
+  "gpt-5": "LLM Baseline",
+  "text2cadquery-qwen": "Academic",
+};
+
+const MODELS = ["claude-opus-4-6", "zoo-ml-ephant", "gemini-2.5-flash", "gpt-5", "text2cadquery-qwen"];
 const TIERS = [1, 2, 3, 4];
 const TIER_LABELS = ["", "Basic primitives", "Multi-feature parts", "Assemblies", "Complex geometry"];
 
@@ -62,13 +71,16 @@ export default function ResultsPage() {
           Benchmark Results
         </h1>
         <p style={{ color: "var(--muted)", fontSize: 15, marginBottom: 40 }}>
-          4 models × 20 prompts across 4 difficulty tiers. Click any cell to see the generated code and 3D rendering.
+          5 models × 20 prompts across 4 difficulty tiers. Click any cell to see the generated code and 3D rendering.
         </p>
 
         {/* Summary row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 40 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 40 }}>
           {summary.map((s) => (
             <div key={s.model} style={{ background: "rgba(0,0,0,0.12)", border: "1px solid var(--border)", padding: "18px 20px" }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 9, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.1)", padding: "1px 5px", letterSpacing: "0.08em" }}>{MODEL_TAGS[s.model]}</span>
+              </div>
               <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 6 }}>
                 {MODEL_LABELS[s.model]}
               </div>
@@ -94,7 +106,7 @@ export default function ResultsPage() {
 
             <div style={{ border: "1px solid var(--border)", overflow: "hidden" }}>
               {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 140px)", background: "rgba(0,0,0,0.2)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(5, 110px)", background: "rgba(0,0,0,0.2)" }}>
                 <div style={{ padding: "10px 16px", fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>PROMPT</div>
                 {MODELS.map((m) => (
                   <div key={m} style={{ padding: "10px 12px", fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em", borderLeft: "1px solid var(--border)", textAlign: "center" }}>
@@ -107,7 +119,7 @@ export default function ResultsPage() {
               {promptsByTier[tier].map((pid, i) => {
                 const prompt = results.find((r) => r.prompt_id === pid)?.prompt || pid;
                 return (
-                  <div key={pid} style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 140px)", borderTop: "1px solid var(--border)", background: i % 2 === 0 ? "rgba(0,0,0,0.05)" : "transparent" }}>
+                  <div key={pid} style={{ display: "grid", gridTemplateColumns: "1fr repeat(5, 110px)", borderTop: "1px solid var(--border)", background: i % 2 === 0 ? "rgba(0,0,0,0.05)" : "transparent" }}>
                     {/* Prompt text */}
                     <div style={{ padding: "12px 16px", fontSize: 13, color: "rgba(255,255,255,0.8)", lineHeight: 1.4 }}>
                       <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", marginRight: 8 }}>{pid}</span>
