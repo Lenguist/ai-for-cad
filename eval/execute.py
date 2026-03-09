@@ -43,9 +43,22 @@ except SyntaxError as e:
 # 2. Execution check (requires cadquery)
 try:
     import cadquery as cq
-    exec_globals = {"cq": cq}
+    import types
+    # Wrap cq.exporters.export as a no-op so models that embed export calls
+    # (e.g. Text-to-CadQuery training artifacts) don't crash the executor.
+    cq_wrapped = types.SimpleNamespace(**{k: getattr(cq, k) for k in dir(cq) if not k.startswith('__')})
+    cq_wrapped.exporters = types.SimpleNamespace(export=lambda *a, **kw: None)
+    exec_globals = {"cq": cq_wrapped}
     exec(code, exec_globals)
+    # Restore real cq for our own export below
+    exec_globals["cq"] = cq
+    # Check for 'result', then common fallback names used by Text-to-CadQuery
     res = exec_globals.get("result")
+    if res is None:
+        for fallback in ("assembly", "part_1", "part_2", "model", "shape", "solid", "body", "plate", "bracket", "gear", "bolt", "spring", "elbow", "shaft"):
+            if fallback in exec_globals:
+                res = exec_globals[fallback]
+                break
     if res is None:
         result_data["exec_valid"] = False
         result_data["exec_error"] = "No variable named 'result' found after exec()"
