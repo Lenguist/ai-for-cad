@@ -27,6 +27,7 @@ env/
 
 # Nested projects (separate repos)
 russians-do-not-belong-at-paraolympics/
+zoo-stuff
 
 # Papers (large PDFs tracked separately)
 feb8/papers/*.pdf
