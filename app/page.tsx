@@ -6,41 +6,41 @@ const PRELIMINARY_RESULTS = [
     rank: 1,
     model: "Claude Opus 4.6",
     type: "baseline" as const,
-    stl_pct: 80,
+    stl_pct: 90,
     syntax_pct: 100,
-    latency: "8.6s",
-    prompts: "16 / 20",
-    note: "Best syntax validity. Fastest LLM.",
+    latency: "6.9s",
+    prompts: "19 / 20",
+    note: "Perfect T1–T3. Only tier 4 failures.",
   },
   {
-    rank: 2,
+    rank: 1,
     model: "Zoo ML-ephant",
     type: "commercial" as const,
-    stl_pct: 80,
-    syntax_pct: 80,
-    latency: "64.8s",
-    prompts: "16 / 20",
-    note: "Matches Claude quality. Slow API.",
+    stl_pct: 95,
+    syntax_pct: 95,
+    latency: "11.1s",
+    prompts: "19 / 20",
+    note: "Tied with Claude. Returns native geometry.",
   },
   {
     rank: 3,
-    model: "GPT-5",
+    model: "Gemini 2.5 Flash",
     type: "baseline" as const,
     stl_pct: 70,
-    syntax_pct: 70,
-    latency: "23.3s",
+    syntax_pct: 100,
+    latency: "3.1s",
     prompts: "14 / 20",
-    note: "Drops on harder tiers.",
+    note: "Fastest. Hallucinates methods at T4.",
   },
   {
     rank: 4,
-    model: "Gemini 2.5 Flash",
+    model: "GPT-5",
     type: "baseline" as const,
-    stl_pct: 35,
-    syntax_pct: 35,
-    latency: "—",
-    prompts: "7 / 20",
-    note: "Rate-limited (free tier). Not model quality.",
+    stl_pct: 60,
+    syntax_pct: 60,
+    latency: "16.1s",
+    prompts: "12 / 20",
+    note: "Token truncation kills all T4 prompts.",
   },
 ];
 
@@ -149,10 +149,11 @@ export default function Home() {
             </span>
           </div>
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <Link href="/results" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Results</Link>
             {["Models", "Benchmark", "Eval", "Vision", "Paper"].map((item) => (
               <a
                 key={item}
-                href={`#${item.toLowerCase()}`}
+                href={item === "Eval" ? "/eval-review.html" : item === "Vision" ? "/vision.html" : `#${item.toLowerCase()}`}
                 style={{
                   color: "var(--muted)",
                   textDecoration: "none",
