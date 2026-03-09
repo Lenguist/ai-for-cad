@@ -1,0 +1,6 @@
+{
+  "syntax_valid": true,
+  "exec_valid": false,
+  "exec_error": "GC_MakeArcOfCircle::Value() - no result",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/mbondarenko/Desktop/ai-for-cad/eval/results/text2cadquery/qwen/_runner.py\", line 34, in <module>\n    exec(code, exec_globals)\n  File \"<string>\", line 17, in <module>\n  File \"/Users/mbondarenko/anaconda3/lib/python3.11/site-packages/cadquery/cq.py\", line 2108, in threePointArc\n    arc = Edge.makeThreePointArc(gstartPoint, gpoint1, gpoint2)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/mbondarenko/anaconda3/lib/python3.11/site-packages/cadquery/occ_impl/shapes.py\", line 2616, in makeThreePointArc\n    ).Value()\n      ^^^^^^^\nOCP.OCP.Standard.Standard_Failure: GC_MakeArcOfCircle::Value() - no result\n"
+}

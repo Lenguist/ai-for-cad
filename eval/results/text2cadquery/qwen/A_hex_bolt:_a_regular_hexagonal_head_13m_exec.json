@@ -1,0 +1,5 @@
+{
+  "syntax_valid": true,
+  "exec_valid": false,
+  "exec_error": "No variable named 'result' found after exec()"
+}
