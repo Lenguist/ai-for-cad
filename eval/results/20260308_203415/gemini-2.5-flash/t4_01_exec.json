@@ -1,0 +1,6 @@
+{
+  "syntax_valid": true,
+  "exec_valid": false,
+  "exec_error": "'Workplane' object has no attribute 'gear'",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/mbondarenko/Desktop/ai-for-cad/eval/results/20260308_203415/gemini-2.5-flash/_runner.py\", line 29, in <module>\n    exec(code, exec_globals)\n  File \"<string>\", line 17, in <module>\nAttributeError: 'Workplane' object has no attribute 'gear'\n"
+}

@@ -175,20 +175,33 @@ class GeminiModel:
             output_type=self.output_type,
         )
         t0 = time.time()
-        try:
-            response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=CADQUERY_SYSTEM_PROMPT,
-                    temperature=0.1,
-                    max_output_tokens=2048,
-                ),
-            )
-            result.raw_response = response.text
-            result.code = extract_code(result.raw_response)
-        except Exception as e:
-            result.error = str(e)
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=CADQUERY_SYSTEM_PROMPT,
+                        temperature=0.1,
+                        max_output_tokens=2048,
+                    ),
+                )
+                result.raw_response = response.text
+                result.code = extract_code(result.raw_response)
+                result.error = None
+                break
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
+                    wait = (2 ** attempt) * 5  # 5, 10, 20, 40, 80s
+                    print(f"    [Gemini] rate-limited, waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                    time.sleep(wait)
+                    if attempt == max_retries - 1:
+                        result.error = err_str
+                else:
+                    result.error = err_str
+                    break
         result.latency_s = time.time() - t0
         return result
 

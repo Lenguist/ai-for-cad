@@ -1,0 +1,7 @@
+{
+  "syntax_valid": true,
+  "exec_valid": true,
+  "bbox_error": "Bnd_Box is void",
+  "stl_exported": false,
+  "stl_error": "[Errno 2] No such file or directory: '/Users/mbondarenko/Desktop/ai-for-cad/eval/results/20260308_203415/claude-opus-4-6/t4_03.stl'"
+}

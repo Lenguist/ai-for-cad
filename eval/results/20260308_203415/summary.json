@@ -1,0 +1,38 @@
+{
+  "gpt-5": {
+    "total": 20,
+    "api_success": 20,
+    "api_success_pct": 100.0,
+    "syntax_valid": 12,
+    "syntax_valid_pct": 60.0,
+    "exec_valid": 12,
+    "exec_valid_pct": 60.0,
+    "stl_exported": 12,
+    "stl_exported_pct": 60.0,
+    "avg_latency_s": 16.14
+  },
+  "claude-opus-4-6": {
+    "total": 20,
+    "api_success": 20,
+    "api_success_pct": 100.0,
+    "syntax_valid": 20,
+    "syntax_valid_pct": 100.0,
+    "exec_valid": 19,
+    "exec_valid_pct": 95.0,
+    "stl_exported": 18,
+    "stl_exported_pct": 90.0,
+    "avg_latency_s": 6.89
+  },
+  "gemini-2.5-flash": {
+    "total": 20,
+    "api_success": 20,
+    "api_success_pct": 100.0,
+    "syntax_valid": 20,
+    "syntax_valid_pct": 100.0,
+    "exec_valid": 14,
+    "exec_valid_pct": 70.0,
+    "stl_exported": 14,
+    "stl_exported_pct": 70.0,
+    "avg_latency_s": 3.08
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "zoo-ml-ephant": {
+    "total": 20,
+    "api_success": 19,
+    "api_success_pct": 95.0,
+    "syntax_valid": 19,
+    "syntax_valid_pct": 95.0,
+    "exec_valid": 19,
+    "exec_valid_pct": 95.0,
+    "stl_exported": 19,
+    "stl_exported_pct": 95.0,
+    "avg_latency_s": 11.08
+  }
+}
