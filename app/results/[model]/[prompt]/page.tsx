@@ -112,8 +112,13 @@ export default async function ResultDetailPage({
           {/* Code */}
           {r.code ? (
             <div style={{ border: "1px solid var(--border)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,0.15)", fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em", display: "flex", justifyContent: "space-between" }}>
-                <span>CADQUERY SOURCE</span>
+              <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,0.15)", fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", padding: "2px 7px", fontSize: 10, letterSpacing: "0.08em" }}>
+                    {(r as { language?: string }).language?.toUpperCase() ?? "SOURCE"}
+                  </span>
+                  <span>SOURCE</span>
+                </div>
                 <span style={{ color: r.success ? "rgba(255,255,255,0.7)" : "rgba(255,100,100,0.8)" }}>
                   {r.success ? "✓ executed" : `✗ ${r.error?.slice(0, 60) || "failed"}`}
                 </span>

@@ -144,7 +144,7 @@ export default function ResultsPage() {
                           <span style={{ fontSize: 18 }}>{ok ? "✓" : "✗"}</span>
                           <div style={{ display: "flex", gap: 4 }}>
                             {hasStl && <span style={{ fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "1px 5px", fontFamily: "var(--font-geist-mono), monospace", color: "rgba(255,255,255,0.7)" }}>3D</span>}
-                            {hasCode && <span style={{ fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "1px 5px", fontFamily: "var(--font-geist-mono), monospace", color: "rgba(255,255,255,0.7)" }}>PY</span>}
+                            {hasCode && <span style={{ fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "1px 5px", fontFamily: "var(--font-geist-mono), monospace", color: "rgba(255,255,255,0.7)" }}>{(r as { output_type?: string }).output_type === "kcl" ? "KCL" : "PY"}</span>}
                           </div>
                         </Link>
                       );

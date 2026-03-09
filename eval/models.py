@@ -52,7 +52,7 @@ class GenerationResult:
     code: str = ""          # extracted Python/CadQuery code
     error: Optional[str] = None
     latency_s: float = 0.0
-    output_type: str = "cadquery"  # "cadquery" | "zoo_stl" | "error"
+    output_type: str = "cadquery"  # "cadquery" | "kcl" | "error"
     metadata: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -214,7 +214,7 @@ class ZooModel:
     Docs: https://zoo.dev/machine-learning-api
     """
     model_id = "zoo-ml-ephant"
-    output_type = "zoo_stl"
+    output_type = "kcl"
     BASE_URL = "https://api.zoo.dev"
     POLL_INTERVAL = 3   # seconds between status checks
     MAX_WAIT = 120      # seconds before timeout
@@ -284,18 +284,22 @@ class ZooModel:
                     stl_key  = next((k for k in outputs if k.endswith(".stl")),  None)
                     step_key = next((k for k in outputs if k.endswith(".step")), None)
 
+                    # KCL source is returned directly in the status response code field
+                    kcl_code = status_data.get("code") or ""
+                    if kcl_code:
+                        result.code = kcl_code
+
                     if stl_key:
                         stl_bytes = _b64decode(outputs[stl_key])
                         result.metadata["stl_bytes_len"] = len(stl_bytes)
                         result.metadata["stl_bytes"] = base64.b64encode(stl_bytes).decode()
-                        result.code = f"# Zoo API output — STL ({len(stl_bytes)} bytes)"
+                        if not kcl_code:
+                            result.code = f"// Zoo API output — STL ({len(stl_bytes)} bytes)"
                     if step_key:
                         step_bytes = _b64decode(outputs[step_key])
                         result.metadata["step_bytes_len"] = len(step_bytes)
                         result.metadata["step_bytes"] = base64.b64encode(step_bytes).decode()
-                        if not stl_key:
-                            result.code = f"# Zoo API output — STEP ({len(step_bytes)} bytes)"
-                    if not stl_key and not step_key:
+                    if not stl_key and not step_key and not kcl_code:
                         result.error = f"No STL/STEP in outputs: {list(outputs.keys())}"
                     break
                 elif status in ("failed", "cancelled"):
