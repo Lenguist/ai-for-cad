@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+{% block title %}Assemble — LEGO Technic Bench{% endblock %}
+
+{% block head %}
+<style>
+  .assemble-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 20px;
+    height: calc(100vh - 52px - 64px);
+    min-height: 500px;
+  }
+
+  /* Left panel */
+  .left-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .panel-header { display: flex; align-items: center; justify-content: space-between; }
+  .panel-header h2 { margin: 0; }
+
+  select#examples {
+    font-size: 12px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+  }
+
+  #editor {
+    flex: 1;
+    width: 100%;
+    min-height: 300px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    resize: none;
+    tab-size: 2;
+  }
+  #editor:focus { outline: none; border-color: #4a90d9; }
+
+  .run-btn {
+    background: #1a1a2e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .run-btn:hover { background: #2a2a4e; }
+  .run-btn:active { transform: scale(.98); }
+
+  /* Results */
+  #results {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 12px;
+    min-height: 80px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .result-valid   { color: #276749; font-weight: 600; }
+  .result-invalid { color: #c53030; font-weight: 600; }
+  .result-line    { padding: 2px 0; }
+  .result-error   { color: #c53030; }
+  .result-warning { color: #b45309; }
+  .result-info    { color: #2255aa; }
+  .result-kin     { color: #276749; }
+
+  /* Right panel — 3D viewer */
+  .right-panel {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .viewer-toolbar {
+    padding: 8px 14px;
+    background: #f8f8f6;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #viewer-canvas {
+    flex: 1;
+    width: 100%;
+    display: block;
+  }
+  .viewer-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    font-size: 11px;
+    color: #aaa;
+    pointer-events: none;
+  }
+  #part-count { font-weight: 600; color: #333; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 20px; padding-bottom: 0;">
+  <div class="assemble-layout">
+
+    <!-- Left: editor + results -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <h2>Assembly JSON</h2>
+        <select id="examples">
+          <option value="">— load example —</option>
+          {% for ex in examples %}
+          <option value="{{ loop.index0 }}">{{ ex.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <textarea id="editor" spellcheck="false"></textarea>
+
+      <button class="run-btn" onclick="runAssemble()">
+        ▶ Run Assembly
+      </button>
+
+      <div id="results">
+        <span style="color:#aaa; font-size:12px;">Click "Run Assembly" to validate and visualize.</span>
+      </div>
+    </div>
+
+    <!-- Right: Three.js viewer -->
+    <div class="right-panel">
+      <div class="viewer-toolbar">
+        <span>3D Viewer · <span id="part-count">0 parts</span></span>
+        <span>drag to rotate · scroll to zoom · right-drag to pan</span>
+      </div>
+      <canvas id="viewer-canvas"></canvas>
+      <div class="viewer-hint">Three.js · schematic view · 1 unit = 1 stud (8mm)</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Embed example data for JS -->
+<script>
+const EXAMPLES = {{ examples | tojson }};
+</script>
+
+<!-- Three.js + OrbitControls from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── OrbitControls (inline, no module needed) ──────────────────────────────
+// Minimal OrbitControls implementation
+class OrbitControls {
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.domElement = domElement;
+    this.target = new THREE.Vector3();
+    this._spherical = { theta: Math.PI/4, phi: Math.PI/3, radius: 20 };
+    this._mouseDown = false;
+    this._rightDown = false;
+    this._lastX = 0; this._lastY = 0;
+    domElement.addEventListener('mousedown', e => {
+      if (e.button === 2) { this._rightDown = true; } else { this._mouseDown = true; }
+      this._lastX = e.clientX; this._lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { this._mouseDown = false; this._rightDown = false; });
+    window.addEventListener('mousemove', e => {
+      if (!this._mouseDown && !this._rightDown) return;
+      const dx = e.clientX - this._lastX, dy = e.clientY - this._lastY;
+      this._lastX = e.clientX; this._lastY = e.clientY;
+      if (this._mouseDown) {
+        this._spherical.theta -= dx * 0.008;
+        this._spherical.phi   = Math.max(0.05, Math.min(Math.PI - 0.05, this._spherical.phi + dy * 0.008));
+      } else {
+        const right = new THREE.Vector3(); const up = new THREE.Vector3();
+        this.camera.getWorldDirection(new THREE.Vector3());
+        right.crossVectors(this.camera.getWorldDirection(new THREE.Vector3()), this.camera.up).normalize();
+        up.copy(this.camera.up).normalize();
+        this.target.addScaledVector(right, -dx * 0.02).addScaledVector(up, dy * 0.02);
+      }
+      this.update();
+    });
+    domElement.addEventListener('wheel', e => {
+      this._spherical.radius = Math.max(3, Math.min(80, this._spherical.radius + e.deltaY * 0.03));
+      this.update();
+    });
+    domElement.addEventListener('contextmenu', e => e.preventDefault());
+    this.update();
+  }
+  update() {
+    const s = this._spherical;
+    this.camera.position.set(
+      this.target.x + s.radius * Math.sin(s.phi) * Math.sin(s.theta),
+      this.target.y + s.radius * Math.cos(s.phi),
+      this.target.z + s.radius * Math.sin(s.phi) * Math.cos(s.theta)
+    );
+    this.camera.lookAt(this.target);
+  }
+}
+
+// ── Scene setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('viewer-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setClearColor(0xf8f8f6);
+renderer.setPixelRatio(window.devicePixelRatio);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+camera.position.set(12, 10, 16);
+
+const controls = new OrbitControls(camera, canvas);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+sun.position.set(8, 14, 10);
+scene.add(sun);
+
+// Grid
+const grid = new THREE.GridHelper(32, 32, 0xcccccc, 0xe0e0e0);
+scene.add(grid);
+
+// Axes indicator (small, at origin)
+const axesHelper = new THREE.AxesHelper(2);
+scene.add(axesHelper);
+
+// Resize observer
+function resizeRenderer() {
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight - 36; // minus toolbar
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeRenderer).observe(canvas.parentElement);
+resizeRenderer();
+
+// Render loop
+function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+animate();
+
+// ── Part geometry ─────────────────────────────────────────────────────────────
+const MAT_BEAM      = new THREE.MeshLambertMaterial({ color: 0xc0c0c0 });
+const MAT_GEAR      = new THREE.MeshLambertMaterial({ color: 0xd4a843 });
+const MAT_AXLE      = new THREE.MeshLambertMaterial({ color: 0x666666 });
+const MAT_PIN       = new THREE.MeshLambertMaterial({ color: 0x333333 });
+const MAT_RACK      = new THREE.MeshLambertMaterial({ color: 0xe87722 });
+const MAT_CONNECTOR = new THREE.MeshLambertMaterial({ color: 0x7a9a7a });
+const MAT_EDGE      = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 });
+
+function withEdges(mesh) {
+  const edges = new THREE.EdgesGeometry(mesh.geometry);
+  mesh.add(new THREE.LineSegments(edges, MAT_EDGE));
+  return mesh;
+}
+
+function applyAxis(mesh, axis, length) {
+  // Rotate geometry (default along Y) to target axis, then offset center
+  const halfLen = (length - 1) / 2;
+  if (axis === 'x') {
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.x += halfLen;
+  } else if (axis === 'z') {
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.z += halfLen;
+  } else {
+    // y — default cylinder orientation, offset in y
+    mesh.position.y += halfLen;
+  }
+}
+
+function createPartMesh(part) {
+  const [px, py, pz] = part.pos;
+  const axis = part.axis || 'x';
+  let mesh;
+
+  switch (part.category) {
+    case 'beam': {
+      const len = part.length || 1;
+      const geo = new THREE.BoxGeometry(len - 0.12, 0.82, 0.82);
+      mesh = withEdges(new THREE.Mesh(geo, MAT_BEAM.clone()));
+      // BoxGeometry is centered; default along X. Rotate if needed.
+      mesh.position.set(px, py, pz);
+      const half = (len - 1) / 2;
+      if (axis === 'x')      { mesh.position.x += half; }
+      else if (axis === 'y') { mesh.rotation.z = Math.PI/2; mesh.position.y += half; }
+      else                   { mesh.rotation.y = Math.PI/2; mesh.position.z += half; }
+      // Add hole dots along beam
+      for (let i = 0; i < len; i++) {
+        const dot = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.15, 0.85, 8),
+          new THREE.MeshLambertMaterial({ color: 0x999999 })
+        );
+        if (axis === 'x')      { dot.position.set(px + i, py, pz); dot.rotation.z = Math.PI/2; }
+        else if (axis === 'y') { dot.position.set(px, py + i, pz); }
+        else                   { dot.position.set(px, py, pz + i); dot.rotation.x = Math.PI/2; }
+        scene.add(dot);
+      }
+      break;
+    }
+    case 'gear': {
+      const r = (part.radius_studs || 1) - 0.1;
+      const geo = new THREE.CylinderGeometry(r, r, 0.4, Math.max(8, (part.teeth || 8) * 2));
+      mesh = withEdges(new THREE.Mesh(geo, MAT_GEAR.clone()));
+      mesh.position.set(px, py, pz);
+      if (axis === 'x')      { mesh.rotation.z = Math.PI/2; }
+      else if (axis === 'z') { mesh.rotation.x = Math.PI/2; }
+      // axis === 'y' is default cylinder
+      break;
+    }
+    case 'axle': {
+      const len = part.length || 3;
+      const geo = new THREE.CylinderGeometry(0.16, 0.16, len - 0.1, 6);
+      mesh = withEdges(new THREE.Mesh(geo, MAT_AXLE.clone()));
+      mesh.position.set(px, py, pz);
+      applyAxis(mesh, axis, len);
+      break;
+    }
+    case 'pin': {
+      const len = part.length || 1;
+      const geo = new THREE.CylinderGeometry(0.2, 0.2, len + 0.5, 8);
+      mesh = withEdges(new THREE.Mesh(geo, MAT_PIN.clone()));
+      mesh.position.set(px, py, pz);
+      applyAxis(mesh, axis, len);
+      break;
+    }
+    case 'rack': {
+      const len = part.length || 4;
+      const geo = new THREE.BoxGeometry(len - 0.1, 0.45, 0.85);
+      mesh = withEdges(new THREE.Mesh(geo, MAT_RACK.clone()));
+      mesh.position.set(px, py, pz);
+      const half = (len - 1) / 2;
+      if (axis === 'x')      { mesh.position.x += half; }
+      else if (axis === 'y') { mesh.rotation.z = Math.PI/2; mesh.position.y += half; }
+      else                   { mesh.rotation.y = Math.PI/2; mesh.position.z += half; }
+      // Rack teeth marks
+      for (let i = 0; i < len; i++) {
+        const tooth = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.25, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0xd06010 })
+        );
+        if (axis === 'x') tooth.position.set(px + i, py + 0.35, pz);
+        else               tooth.position.set(px, py + 0.35, pz + i);
+        scene.add(tooth);
+      }
+      break;
+    }
+    case 'connector': {
+      const geo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+      mesh = withEdges(new THREE.Mesh(geo, MAT_CONNECTOR.clone()));
+      mesh.position.set(px, py, pz);
+      break;
+    }
+    default: {
+      const geo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+      mesh = withEdges(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x999999 })));
+      mesh.position.set(px, py, pz);
+    }
+  }
+  return mesh;
+}
+
+// ── Assembly render ───────────────────────────────────────────────────────────
+let assemblyGroup = new THREE.Group();
+scene.add(assemblyGroup);
+
+function clearAssembly() {
+  scene.remove(assemblyGroup);
+  assemblyGroup = new THREE.Group();
+  scene.add(assemblyGroup);
+  // Also remove any loose meshes (hole dots, teeth)
+  const toRemove = [];
+  scene.traverse(obj => {
+    if (obj.isMesh && obj !== grid) toRemove.push(obj);
+  });
+  toRemove.forEach(o => scene.remove(o));
+}
+
+function renderAssembly(geometry) {
+  clearAssembly();
+  if (!geometry || geometry.length === 0) return;
+
+  geometry.forEach(part => {
+    try {
+      const mesh = createPartMesh(part);
+      if (mesh) assemblyGroup.add(mesh);
+    } catch(e) { console.warn('Part render error:', part.id, e); }
+  });
+
+  // Center camera on assembly
+  const box = new THREE.Box3().setFromObject(assemblyGroup);
+  const center = box.getCenter(new THREE.Vector3());
+  const size   = box.getSize(new THREE.Vector3());
+  controls.target.copy(center);
+  controls._spherical.radius = Math.max(12, size.length() * 1.6);
+  controls.update();
+
+  document.getElementById('part-count').textContent = geometry.length + ' parts';
+}
+
+// ── Run assembly ──────────────────────────────────────────────────────────────
+async function runAssemble() {
+  const raw = document.getElementById('editor').value;
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '<span style="color:#888">Running…</span>';
+
+  let assembly;
+  try {
+    assembly = JSON.parse(raw);
+  } catch(e) {
+    resultsEl.innerHTML = `<div class="result-invalid">✗ JSON parse error: ${e.message}</div>`;
+    return;
+  }
+
+  let resp, data;
+  try {
+    resp = await fetch('/api/assemble', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ assembly })
+    });
+    data = await resp.json();
+  } catch(e) {
+    resultsEl.innerHTML = `<div class="result-invalid">✗ Server error: ${e.message}</div>`;
+    return;
+  }
+
+  // Build results HTML
+  let html = '';
+  if (data.valid) {
+    html += `<div class="result-valid">✓ Valid assembly · ${data.part_count} parts</div>`;
+  } else {
+    html += `<div class="result-invalid">✗ Invalid assembly</div>`;
+  }
+
+  data.errors.forEach(e => {
+    html += `<div class="result-line result-error">⚠ ${e}</div>`;
+  });
+  data.warnings.forEach(w => {
+    html += `<div class="result-line result-warning">△ ${w}</div>`;
+  });
+
+  const kin = data.kinematics;
+  if (kin && Object.keys(kin).length > 0) {
+    html += `<hr style="margin: 8px 0; border-color: #eee">`;
+    html += `<div class="result-info" style="font-weight:600; margin-bottom:4px">Kinematic Analysis</div>`;
+    if (kin.summary) html += `<div class="result-kin">⚙ ${kin.summary}</div>`;
+    if (kin.motion_type) html += `<div class="result-kin">↔ ${kin.motion_type}</div>`;
+    if (kin.gear_pairs) {
+      kin.gear_pairs.forEach(p => {
+        html += `<div class="result-line result-kin">
+          Gear pair: ${p.gear1} (${p.teeth1}T) → ${p.gear2} (${p.teeth2}T) &nbsp;·&nbsp;
+          ratio ${p.ratio_str} &nbsp;·&nbsp;
+          ${p.ratio > 1 ? p.ratio.toFixed(2) + 'x slower' : (1/p.ratio).toFixed(2) + 'x faster'}
+        </div>`;
+      });
+    }
+    if (kin.rack_pinion) {
+      kin.rack_pinion.forEach(r => {
+        html += `<div class="result-line result-kin">↔ ${r.note}</div>`;
+      });
+    }
+  }
+
+  resultsEl.innerHTML = html;
+  renderAssembly(data.geometry);
+}
+
+// ── Examples dropdown ─────────────────────────────────────────────────────────
+document.getElementById('examples').addEventListener('change', function() {
+  const idx = parseInt(this.value);
+  if (isNaN(idx)) return;
+  const ex = EXAMPLES[idx];
+  document.getElementById('editor').value = JSON.stringify(ex.assembly, null, 2);
+  this.value = '';
+  runAssemble();
+});
+
+// Keyboard shortcut: Ctrl/Cmd + Enter to run
+document.getElementById('editor').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runAssemble();
+  }
+});
+
+// Load first example on page load
+document.getElementById('editor').value = JSON.stringify(EXAMPLES[0].assembly, null, 2);
+setTimeout(runAssemble, 100);
+</script>
+{% endblock %}

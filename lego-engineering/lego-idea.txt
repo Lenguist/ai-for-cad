@@ -1,0 +1,74 @@
+LEGO Engineering & Design Benchmark
+=====================================
+
+Core Insight
+------------
+LEGO is a perfect abstraction layer for benchmarking AI mechanical engineering
+reasoning, decoupled from CAD-specific complexity.
+
+The key reframe: we don't want "AI for CAD", we want "AI Mechanical Engineer".
+CAD is a small part of that. The hard part is mechanism design + constraint thinking.
+LEGO lets us probe *that* in isolation.
+
+Why LEGO works as a benchmark substrate
+-----------------------------------------
+- Fixed, well-defined part library (LEGO has ~10,000+ parts, all documented)
+- Snap-fit connection grammar is simple and unambiguous
+- No material property reasoning needed (it's all ABS, same tolerances)
+- No extrusion/sketch/feature tree headaches
+- Mechanisms can still be complex: gears, axles, beams, Technic pins, differentials
+- LEGO Technic in particular covers: rotation, linear motion, linkages, gear trains,
+  pneumatics, ratchets, cams, differentials — real mech-e territory
+
+Benchmark Structure
+--------------------
+Difficulty levels:
+  T1 - Static structures ("build a bridge that spans 20 studs")
+  T2 - Simple motion ("connect two gears with 3:1 ratio")
+  T3 - Mechanism design ("build a mechanism that converts rotation to linear motion")
+  T4 - Constrained design ("build a steering mechanism that fits in 10x10x5 studs")
+  T5 - Multi-constraint ("build a gearbox with 2 speeds that fits in a 15x15x10 volume")
+
+AI Interface
+-------------
+- Give AI access to a semantic LEGO part library (embed by function/shape)
+- Allow natural language part search: "find me a 2:1 gear ratio pair"
+- Output format: structured assembly description
+  - Part ID + quantity
+  - Connection grammar: PART_A.stud[x,y] → PART_B.hole[x,y], orientation
+  - Or a higher-level DSL (LDraw format already exists for this!)
+- Optionally: render/validate via LDraw or BrickLink Studio
+
+Evaluation
+-----------
+- Validity: does the assembly connect without conflicts?
+- Function: does a physics sim confirm the mechanism works?
+- Efficiency: part count, compactness
+- For constrained tasks: does it fit within specified volume/force limits?
+
+Why this is a great benchmark
+-------------------------------
+1. Probes mechanism understanding and engineering intuition
+2. Decoupled from CAD tool quirks — pure reasoning challenge
+3. Scalable difficulty (static → kinematic → multi-constraint)
+4. Ground truth is checkable (LDraw validator + physics sim)
+5. No existing benchmark like this — clear gap
+6. Fun and legible for demos / public engagement
+7. Could extend to other brick systems (Technic, K'Nex) for generalization
+
+Connection to AI-for-CAD
+--------------------------
+A model that aces the LEGO benchmark but fails at CAD tells you:
+  → the bottleneck is CAD tool interface, not mechanical reasoning
+A model that aces CAD but fails at LEGO tells you:
+  → it's pattern-matching CAD syntax, not reasoning about mechanisms
+This cross-benchmark comparison would be genuinely insightful.
+
+Next Steps (if pursuing)
+------------------------
+- Find/scrape the full LEGO Technic part library with connection metadata
+- Build a part embedding index (semantic search over function + geometry)
+- Define the connection grammar / DSL
+- Write 20 benchmark tasks across difficulty levels
+- Build a validator (LDraw-based or custom)
+- Run against GPT-5, Claude Opus, Gemini

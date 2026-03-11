@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LEGO Technic Bench{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f4f0; color: #1a1a1a; }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      height: 52px;
+    }
+    nav .logo { font-weight: 700; font-size: 15px; letter-spacing: .02em; color: #fff; text-decoration: none; }
+    nav a { color: #aab; text-decoration: none; font-size: 14px; padding: 4px 0; border-bottom: 2px solid transparent; }
+    nav a:hover, nav a.active { color: white; border-bottom-color: #4a90d9; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    h2 { font-size: 17px; font-weight: 600; margin-bottom: 12px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 24px; }
+
+    .tag {
+      display: inline-block;
+      background: #e8e8e4;
+      color: #555;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .tag.beam     { background: #dde8f0; color: #2255aa; }
+    .tag.gear     { background: #fff0cc; color: #885500; }
+    .tag.axle     { background: #e8e8e8; color: #333; }
+    .tag.pin      { background: #e8e4f0; color: #553388; }
+    .tag.rack     { background: #fde8d8; color: #883300; }
+    .tag.connector{ background: #e4f0e4; color: #225522; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">⚙ LEGO Technic Bench</a>
+    <a href="/parts" {% if request.path.startswith('/parts') or request.path == '/' %}class="active"{% endif %}>Parts Library</a>
+    <a href="/assemble" {% if request.path.startswith('/assemble') %}class="active"{% endif %}>Assemble</a>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

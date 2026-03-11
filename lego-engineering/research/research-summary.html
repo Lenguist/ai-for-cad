@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI for LEGO Engineering and Mechanism Design: A Deep Survey</title>
+<style>
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    background: #fafaf8;
+    color: #1a1a1a;
+    line-height: 1.75;
+    font-size: 17px;
+  }
+  h1 {
+    font-size: 2.1em;
+    font-weight: bold;
+    color: #1a1a1a;
+    border-bottom: 3px solid #2c5282;
+    padding-bottom: 14px;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .subtitle {
+    font-size: 1.05em;
+    color: #555;
+    margin-bottom: 30px;
+    font-style: italic;
+  }
+  h2 {
+    font-size: 1.45em;
+    font-weight: bold;
+    color: #2c5282;
+    margin-top: 52px;
+    margin-bottom: 12px;
+    border-left: 5px solid #2c5282;
+    padding-left: 12px;
+  }
+  h3 {
+    font-size: 1.15em;
+    font-weight: bold;
+    color: #333;
+    margin-top: 32px;
+    margin-bottom: 8px;
+  }
+  p {
+    margin-bottom: 16px;
+  }
+  .abstract {
+    background: #eef2f9;
+    border: 1px solid #c5d3e8;
+    border-radius: 4px;
+    padding: 22px 26px;
+    margin: 30px 0;
+    font-size: 0.97em;
+  }
+  .abstract strong {
+    display: block;
+    font-size: 1em;
+    margin-bottom: 8px;
+    color: #2c5282;
+  }
+  .toc {
+    background: #f5f5f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 18px 24px;
+    margin: 30px 0;
+    font-size: 0.93em;
+  }
+  .toc strong {
+    display: block;
+    font-size: 1em;
+    margin-bottom: 10px;
+    color: #333;
+  }
+  .toc ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .toc li {
+    margin-bottom: 5px;
+    color: #2c5282;
+  }
+  .toc a {
+    color: #2c5282;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.88em;
+  }
+  th {
+    background: #2c5282;
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: bold;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background: #f5f7fb;
+  }
+  .callout {
+    background: #fffbea;
+    border-left: 4px solid #e2a800;
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.95em;
+  }
+  .callout-critical {
+    background: #fff5f5;
+    border-left: 4px solid #c53030;
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.95em;
+  }
+  .callout-green {
+    background: #f0fff4;
+    border-left: 4px solid #276749;
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.95em;
+  }
+  code {
+    background: #eee;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.88em;
+    font-family: 'Courier New', monospace;
+  }
+  .paper-box {
+    background: #f8f8f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 0.93em;
+  }
+  .paper-box .paper-title {
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-bottom: 5px;
+  }
+  .paper-box .paper-meta {
+    color: #666;
+    font-style: italic;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+  }
+  .metric-highlight {
+    font-weight: bold;
+    color: #2c5282;
+  }
+  .metric-bad {
+    font-weight: bold;
+    color: #c53030;
+  }
+  .metric-good {
+    font-weight: bold;
+    color: #276749;
+  }
+  .section-break {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 50px 0 30px 0;
+  }
+  footer {
+    margin-top: 70px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+    font-size: 0.88em;
+    color: #777;
+  }
+</style>
+</head>
+<body>
+
+<h1>AI for LEGO Engineering and Mechanism Design: A Deep Survey</h1>
+<div class="subtitle">March 2026 &nbsp;&middot;&nbsp; Survey of ~20 papers across generative brick assembly, kinematic synthesis, spatial reasoning benchmarks, and agentic engineering design</div>
+
+<div class="abstract">
+  <strong>Abstract</strong>
+  This survey covers the emerging intersection of artificial intelligence and structured physical construction, with a focus on two threads that remain largely disconnected in the literature: (1) brick-based assembly, where LEGO and Minecraft-style block worlds serve as evaluation substrates for spatial reasoning and generative construction, and (2) kinematic mechanism synthesis, where machine learning replaces classical optimization for designing functional planar linkages. We review benchmark ecosystems evaluating multimodal language models (MLLMs) on assembly tasks, finding consistent and severe gaps between human performance (88-95%) and state-of-the-art AI (40-57%). We document the distinct challenge of physics-aware functional machine design, surveyed through BesiegeField, BuildArena, and EngDesign, where even frontier models frequently produce structurally invalid or non-functional outputs. We cover four-bar linkage synthesis as a mature sub-field with recent deep learning inroads (LInK, cGAN, LSTM-MoE), and examine generative assembly pipelines for robotic manipulation (Blox-Net, Score-PA, MEPNet). The survey concludes with a synthesis of open problems: the absence of a unified benchmark for LEGO Technic mechanism design, the tokenization bottleneck for 3D spatial reasoning, and the gap between trajectory-level kinematic accuracy and functional mechanical performance.
+</div>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#s1">Introduction and Framing</a></li>
+    <li><a href="#s2">LEGO Brick Assembly: Generative Models</a></li>
+    <li><a href="#s3">Sequential Brick Assembly: Constraint Satisfaction and Physics</a></li>
+    <li><a href="#s4">Spatial Reasoning Benchmarks: Where AI Falls Short</a></li>
+    <li><a href="#s5">Multi-Step VLM Evaluation on Block Construction</a></li>
+    <li><a href="#s6">Mechanism Synthesis: Four-Bar Linkages and Deep Learning</a></li>
+    <li><a href="#s7">Contrastive Retrieval for Mechanism Design: LInK</a></li>
+    <li><a href="#s8">Physics-Aware Functional Machine Design: Besiege Environments</a></li>
+    <li><a href="#s9">Engineering Design Benchmarks with Simulation Evaluation</a></li>
+    <li><a href="#s10">Manual Parsing, Robotic Assembly, and Agentic Pipelines</a></li>
+    <li><a href="#s11">Cross-Cutting Themes, Gaps, and Open Problems</a></li>
+  </ol>
+</div>
+
+<hr class="section-break">
+
+<h2 id="s1">1. Introduction and Framing</h2>
+
+<p>LEGO is the most widely manufactured object in history by brick count, and its grid-based, discrete assembly structure makes it a natural laboratory for AI research in spatial reasoning, sequential planning, and physical construction. Yet the AI literature treating LEGO seriously as an engineering substrate, rather than merely a visual recognition target, remains thin and scattered. This survey attempts to map the field honestly, connecting three partially overlapping research communities: (1) the multimodal LLM evaluation community, which has recently discovered brick assembly as a spatial reasoning benchmark; (2) the robotic manipulation community, which uses block-world tasks to evaluate generative Design-for-Robot-Assembly systems; and (3) the computational kinematics community, which has been applying machine learning to four-bar linkage synthesis since around 2019.</p>
+
+<p>What connects these communities is a common substrate problem: objects with discrete, constrained connection points require a qualitatively different kind of spatial reasoning from objects with continuous geometry. A LEGO brick can only connect to another LEGO brick at specific integer grid positions and orientations. A four-bar linkage mechanism must satisfy Grashof's law or it will jam. A Besiege machine must remain rigid under simulated physics or it will collapse. This structural rigidity of the design space is precisely what makes these domains challenging for neural models trained on the continuous distributions of natural language and image data.</p>
+
+<p>The survey covers approximately 19 papers read in full, supplemented by secondary literature. We proceed from the most concrete (brick generation) to the most abstract (mechanism synthesis and engineering benchmark design), closing with a synthesis of where the field stands and what it most urgently needs.</p>
+
+<div class="callout">
+  <strong>Key observation:</strong> Across all evaluated benchmarks, the gap between human performance and the best AI systems on multi-step spatial assembly tasks is approximately 40-55 percentage points. This gap has not closed meaningfully between GPT-4 and GPT-4o-era evaluations, and in some tasks actually widens as task complexity increases. The "thinking mode" extended chain-of-thought variants evaluated in PhyBlock and elsewhere provide negligible benefit on spatial assembly tasks.
+</div>
+
+<hr class="section-break">
+
+<h2 id="s2">2. LEGO Brick Assembly: Generative Models</h2>
+
+<h3>2.1 BrickGPT / LegoGPT: Autoregressive Text-to-Brick Generation</h3>
+
+<div class="paper-box">
+  <div class="paper-title">BrickGPT / LegoGPT (2024-2025)</div>
+  <div class="paper-meta">LLaMA-3.2-Instruct-1B fine-tuned on StableText2Brick dataset; 47,000+ structures, 28,000+ unique 3D objects</div>
+  The most complete end-to-end text-to-LEGO generation system in the current literature. The core contribution is treating brick assembly as a language modeling problem: each brick is serialized as the token format {h}x{w}({x},{y},{z}), where h and w are the brick dimensions and (x,y,z) is the grid position. The entire structure is a flat sequence of these tokens, and a fine-tuned LLaMA-3.2-1B model autoregressively generates them from a text prompt.
+</div>
+
+<p>The training dataset, StableText2Brick, contains 47,000+ structures derived from 28,000+ unique 3D objects, with captions generated by GPT-4V. The dataset construction pipeline is careful: it filters for structures that are physically stable under simulated gravity before inclusion. This upstream stability filtering is the key engineering decision that makes the downstream metrics look good. At inference time, BrickGPT uses a two-stage validity enforcement pipeline: rejection sampling (discard entire invalid assemblies and regenerate) combined with physics-aware rollback (when a brick placement would violate physics, backtrack and try the next most likely token). With this pipeline, the reported figures are <span class="metric-good">98.8% stability and 100% validity</span> on a held-out test set.</p>
+
+<div class="callout-critical">
+  <strong>Critical note:</strong> The 100% validity figure is achieved through rejection sampling at test time, which is computationally expensive and not reported in terms of pass@k or average number of retries. The 98.8% stability metric is evaluated in the same simulation environment used to filter the training data, which introduces distributional circularity. Real-world physical stability, which involves stud friction, weight distribution, and tolerance stack-up, is not evaluated. The system generates structures that look like simplified block representations of objects, not functional LEGO Technic mechanisms with gears, axles, and kinematic constraints.
+</div>
+
+<p>Compared to prior work on LEGO generation using graph neural networks and voxel-based approaches, the autoregressive text-based approach has the clear advantage of being conditionable on arbitrary natural language prompts without retraining. The brick representation works well within the LLaMA architecture's context window for small structures (~20-30 bricks). For larger structures (100+ bricks), the approach has not been demonstrated to scale, and the position coordinate space grows combinatorially.</p>
+
+<h3>2.2 BrECS: Budget-Aware Sequential Brick Assembly</h3>
+
+<div class="paper-box">
+  <div class="paper-title">BrECS: U-shaped sparse 3D CNN for sequential brick assembly with constraint satisfaction</div>
+  <div class="paper-meta">2024; budget-free and budget-aware LEGO assembly optimization from target 3D voxel grids</div>
+  Where BrickGPT approaches assembly as language generation, BrECS approaches it as constrained optimization. Given a target 3D shape, the system plans a sequential brick-placement order that reconstructs the shape using valid LEGO connections, respecting either an unlimited brick budget or a fixed brick count constraint.
+</div>
+
+<p>The technical core is a sparse 3D convolutional U-Net architecture combined with an efficient validity-checking mechanism. The key computational insight is the use of a one-initialized brick-sized convolution filter to check placement validity: by convolving the current structure with a filter shaped like a target brick type, the network can simultaneously check all possible positions and orientations for valid placements, achieving a <span class="metric-good">2,300x speedup</span> in validity checking compared to naive position enumeration. BrECS outperforms Bayesian optimization, Generative Graph Models (GGM), and reinforcement learning baselines on both budget-free and budget-aware scenarios measured by IoU of the reconstructed versus target voxel grid.</p>
+
+<p>The budget-aware setting, where the model must reconstruct a target shape using exactly N bricks, is particularly interesting because it mirrors real-world design constraints such as limited parts inventory. The approach is fundamentally reconstruction-focused rather than generative: it assumes a target shape voxel grid as input and cannot generate novel structures from text prompts. It also does not reason about functional mechanical constraints. It is best understood as an automated LEGO-ification system for arbitrary 3D shapes, not a mechanism design system.</p>
+
+<hr class="section-break">
+
+<h2 id="s3">3. Sequential Brick Assembly: Constraint Satisfaction and Physics</h2>
+
+<h3>3.1 The Stability-Validity-Functionality Hierarchy</h3>
+
+<p>A crucial distinction that the literature handles inconsistently is the hierarchy of physical constraints for brick assemblies:</p>
+
+<table>
+  <tr>
+    <th>Constraint Level</th>
+    <th>Definition</th>
+    <th>Evaluation Method</th>
+    <th>Typical AI Performance</th>
+  </tr>
+  <tr>
+    <td><strong>Validity</strong></td>
+    <td>Bricks connect only at valid stud positions; no interpenetration</td>
+    <td>Geometric check; fast</td>
+    <td>High with rejection sampling (100% in BrickGPT)</td>
+  </tr>
+  <tr>
+    <td><strong>Stability</strong></td>
+    <td>Structure does not collapse under gravity</td>
+    <td>Physics simulation</td>
+    <td>~98.8% (BrickGPT, with training-set filtering)</td>
+  </tr>
+  <tr>
+    <td><strong>Buildability</strong></td>
+    <td>Can be assembled step-by-step without disassembling prior bricks</td>
+    <td>Sequential feasibility check</td>
+    <td>Not evaluated in most papers</td>
+  </tr>
+  <tr>
+    <td><strong>Functionality</strong></td>
+    <td>Structure performs a mechanical function (moves, bears load, achieves specified kinematics)</td>
+    <td>Domain-specific simulation or physical testing</td>
+    <td>Poor; virtually unaddressed for LEGO Technic</td>
+  </tr>
+</table>
+
+<p>Most papers in the brick generation literature focus on validity and stability, which are necessary but far from sufficient for engineering applications. The functionality level, building a LEGO Technic gear train that achieves a target torque ratio, or a mechanism that traces a specified coupler curve, is essentially unaddressed by current generative models. The gap between "builds a stable structure that looks like a giraffe" and "builds a mechanism that converts rotary motion to a specific linear trajectory" is enormous, and no current system bridges it.</p>
+
+<h3>3.2 The Graph Representation Problem</h3>
+
+<p>One paper in our reading set (building-lego-graph-generative.pdf) was unreadable due to PDF corruption, but from secondary sources it addresses LEGO assembly as a graph generation problem, where nodes represent bricks and edges represent connection relations. This representation has theoretical advantages: topological constraints like "every brick must be connected to at least one other brick" are easy to enforce at the graph level. However, the spatial embedding (where in 3D space each brick actually sits) cannot be read off from the graph alone, since the same connectivity graph can correspond to multiple valid and invalid spatial configurations. This makes graph-based approaches less directly usable for physical assembly than coordinate-based representations like BrickGPT's token format.</p>
+
+<hr class="section-break">
+
+<h2 id="s4">4. Spatial Reasoning Benchmarks: Where AI Falls Short</h2>
+
+<h3>4.1 LEGO-Puzzles: The Canonical Multi-Step Benchmark</h3>
+
+<div class="paper-box">
+  <div class="paper-title">LEGO-Puzzles: Multi-Step Spatial Reasoning Benchmark for MLLMs</div>
+  <div class="paper-meta">2024-2025; 1,100 VQA samples, 11 tasks, 20 MLLMs evaluated; 3 task categories</div>
+  The most carefully designed benchmark for evaluating spatial reasoning on LEGO assembly in the current literature. Tasks are organized around three categories with a clear progression of difficulty: Spatial Understanding (4 tasks), Single-Step Sequential reasoning (4 tasks), and Multi-Step Sequential reasoning (3 tasks requiring k-step look-ahead).
+</div>
+
+<p>The headline numbers are stark: <span class="metric-good">human performance: 93.6%</span> versus <span class="metric-bad">GPT-4o: 57.7%</span> and <span class="metric-bad">Gemini-2.0-Flash: 54.0%</span>. The gap of ~36 percentage points is large, but the more important result is the degradation pattern as k increases. On multi-step tasks, performance collapses as k increases: GPT-4o reportedly reaches 0% on tasks requiring k=4 or more steps of sequential reasoning. Chain-of-thought prompting provides negligible benefit for k&ge;2 step tasks, which the authors interpret as evidence that the failures are not due to lack of deliberation but rather due to a fundamental inability to mentally simulate the intermediate states of a 3D assembly process.</p>
+
+<div class="callout">
+  <strong>The k-step collapse:</strong> The fact that multi-step performance collapses so rapidly is one of the most important empirical findings across these benchmarks. It suggests that models are not performing look-ahead planning but rather matching the current visual state to a learned distribution of "what comes next." When the current state differs sufficiently from training-distribution configurations (which happens quickly in multi-step sequences), performance degrades to chance. This collapse at k=4 is consistent across LEGO-Puzzles, PhyBlock, and MineAnyBuild.
+</div>
+
+<h3>4.2 PhyBlock: Physics-Grounded Assembly Planning</h3>
+
+<div class="paper-box">
+  <div class="paper-title">PhyBlock: Physics-Grounded Block Assembly Benchmark</div>
+  <div class="paper-meta">2024-2025; 2,600 tasks (400 assembly + 2,200 VQA), 23 VLMs evaluated; 4 levels up to 22 blocks</div>
+  PhyBlock is more ambitious in scope than LEGO-Puzzles, combining VQA with actual assembly planning and explicitly requiring physics reasoning. The four levels, Basic Perception through Spatial Planning with up to 22 blocks, provide a clearer picture of exactly where performance degrades.
+</div>
+
+<p>The best result is <span class="metric-bad">Claude 3.7 Sonnet-Thinking: F1 = 47.4%</span> against <span class="metric-good">human: 94.7%</span>. Critically, "thinking mode" (extended chain-of-thought with dedicated reasoning tokens) provides negligible benefit over standard inference. The dominant failure mode is incorrect orientation (majority of errors), followed by dependency reasoning failures (placing brick B before brick A when B depends on A for support). Both errors involve spatial relationships that are straightforward for humans, who intuitively understand which way a brick faces and which assembly order is physically feasible, but are surprisingly opaque to models that process images as flat pixel arrays.</p>
+
+<p>The evaluation at 22-block complexity is particularly telling: at this scale, the assembly state space is large enough that retrieval-based approaches fail, and true compositional reasoning would be required. No evaluated model performs above chance on the most difficult PhyBlock configurations.</p>
+
+<h3>4.3 MineAnyBuild: Minecraft as Spatial Reasoning Substrate</h3>
+
+<div class="paper-box">
+  <div class="paper-title">MineAnyBuild: 4,000 Minecraft Spatial Planning Tasks</div>
+  <div class="paper-meta">2024; 4 evaluation dimensions (Executable Plan Generation, Spatial Understanding, Creativity, Spatial Commonsense); 13 MLLMs</div>
+  Uses Minecraft, structurally isomorphic to LEGO in its discrete grid-based placement, as a benchmark substrate emphasizing generative spatial planning over instruction following.
+</div>
+
+<p>GPT-4o achieves the highest overall score at <span class="metric-bad">41.02/100</span>, with most open-source models scoring below 20. The Spatial Plan Generation dimension, the most directly relevant to engineering design, shows the worst performance. The Spatial Commonsense dimension captures an interesting failure mode: models understand individual spatial relations but fail when reasoning requires integrating multiple such relations simultaneously into a globally consistent spatial arrangement. This is the 3D instantiation of the classic "spatial relational reasoning" failure mode documented in NLP benchmarks.</p>
+
+<h3>4.4 ChildPlay: LCL and the ASCII Representation Problem</h3>
+
+<div class="paper-box">
+  <div class="paper-title">ChildPlay: Benchmarking LLMs on Non-Linguistic Reasoning including LEGO Connect Language (LCL)</div>
+  <div class="paper-meta">arXiv 2407.11068, University of Groningen; GPT-3.5, GPT-4, GPT-4o, GPT-4o-mini evaluated</div>
+  A benchmark introducing the LEGO Connect Language (LCL), a 2D assembly language for 2x4 LEGO pieces encoded as ASCII coordinate tuples, alongside classical board games (Tic-Tac-Toe, Connect Four, Battleship) and molecular graph recognition. All tasks ASCII-encoded to minimize training data contamination.
+</div>
+
+<p>The LCL validity testing task (classify a construction as valid or invalid, binary) achieves only 50% for GPT-3.5 and GPT-4 (random chance), with GPT-4o reaching only 75% at best. Construct generation (produce a valid LCL assembly from a prompt) achieves approximately 0% for GPT-3.5 and GPT-4, 2% for GPT-4o-mini, and <span class="metric-bad">36% for GPT-4o</span> at optimal temperature.</p>
+
+<p>The 36% figure shows genuine improvement with model scale, but absolute performance remains very low. The ASCII encoding of LEGO assemblies as coordinate tuples turns out to be less readable by LLMs than one might expect because the models have not seen this specific notation in training and struggle to learn the connection rules from in-context description alone. Notably, the Battleship results show the opposite scaling trend from Tic-Tac-Toe and Connect Four: GPT-3.5 outperforms GPT-4 and GPT-4o on Battleship, providing strong evidence against simple "emergent spatial intelligence" narratives. Model improvements are domain-specific and do not generalize uniformly across spatial task types.</p>
+
+<hr class="section-break">
+
+<h2 id="s5">5. Multi-Step VLM Evaluation on Block Construction</h2>
+
+<h3>5.1 LEGO Co-Builder: Fine-Grained Instruction Following</h3>
+
+<div class="paper-box">
+  <div class="paper-title">LEGO Co-Builder: VLM Assembly Instruction Following Benchmark</div>
+  <div class="paper-meta">2024; 65 official LEGO manuals, 35,612 samples; 3 tasks: Scene Understanding (T1), Object Detection (T2), State Detection (T3)</div>
+  Uses official LEGO instruction manuals as the evaluation source, providing real-world complexity with thousands of distinct brick types and configurations. Tasks require reading a manual page and identifying: what exists in the scene (T1), which bricks are newly added (T2), and which bricks changed state (T3).
+</div>
+
+<p>The performance numbers are consistently low. GPT-4o achieves a maximum <span class="metric-bad">F1-State of 40.54%</span> on T3, the hardest task. Object detection (T2) achieves IOU of only 47.20% even after fine-tuning on task-specific data. The State Detection task (T3), requiring temporal tracking of which bricks are "active" (newly added) versus "passive" (already present from prior steps), is a direct proxy for the sequential state tracking required for autonomous assembly. Fine-tuning improves recognition sub-tasks (T1, T2) but provides limited benefit on the relational task (T3), suggesting architectural rather than data-distributional limitations.</p>
+
+<h3>5.2 MEPNet: Manual Parsing for Machine-Executable Plans</h3>
+
+<div class="paper-box">
+  <div class="paper-title">MEPNet: Manual-to-Executable-Plan Network</div>
+  <div class="paper-meta">Stanford/MIT/Google Research; arXiv 2207.12572; 2022; LEGO + Minecraft house benchmarks</div>
+  A specialized network for translating visual LEGO assembly manuals into machine-executable plans (sequences of 3D poses). Unlike the evaluation-focused papers above, MEPNet proposes a specific architectural solution to the 2D-to-3D correspondence problem inherent in manual parsing.
+</div>
+
+<p>The two-stage architecture is principled. Stage 1 uses a conditional Hourglass network to predict 2D keypoints, instance masks, and rotation categories (0, 90, 180, 270 degrees) for each new component visible in the manual image. Stage 2 uses two deterministic geometric algorithms, connection-constrained 3D translation inference and inference-by-synthesis for rotation refinement, to lift these 2D predictions to full 6-DoF 3D poses.</p>
+
+<p>The key design choice is separating neural prediction (stage 1) from geometric reasoning (stage 2). The connection constraints of LEGO studs dramatically reduce the 3D pose search space: once a 2D brick center is located, the constraint that studs connect at integer offsets limits the 3D translation to a small discrete set of candidates. MEPNet generalizes to real LEGO manuals despite training only on synthetically generated manual images, demonstrating the value of training on perfect synthetic data when the domain has strong geometric structure. Remaining failure cases are primarily bricks with high symmetry and manual pages with severe occlusion.</p>
+
+<hr class="section-break">
+
+<h2 id="s6">6. Mechanism Synthesis: Four-Bar Linkages and Deep Learning</h2>
+
+<h3>6.1 Background: The Classical Problem</h3>
+
+<p>Four-bar linkage mechanism synthesis is a well-defined inverse problem in kinematics: given desired motion characteristics (a path to trace, a function to generate, a set of precision points), find the link lengths (l1, l2, l3, l4) and geometry that produce that motion. Exact synthesis methods solve systems of polynomial equations (Burmester theory, dyad equations) but become intractable for large precision point sets. Approximate synthesis methods minimize structural error using numerical optimization but suffer from local minima and initialization sensitivity.</p>
+
+<p>The data-driven approach treats synthesis as a regression problem: given a description of desired motion, predict link lengths directly without solving equations or running optimization. This is appealing because: inference is fast once the model is trained; the model can learn solution distributions rather than single solutions, enabling design diversity; training data can be generated synthetically at arbitrary scale using forward kinematics. The three papers reviewed here represent distinct strategies: GAN-based generation (cGAN), LSTM-based sequential regression (LSTM-MoE), and contrastive retrieval (LInK).</p>
+
+<h3>6.2 cGAN for Kinematic and Quasi-Static Synthesis (KAIST)</h3>
+
+<div class="paper-box">
+  <div class="paper-title">Deep Generative Model-based Synthesis of Four-bar Linkage Mechanisms with Target Conditions</div>
+  <div class="paper-meta">Lee, Kim, Kang; KAIST / Narnia Labs; arXiv 2402.14882; Feb 2024; 100,000 training mechanisms</div>
+  The key contribution is extending crank-rocker four-bar synthesis beyond purely kinematic constraints to include quasi-static conditions, specifically the torque-per-force ratio eta, which measures the mechanical advantage of the mechanism. This is the first paper in the data-driven synthesis literature to simultaneously optimize for both kinematic (path shape via maximum workspace distance d_max) and quasi-static (eta_min, minimum torque ratio) conditions.
+</div>
+
+<p>The training dataset uses Latin Hypercube Sampling to generate 100,000 valid crank-rocker mechanisms, with conditions computed by forward kinematics and static analysis. The cGAN architecture is modified with two additions: a Predictor network (an MLP estimating actual d_max and eta_min for generated samples, added to minimize the gap between target and achieved conditions) and a Similarity loss (which maximizes minimum Euclidean distance between generated samples to prevent mode collapse). SMOTE-based k-NN oversampling is needed for fake condition generation because the natural distribution of conditions is Pareto-like, making uniform sampling unrealistic.</p>
+
+<p>Results: for multiple conditions, RMSE of 0.147 on d_max and 0.894 on eta_min, with R-squared of 0.958 and 0.850 respectively. The model struggles when eta_min exceeds 6 rad/length due to data sparsity. For single condition synthesis, diverse samples are generated demonstrating correct learning of the multi-modal solution manifold. The approach is limited to crank-rocker mechanisms and two scalar conditions; real design problems typically require more complex motion specifications.</p>
+
+<h3>6.3 LSTM-MoE for Multi-Type Function Generation (Korea University)</h3>
+
+<div class="paper-box">
+  <div class="paper-title">Data-Driven Dimensional Synthesis of Diverse Planar Four-bar Function Generation Mechanisms via Direct Parameterization</div>
+  <div class="paper-meta">Kim, Jung, Ha, Lee, Shim; Korea University; arXiv 2507.08269; July 2025</div>
+  The most recent and technically complete paper in the data-driven four-bar synthesis literature reviewed here. Addresses three limitations of prior work: most methods handle path generation rather than function generation (where both input and output link rotations at precision points must be specified); most are limited to a single Grashof type; most require a fixed number of precision points.
+</div>
+
+<p>The LSTM architecture is natural for sequential precision points because order matters and there is no fixed maximum count. The Mixture of Experts (MoE) structure, 16 expert LSTM networks one per configuration of the 8 four-bar types and 2 geometric inversions, is a principled approach to the multi-type synthesis problem: each expert specializes in exactly one configuration rather than learning a single model that must generalize across all 16 type-inversion configurations. The Type Specifying Layer applies a differentiable projection that constrains the generator output to satisfy the sign conditions (T1, T2, T3) that define the desired linkage type, enforcing type correctness at the output level rather than through rejection sampling.</p>
+
+<p>The simulation metric for evaluation, comparing desired and achieved input-output angle pairs by running forward kinematics on the predicted mechanism, is methodologically superior to RMSE on link lengths. A mechanism can have low RMSE in link length space while being completely wrong in motion space; simulation-based evaluation is essential. The defect-free synthesis claim is also important: circuit, branch, and order defects (collectively CBO defects) are avoided by construction through the data generation procedure, sidestepping a major practical problem in classical synthesis.</p>
+
+<hr class="section-break">
+
+<h2 id="s7">7. Contrastive Retrieval for Mechanism Design: LInK</h2>
+
+<div class="paper-box">
+  <div class="paper-title">LInK: Learning Joint Representations of Design and Performance Spaces through Contrastive Learning for Mechanism Synthesis</div>
+  <div class="paper-meta">2024; LINKS dataset: 100 million planar linkage mechanisms; GHop (Graph Isomorphism + Hop Attention) architecture</div>
+  The most ambitious paper in the mechanism synthesis space. LInK treats synthesis as a retrieval problem rather than a regression problem: learn a joint embedding space where similar mechanisms (similar topology and geometry) are close to similar paths (similar traced curves), then retrieve the best mechanism from a 100M-entry database given a target path.
+</div>
+
+<p>The LINKS dataset, 100 million planar linkage mechanisms with precomputed kinematic paths, is the largest such dataset in the literature by roughly 10x. The GHop architecture combines Graph Isomorphism Networks (for topology-invariant mechanism encoding) with Hop Attention (for encoding the long-range path structure as a sequence). The contrastive loss encourages the joint embedding space to be metric: mechanisms that trace similar paths are embedded close together, regardless of whether their link lengths are similar. This is the right inductive bias, since two mechanisms with completely different link lengths can trace nearly identical paths.</p>
+
+<p>The three-stage synthesis pipeline exploits retrieval for initialization: (1) contrastive retrieval finds the k nearest neighbors to the target path in the embedding space; (2) batch BFGS refines all k candidates with gradient-based optimization using forward kinematics as the constraint; (3) final refinement polishes the best candidate. BFGS is fast and reliable when initialized close to a good solution, even though it fails from random initialization due to the non-convex landscape.</p>
+
+<table>
+  <tr>
+    <th>Metric</th>
+    <th>Prior SOTA</th>
+    <th>LInK</th>
+    <th>Factor</th>
+  </tr>
+  <tr>
+    <td>Path tracing error (standard benchmarks)</td>
+    <td>baseline</td>
+    <td>28x lower error</td>
+    <td class="metric-good">28x</td>
+  </tr>
+  <tr>
+    <td>Synthesis time</td>
+    <td>baseline</td>
+    <td>20x faster</td>
+    <td class="metric-good">20x</td>
+  </tr>
+  <tr>
+    <td>LINK-ABC (letter tracing)</td>
+    <td>near-zero (prior methods)</td>
+    <td>substantial improvement</td>
+    <td class="metric-good">Category creation</td>
+  </tr>
+</table>
+
+<p>The LINK-ABC benchmark requires synthesizing mechanisms that trace specific letter shapes, a more demanding target than arbitrary smooth curves because letters have sharp corners, cusps, and direction reversals. Prior methods fail on this benchmark nearly entirely. LInK's retrieval advantage is systematic here: with 100M mechanisms, the database is large enough to contain mechanisms that trace letter-like paths even though they are rare. A Mixed Integer Linear Programming (MILP) post-processing step implemented via Gurobi snaps continuous link lengths to discrete manufacturable values. The paper does not report how much performance degrades after MILP rounding, which is an important omission for practical use.</p>
+
+<hr class="section-break">
+
+<h2 id="s8">8. Physics-Aware Functional Machine Design: Besiege Environments</h2>
+
+<h3>8.1 BesiegeField: LLMs as Machine Designers</h3>
+
+<div class="paper-box">
+  <div class="paper-title">BesiegeField: Evaluating LLMs on Physics-Based Machine Design in Sandbox Environments</div>
+  <div class="paper-meta">2024-2025; 27 blocks from Besiege game; multi-agent pipeline; Gemini 2.5 Pro, o3, and other frontier models</div>
+  BesiegeField is the most direct prior work to a potential LEGO Technic AI engineering benchmark. It evaluates LLMs on designing functional machines in the Besiege physics sandbox. Two tasks: Car (maximize forward movement distance) and Catapult (maximize projectile throw distance). Block vocabulary constrained to 27 blocks (from 75 total) to create a tractable but non-trivial design space.
+</div>
+
+<p>The multi-agent workflow has five roles: Meta-Designer (high-level architecture), Designer (block placement detail), Inspector (specification compliance checking), Refiner (corrects Inspector-identified errors), and Environment Querier (executes physics simulation and reports results). The Refiner stage consistently improves over raw Designer output, validating the multi-agent critique-and-refine approach.</p>
+
+<p>The representation ablation is the most important finding. A construction tree representation (hierarchical, bottom-up description of how blocks are connected) dramatically outperforms global-position-based 3D coordinates. This directly parallels BrickGPT's finding that sequential, connection-relative representations are more tractable for LLMs than absolute coordinate arrays.</p>
+
+<p>Performance varies widely by task and model. Gemini 2.5 Pro achieves the best Car task performance (mean distance 27.85-38.06 across pipeline stages). The Catapult task proves dramatically harder: <span class="metric-bad">o3 achieves 0 valid machines with the Meta-Designer stage</span>, suggesting that the higher-level architectural planning required for catapult design (coordinated timing of projectile release, lever arm geometry, counterweight placement) is beyond current model capability.</p>
+
+<div class="callout">
+  <strong>Key finding for LEGO Technic:</strong> BesiegeField demonstrates that LLMs can design simple functional machines in physics sandboxes but performance degrades rapidly as mechanical complexity increases. The catapult task exposes a planning horizon limitation that would be equally severe in LEGO Technic mechanism design, where gear trains, linkages, and timing must be coordinated simultaneously.
+</div>
+
+<h3>8.2 BuildArena: Spatial Conflict as the Primary Failure Mode</h3>
+
+<div class="paper-box">
+  <div class="paper-title">BuildArena: Standardized Evaluation of LLMs on Physics-Aware Mechanical Construction</div>
+  <div class="paper-meta">2025; 3 tasks (Transport, Support, Lift), 3 difficulty levels, 8 LLMs; standardized Spatial Geometric Computation Library</div>
+  A more systematic evaluation of the design-in-physics-sandbox paradigm, with three well-defined task types and quantitative measurement of failure modes.
+</div>
+
+<p>The three tasks have increasing mechanical complexity: Transport (move an object between positions), Support (build a stable supporting structure), and Lift (elevate an object using mechanical advantage). Grok-4 achieves the best overall performance across tasks and difficulty levels, with all models failing at the highest-difficulty Lift tasks. <span class="metric-bad">Spatial conflict, placing two blocks that occupy the same volume or violate geometric connection constraints, is identified as the dominant failure mode</span>, not physical instability or functional failure. This is an important diagnostic: the models are failing before even getting to physics, at the level of basic geometric constraint satisfaction. The finding that massive inference does not guarantee performance is significant: spending more compute on sampling or chain-of-thought does not systematically improve results, suggesting architectural rather than compute-related limitations.</p>
+
+<hr class="section-break">
+
+<h2 id="s9">9. Engineering Design Benchmarks with Simulation Evaluation</h2>
+
+<h3>9.1 EngDesign: Rigorous Simulation-Based Evaluation</h3>
+
+<div class="paper-box">
+  <div class="paper-title">EngDesign: A Benchmark for AI Engineering Design Capability with Simulation-Based Evaluation</div>
+  <div class="paper-meta">2024-2025; 101 tasks, 9 engineering domains, 473 rubric items; MATLAB, SPICE, domain simulators used for evaluation</div>
+  The most rigorously constructed engineering design benchmark in the literature. Unlike alternatives that use LLM judges or multiple-choice questions, EngDesign uses actual domain simulators (MATLAB for control/thermal, SPICE for analog/digital, etc.) to evaluate whether generated designs meet engineering specifications.
+</div>
+
+<p>Results are sobering. The best model, o3, achieves a <span class="metric-bad">34.38% pass rate</span>. GPT-4o achieves 15.68%. <span class="metric-bad">Analog IC design: 0% for all models</span> across all tasks. The error taxonomy breaks down as: Domain Knowledge Error (DKE) 33%, Constraint Violation Error (CVE) 25%, Performance Knowledge Omission (PKO) 19%, Hallucination (HAL) 13%, Calculation Error (CE) 9%. The two largest error categories, DKE and CVE, reflect both missing domain knowledge and inability to satisfy explicitly stated constraints, suggesting that current models cannot reliably translate specification text into constraint-satisfying designs even when the constraints are clearly stated.</p>
+
+<table>
+  <tr>
+    <th>Error Type</th>
+    <th>Code</th>
+    <th>Frequency</th>
+    <th>Meaning</th>
+  </tr>
+  <tr>
+    <td>Domain Knowledge Error</td>
+    <td>DKE</td>
+    <td class="metric-bad">33%</td>
+    <td>Missing or incorrect domain-specific knowledge applied to design</td>
+  </tr>
+  <tr>
+    <td>Constraint Violation Error</td>
+    <td>CVE</td>
+    <td class="metric-bad">25%</td>
+    <td>Designs violating explicitly specified constraints</td>
+  </tr>
+  <tr>
+    <td>Performance Knowledge Omission</td>
+    <td>PKO</td>
+    <td>19%</td>
+    <td>Omitting performance-relevant design choices</td>
+  </tr>
+  <tr>
+    <td>Hallucination</td>
+    <td>HAL</td>
+    <td>13%</td>
+    <td>Plausible but physically/computationally incorrect outputs</td>
+  </tr>
+  <tr>
+    <td>Calculation Error</td>
+    <td>CE</td>
+    <td>9%</td>
+    <td>Numerical computation errors in design calculations</td>
+  </tr>
+</table>
+
+<div class="callout-green">
+  <strong>The iterative refinement finding:</strong> When o3 is given 10 iterations of simulation feedback (it can see simulation results for its designs and revise), performance reaches approximately 60% pass rate from a one-shot baseline of 34.38%. This demonstrates that AI-assisted engineering design with simulation-in-the-loop iteration is a substantially more tractable near-term goal than fully autonomous one-shot design. This finding is independently replicated in BesiegeField (Refiner agent improvement), Blox-Net (perturbation redesign), and BuildArena.
+</div>
+
+<h3>9.2 BikeBench: Multi-Objective Engineering Design</h3>
+
+<div class="paper-box">
+  <div class="paper-title">BikeBench: A Bicycle Design Benchmark for Generative Models with Objectives and Constraints</div>
+  <div class="paper-meta">MIT/ProgressSoft/Utrecht; arXiv 2508.00830; Oct 2025; 64 parameters, 10 objectives, 40 constraints; 1.6M synthetic designs</div>
+  Methodologically important because it evaluates generative models, tabular models, LLMs, and optimization algorithms side-by-side on the same problem with the same evaluation criteria, enabling a genuinely fair comparison across algorithm classes.
+</div>
+
+<p>The benchmark evaluates bicycle designs across five multidisciplinary performance dimensions: geometric feasibility (31 closed-form constraint checks), structural mechanics (FEA-predicted planar/transverse/eccentric compliance via the FRAMED dataset), aerodynamics (CFD-computed drag force from 4,000 cyclist aerodynamics simulations), ergonomics (kinematics solver for joint angles), and aesthetics/human perception (CLIP similarity to text prompts plus a regression model trained on 10,350 human usability ratings). The dataset infrastructure is substantial: 1.6M synthetically generated bicycle designs via BikeCAD to XML to SVG to PNG pipeline, the 4,500-bike BIKED dataset, and 15,000 frame designs with FEA results from FRAMED.</p>
+
+<p>Four principal evaluation metrics are measured simultaneously: design quality (hypervolume over all 10 objectives), constraint violation rate (mean constraints violated per design), similarity to data (Maximum Mean Discrepancy against held-out human designs), and design diversity (Determinantal Point Process diversity). The main finding is that hybrid GenAI+optimization algorithms are current frontrunners, substantially outperforming both pure LLMs and pure tabular generative models on design quality and constraint satisfaction. GPT-5-high falls significantly short of optimization-augmented approaches. In parallel findings from ship hull design benchmarks, generative models violate geometric constraints over 95% of the time; BikeBench shows similar patterns for bicycle frame validity.</p>
+
+<hr class="section-break">
+
+<h2 id="s10">10. Manual Parsing, Robotic Assembly, and Agentic Pipelines</h2>
+
+<h3>10.1 Blox-Net: Generative Design for Robot Assembly</h3>
+
+<div class="paper-box">
+  <div class="paper-title">Blox-Net: Generative Design-for-Robot-Assembly Using VLM Supervision, Physics Simulation, and a Robot with Reset</div>
+  <div class="paper-meta">UC Berkeley AUTOLAB; arXiv 2409.17126; Sep 2024; GPT-4o + PyBullet + UR5e + 3D-printed cuboid/cylinder blocks</div>
+  Blox-Net introduces the Generative Design-for-Robot-Assembly (GDfRA) problem: given a natural language prompt and a set of available physical components, generate a 3D assembly that visually resembles the described object and can be physically assembled by a robot arm with a suction gripper.
+</div>
+
+<p>The three-phase architecture: Phase I uses GPT-4o to generate 10 candidate assembly designs in parallel (JSON specifications of block positions), selects the most visually recognizable candidate via VLM head-to-head evaluation. Phase II applies perturbation-based redesign: each block placement is perturbed in the PyBullet physics simulator, and unstable blocks are repositioned. Phase III uses SAM segmentation plus RANSAC plane fitting to localize physical blocks, plans robot motions, and assembles using a UR5e arm with suction gripper. Assembly is fully autonomous (humans only intervene during automated reset between trials).</p>
+
+<p>Semantic recognizability at N=5 labels: <span class="metric-highlight">Top-1 accuracy 63.5%</span>, falling to 48.5% at N=10 and 41.5% at N=20. Physical assembly: all 6 evaluated designs achieve <span class="metric-good">98%+ correct block placement</span>, 5 of 6 achieve 100% full completion over 10 trials. The perturbation redesign step is critical: without it, full completion rates drop approximately 4x for several designs. The system operates with zero human intervention during assembly (only during automated reset).</p>
+
+<div class="callout-critical">
+  <strong>Scope limitation:</strong> Blox-Net is limited to non-deformable cuboid and cylinder blocks in stable flat surface poses. There are no joints, rotational connections, kinematic constraints, gears, or axles. The "design" task is closer to block-stacking sculpture than mechanism engineering. The gap between Blox-Net's capability and LEGO Technic mechanism design is roughly the gap between building a pile of boxes and building a functioning differential gearbox.
+</div>
+
+<h3>10.2 Score-PA: Generative 3D Part Assembly</h3>
+
+<div class="paper-box">
+  <div class="paper-title">Score-PA: Score-based 3D Part Assembly</div>
+  <div class="paper-meta">Imperial/PKU/ZJU/Oxford; arXiv 2309.04220; 2023; Fast Predictor-Corrector Sampler (FPC) for inference acceleration</div>
+  Reformulates 3D part assembly as a generative problem: learn a conditional score function that models the gradient field of the conditional distribution of pose configurations given input parts, rather than regressing to a single optimal pose.
+</div>
+
+<p>The motivation for generative rather than regressive assembly is sound: for any given set of input parts, multiple valid assembly configurations exist (consider a symmetric chair with interchangeable legs). Regressive methods collapse to the mode of this distribution; score-based methods learn the full distribution and can sample diverse valid assemblies. The Fast Predictor-Corrector Sampler (FPC) addresses the main practical limitation of score-based models: slow inference requiring many MCMC steps (standard Predictor-Corrector requires ~400 steps). FPC achieves comparable quality with dramatically fewer steps by using Langevin MCMC with noise decay followed by a single noise-free predictor step.</p>
+
+<p>The Quality-Diversity Score (QDS) and Weighted Quality-Diversity Score (WQDS) metrics introduced in this paper are useful additions to the assembly evaluation toolkit, providing a single scalar capturing both assembly accuracy and output diversity. Most prior work evaluates only quality without measuring whether the model produces multiple distinct valid assemblies, which is important for design exploration.</p>
+
+<h3>10.3 RoboGPT: LLM-Based Construction Sequence Planning</h3>
+
+<div class="paper-box">
+  <div class="paper-title">RoboGPT: Robot-Enabled Construction Assembly with Automated Sequence Planning based on ChatGPT</div>
+  <div class="paper-meta">University of Florida; IEEE Access; ChatGPT-4 + Franka Emika Panda + Unity simulation; 2 case studies, 80 trials</div>
+  Applies ChatGPT to construction sequence planning for robotic assembly, demonstrating that LLMs can generate valid assembly sequences for concrete tasks when given appropriate output format constraints and system prompts.
+</div>
+
+<p>The regularization approach, constraining ChatGPT responses to a structured format of [Action] [Object] to [Position] steps, is a practical prompt engineering contribution. The two demonstrated tasks, size-ordered block stacking and 5-disk Tower of Hanoi (generated as a 31-step sequence executed successfully by the Panda robot), are proof-of-concept demonstrations. The comparative pipeline installation study shows ChatGPT-derived plans outperforming heuristic baselines in adaptability under varied conditions. However, both demonstrated tasks have well-known algorithmic solutions that ChatGPT has very likely encountered in training data. Generalization to construction tasks with novel constraints or unusual topologies is not tested.</p>
+
+<hr class="section-break">
+
+<h2 id="s11">11. Cross-Cutting Themes, Gaps, and Open Problems</h2>
+
+<h3>11.1 The Tokenization Bottleneck for 3D Spatial Reasoning</h3>
+
+<p>Across all benchmarks reviewed, a consistent pattern emerges: models fail not primarily because they lack training data about the domain, but because standard tokenization and attention mechanisms do not naturally represent 3D spatial relationships. When a LEGO brick is described as a coordinate tuple (x, y, z, orientation), the transformer treats it as a sequence of tokens with positional encodings, which does not capture the 3D neighborhood structure. Two bricks at positions (0,0,0) and (0,0,1) are spatially adjacent, but their token representations may be far apart in the sequence and may not share attention weight.</p>
+
+<p>The BesiegeField finding that construction tree representations outperform global position coordinates is consistent with this analysis: tree representations encode relative connectivity (brick A supports brick B) rather than absolute positions, and relative relationships are more naturally learned by sequence models. Similarly, BrECS's convolution-based validity checking implicitly exploits spatial locality structure that flat coordinate representations do not capture. A promising architectural direction, not yet applied to LEGO or mechanism design, is 3D position-embedded transformers where attention is biased by 3D Euclidean distance rather than sequence position, as implemented successfully in molecular geometry (Equiformer, SE(3)-Transformers).</p>
+
+<h3>11.2 The Physics Gap: Validity vs. Functionality</h3>
+
+<p>The hierarchy from Section 3 reflects a genuine capability gap. Papers in the surveyed literature fall cleanly into two clusters:</p>
+
+<ul>
+  <li><strong>Validity/stability-focused:</strong> BrickGPT, BrECS, Score-PA, MEPNet, Blox-Net, LEGO-Puzzles, PhyBlock. These evaluate whether assemblies are geometrically valid and physically stable. Most report satisfactory results on these criteria with appropriate engineering (rejection sampling, physics-in-the-loop redesign).</li>
+  <li><strong>Functionality-focused:</strong> BesiegeField, BuildArena, EngDesign, BikeBench, LInK, cGAN, LSTM-MoE. These evaluate whether designs perform a mechanical function. Results are substantially worse, with frontier models frequently producing zero valid functional machines on harder tasks.</li>
+</ul>
+
+<p>No paper bridges this gap for LEGO specifically. No system in the literature takes a LEGO Technic parts vocabulary (gears, axles, beams, pins, connectors) and generates functional mechanisms that achieve a specified kinematic objective. The four-bar linkage synthesis literature (LInK, cGAN, LSTM-MoE) works with abstract link length parameterizations, not physical LEGO components. The LEGO assembly literature (BrickGPT, BrECS) focuses on appearance, not function.</p>
+
+<h3>11.3 The Missing LEGO Technic Benchmark</h3>
+
+<p>The most glaring gap in the surveyed literature is the absence of a benchmark specifically for LEGO Technic mechanism design. LEGO Technic is uniquely suited for such a benchmark because:</p>
+
+<ul>
+  <li>It has a discrete, well-documented parts vocabulary (~1,000 part types in the LDraw library) with formal connection constraints</li>
+  <li>It supports functional mechanisms: gears with exact tooth counts and gear ratios, rack-and-pinion, worm gears, linkages, differentials, pneumatics</li>
+  <li>It has physics simulation support via BrickSim, LeoCAD, and related tools with rigid-body simulation</li>
+  <li>It has a large dataset of existing models: the LDraw community has digitized thousands of official LEGO Technic sets</li>
+  <li>It bridges the gap between the assembly literature (discrete brick connections) and the mechanism synthesis literature (kinematic function)</li>
+</ul>
+
+<p>A LEGO Technic benchmark analogous to BesiegeField but using the physical LEGO Technic block vocabulary, evaluated in a rigid-body physics simulator supporting gear mesh and pin joint constraints, would be a significant contribution to multiple research communities simultaneously.</p>
+
+<h3>11.4 Cross-Domain Summary Table</h3>
+
+<table>
+  <tr>
+    <th>Paper</th>
+    <th>Domain</th>
+    <th>Best AI Score</th>
+    <th>Human Score</th>
+    <th>Key Limitation</th>
+  </tr>
+  <tr>
+    <td>LEGO-Puzzles</td>
+    <td>Spatial VQA</td>
+    <td>57.7% (GPT-4o)</td>
+    <td>93.6%</td>
+    <td>Multi-step collapse at k&ge;2; 0% at k=4</td>
+  </tr>
+  <tr>
+    <td>PhyBlock</td>
+    <td>Physics assembly VQA</td>
+    <td>47.4% F1 (Claude 3.7 Thinking)</td>
+    <td>94.7%</td>
+    <td>Orientation + dependency errors; thinking mode unhelpful</td>
+  </tr>
+  <tr>
+    <td>MineAnyBuild</td>
+    <td>Spatial plan generation</td>
+    <td>41.02/100 (GPT-4o)</td>
+    <td>~90+</td>
+    <td>Spatial commonsense integration across multiple relations</td>
+  </tr>
+  <tr>
+    <td>ChildPlay LCL</td>
+    <td>LEGO 2D assembly gen.</td>
+    <td>36% construct gen. (GPT-4o)</td>
+    <td>~100%</td>
+    <td>Novel notation not in training; GPT-4 achieves ~0%</td>
+  </tr>
+  <tr>
+    <td>LEGO Co-Builder</td>
+    <td>Manual instruction following</td>
+    <td>40.54% F1-State (GPT-4o)</td>
+    <td>~90+</td>
+    <td>2D-3D pose estimation; temporal state tracking</td>
+  </tr>
+  <tr>
+    <td>EngDesign</td>
+    <td>Multi-domain engineering</td>
+    <td>34.38% (o3, 1-shot); ~60% (10 iter.)</td>
+    <td>~100%</td>
+    <td>0% on analog IC; large DKE and CVE error rates</td>
+  </tr>
+  <tr>
+    <td>BesiegeField (Car)</td>
+    <td>Physics machine design</td>
+    <td>38.06 distance (Gemini 2.5 Pro)</td>
+    <td>N/A</td>
+    <td>Catapult: 0 valid machines for o3; representation critical</td>
+  </tr>
+  <tr>
+    <td>BuildArena</td>
+    <td>Physics construction</td>
+    <td>Grok-4 best overall; all fail high-diff Lift</td>
+    <td>N/A</td>
+    <td>Spatial conflict dominant failure; scale not helpful</td>
+  </tr>
+  <tr>
+    <td>Blox-Net</td>
+    <td>Robot assembly design</td>
+    <td>63.5% Top-1 at N=5 (GPT-4o); 99.2% block placement</td>
+    <td>N/A</td>
+    <td>No joints, kinematics, or connection constraints</td>
+  </tr>
+  <tr>
+    <td>LInK</td>
+    <td>Planar linkage synthesis</td>
+    <td>28x error reduction vs SOTA; 20x faster</td>
+    <td>N/A</td>
+    <td>Planar only; MILP rounding impact unreported</td>
+  </tr>
+  <tr>
+    <td>cGAN (KAIST)</td>
+    <td>Four-bar mechanism gen.</td>
+    <td>R-sq 0.958/0.850 on dual conditions</td>
+    <td>N/A</td>
+    <td>Crank-rocker only; two scalar conditions only</td>
+  </tr>
+  <tr>
+    <td>LSTM-MoE (KU)</td>
+    <td>Multi-type function gen.</td>
+    <td>Defect-free; 16 type-inversion configs.</td>
+    <td>N/A</td>
+    <td>Planar only; four-bar only; no physical parts vocabulary</td>
+  </tr>
+  <tr>
+    <td>BikeBench</td>
+    <td>Multi-objective eng. design</td>
+    <td>GenAI+optim. best; LLMs weak on all metrics</td>
+    <td>N/A</td>
+    <td>LLMs violate constraints routinely; no mechanism design</td>
+  </tr>
+  <tr>
+    <td>BrickGPT</td>
+    <td>Text-to-LEGO generation</td>
+    <td>98.8% stability, 100% validity (with filtering)</td>
+    <td>N/A</td>
+    <td>Cosmetic only; no function; circularity in stability eval</td>
+  </tr>
+  <tr>
+    <td>BrECS</td>
+    <td>LEGO shape reconstruction</td>
+    <td>Best IoU among baselines; 2300x faster validity</td>
+    <td>N/A</td>
+    <td>Reconstruction only; no generation; no function</td>
+  </tr>
+  <tr>
+    <td>MEPNet</td>
+    <td>Manual-to-plan parsing</td>
+    <td>Generalizes to real manuals from synthetic training</td>
+    <td>N/A</td>
+    <td>Symmetric bricks; heavy occlusion remain failure modes</td>
+  </tr>
+</table>
+
+<h3>11.5 The Iterative Refinement Finding</h3>
+
+<p>Multiple papers independently discover that iterative refinement with simulation feedback substantially improves performance: EngDesign shows o3 going from 34% to ~60% over 10 iterations; BesiegeField shows the Refiner agent improving over the Designer; Blox-Net's perturbation redesign improves full completion rates 4x; BuildArena's multi-stage pipeline outperforms single-shot generation. This convergent finding has an important practical implication: the correct framing for near-term AI-assisted engineering design is simulation-in-the-loop iteration, not one-shot autonomous generation.</p>
+
+<p>The design of tight feedback loops, where simulation results are formatted to maximally inform model revision, appears to be as important as the model architecture itself. The EngDesign iterative protocol (provide simulation output verbatim, ask for revised design) is crude and still achieves substantial improvement. More sophisticated feedback structuring, guided by the EngDesign error taxonomy (specifically, targeting DKE and CVE errors with structured domain knowledge retrieval and constraint verification before generation), could plausibly improve results further.</p>
+
+<h3>11.6 Representation as Architecture</h3>
+
+<p>A recurring theme across multiple papers is that the representation of the design state is as important as the model architecture. BesiegeField's construction tree vs. global position ablation; BrickGPT's sequential brick token format; LSTM-MoE's LSTM over ordered precision points; LInK's graph encoding of mechanism topology; MEPNet's 2D keypoint-to-3D constraint pipeline: in each case, the choice of representation is the primary design decision, and the model architecture is relatively standard given that representation choice.</p>
+
+<p>This suggests that progress on LEGO Technic mechanism design may depend more on finding the right representation of the design state (a connectivity graph of Technic beams, axles, and gears that captures kinematic chain structure) than on architectural innovation per se. The LSTM-MoE type specifying layer, which constrains output to mechanically valid four-bar types, provides a prototype for how formal mechanical constraints can be embedded in the generation process. Extending this to the LEGO Technic connection constraint graph, where valid connections are determined by the part type, stud pattern, and orientation, seems like a tractable near-term research direction.</p>
+
+<h3>11.7 Outlook: What Genuine Progress Requires</h3>
+
+<p>Based on the surveyed literature, genuine progress on AI for LEGO engineering and mechanism design would require advances on at least three fronts simultaneously:</p>
+
+<p><strong>Representational:</strong> A 3D-native representation for brick assemblies and mechanisms that captures spatial adjacency and connection structure, suitable for both training and efficient inference. The success of construction tree representations in BesiegeField and sequential coordinate encodings in BrickGPT suggests that relative, topology-first representations are the right direction. Integration with rigid-body physics simulators in the training loop, analogous to how LInK uses forward kinematics as a feedback signal during optimization, would enable learning functional rather than merely geometric constraints.</p>
+
+<p><strong>Benchmark:</strong> A LEGO Technic mechanism design benchmark with unambiguous functional evaluation criteria. A mechanism achieves or does not achieve a specified gear ratio, coupler curve, or workspace. Such a benchmark needs: (1) a formal parts vocabulary from the LDraw standard library; (2) a physics simulation environment that handles gear meshes and pin joints correctly; (3) a task specification format that bridges natural language design intent with quantitative simulation evaluation. The BesiegeField evaluation protocol (physics simulation score averaged over multiple runs) and EngDesign's rubric-based simulation evaluation provide good templates.</p>
+
+<p><strong>Pipeline:</strong> Either fine-tuning frontier VLMs on LEGO Technic-specific data with physics-in-the-loop feedback, or developing specialized architectures for constraint-satisfaction-aware generation (analogous to the Type Specifying Layer in LSTM-MoE, generalized to the LEGO connection constraint graph). The iterative refinement finding from EngDesign, BesiegeField, and Blox-Net suggests that tight simulator integration is more immediately tractable than architectural innovation. A practical near-term system might combine LInK-style contrastive retrieval from a large database of known Technic mechanisms with BFGS-style simulation-driven refinement.</p>
+
+<p>The field is at an early stage where benchmarks are being created, baseline results are being established as uniformly poor for complex tasks, and the right representations and evaluation criteria are being debated. The foundational work in kinematic synthesis provides a mature technical toolkit for the mechanism design sub-problem. What is missing is the integration: a system that reasons about LEGO Technic's discrete connection vocabulary, the kinematics of its mechanism primitives, and the functional requirements of a design target, all in a unified framework with physics evaluation in the loop.</p>
+
+<footer>
+  <p><strong>Survey coverage:</strong> Direct reading of 19 papers: BrickGPT/LegoGPT, BrECS (budget-aware-brick-assembly), LEGO-Puzzles, PhyBlock, MineAnyBuild, ChildPlay (arXiv 2407.11068), LEGO Co-Builder, MEPNet (arXiv 2207.12572), BesiegeField (appendix + papers.md summary), BuildArena, EngDesign, BikeBench (arXiv 2508.00830), LInK (link-mechanism-synthesis.pdf), fourbar-cGAN (KAIST, arXiv 2402.14882), LSTM-MoE (Korea University, arXiv 2507.08269), Blox-Net (arXiv 2409.17126), Score-PA (arXiv 2309.04220), RoboGPT (IEEE Access). Two papers were unreadable due to PDF corruption: building-lego-graph-generative.pdf and manual2skill.pdf. Secondary literature consulted via papers.md summary file. Report generated March 2026.</p>
+</footer>
+
+</body>
+</html>

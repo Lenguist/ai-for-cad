@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Parts Library — LEGO Technic Bench{% endblock %}
+
+{% block head %}
+<style>
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .toolbar input[type=search] {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 220px;
+    background: white;
+  }
+  .cat-btn {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    color: #444;
+    text-transform: capitalize;
+  }
+  .cat-btn:hover { background: #eee; }
+  .cat-btn.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+
+  .parts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .part-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow .15s;
+    cursor: default;
+  }
+  .part-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.1); }
+
+  .part-img-wrap {
+    width: 100%;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f8f6;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .part-img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .part-img-wrap .icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .part-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .part-id   { font-size: 11px; color: #888; font-family: monospace; }
+  .part-desc { font-size: 11px; color: #666; line-height: 1.4; }
+
+  .specs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .spec {
+    background: #f0f0ec;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #555;
+  }
+
+  .empty { text-align: center; padding: 60px; color: #888; font-size: 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Parts Library</h1>
+  <p class="subtitle">{{ parts|length }} part{{ 's' if parts|length != 1 }} · curated Technic subset for AI assembly</p>
+
+  <form class="toolbar" method="get" action="/parts">
+    <input type="search" name="q" placeholder="Search parts…" value="{{ query }}" autocomplete="off">
+    <a href="/parts?category=all{% if query %}&q={{ query }}{% endif %}"
+       class="cat-btn {% if current_category == 'all' %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="/parts?category={{ cat }}{% if query %}&q={{ query }}{% endif %}"
+       class="cat-btn {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </form>
+
+  {% if parts %}
+  <div class="parts-grid">
+    {% for id, part in parts.items() %}
+    <div class="part-card">
+      <div class="part-img-wrap">
+        <img
+          src="https://img.bricklink.com/ItemImage/PN/86/{{ part.bl_id }}.png"
+          alt="{{ part.name }}"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+        <span class="icon" style="display:none">
+          {% if part.category == 'beam' %}🔩
+          {% elif part.category == 'gear' %}⚙️
+          {% elif part.category == 'axle' %}➖
+          {% elif part.category == 'pin' %}📌
+          {% elif part.category == 'rack' %}📏
+          {% else %}🔧{% endif %}
+        </span>
+      </div>
+      <div>
+        <div class="part-name">{{ part.name }}</div>
+        <div class="part-id">{{ id }}</div>
+      </div>
+      <span class="tag {{ part.category }}">{{ part.category }}</span>
+      <div class="specs">
+        {% if part.length %}
+        <span class="spec">{{ part.length }}L</span>
+        {% endif %}
+        {% if part.teeth %}
+        <span class="spec">{{ part.teeth }}T</span>
+        {% endif %}
+        {% if part.radius_studs %}
+        <span class="spec">r={{ part.radius_studs }}</span>
+        {% endif %}
+        {% if part.holes %}
+        <span class="spec">{{ part.holes|length }} holes</span>
+        {% endif %}
+      </div>
+      <div class="part-desc">{{ part.description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">No parts found.</div>
+  {% endif %}
+</div>
+{% endblock %}
