@@ -1,0 +1,12 @@
+{
+  "id": "claude-opus-4-6-sc",
+  "name": "Claude Opus 4.6 (Self-Correcting)",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Anthropic",
+  "website": "https://www.anthropic.com",
+  "base_model": "claude-opus-4-6",
+  "notes": "Claude Opus 4.6 with iterative self-correction. On execution failure, the error is fed back in a multi-turn conversation (up to 3 retries). Uses cadarena/eval/execute.py for local CadQuery validation between turns.",
+  "benchmark_results": null
+}

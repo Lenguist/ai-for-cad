@@ -1,0 +1,95 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Zoo Text-to-CAD'),'1');
+FILE_NAME('output.step', '2026-03-08T23:00:09.996779930+00:00', (''), (''), 'zoo.dev beta', 'zoo.dev', '');
+FILE_SCHEMA(('AP203_CONFIGURATION_CONTROLLED_3D_DESIGN_OF_MECHANICAL_PARTS_AND_ASSEMBLIES_MIM_LF'));
+ENDSEC;
+DATA;
+#1 = (
+  LENGTH_UNIT()
+  NAMED_UNIT(*)
+  SI_UNIT(.MILLI., .METRE.)
+);
+#2 = (
+  NAMED_UNIT(*)
+  PLANE_ANGLE_UNIT()
+  SI_UNIT($, .RADIAN.)
+);
+#3 = UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(0.01), #1, 'DISTANCE_ACCURACY_VALUE', $);
+#4 = (
+  GEOMETRIC_REPRESENTATION_CONTEXT(3)
+  GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#3))
+  GLOBAL_UNIT_ASSIGNED_CONTEXT((#1, #2))
+  REPRESENTATION_CONTEXT('3D', '3D context')
+);
+#5 = CARTESIAN_POINT('', (5., 0., 0.));
+#6 = VERTEX_POINT('', #5);
+#7 = CARTESIAN_POINT('', (5., 0., 30.));
+#8 = VERTEX_POINT('', #7);
+#9 = DIRECTION('', (1., 0., 0.));
+#10 = DIRECTION('', (0., -0., 1.));
+#11 = CARTESIAN_POINT('', (0., -0., 0.));
+#12 = AXIS2_PLACEMENT_3D('', #11, #10, #9);
+#13 = CIRCLE('', #12, 5.);
+#14 = DIRECTION('', (0., -0., 1.));
+#15 = VECTOR('', #14, 1.);
+#16 = CARTESIAN_POINT('', (5., 0., 0.));
+#17 = LINE('', #16, #15);
+#18 = DIRECTION('', (1., 0., 0.));
+#19 = DIRECTION('', (0., -0., 1.));
+#20 = CARTESIAN_POINT('', (0., -0., 30.));
+#21 = AXIS2_PLACEMENT_3D('', #20, #19, #18);
+#22 = CIRCLE('', #21, 5.);
+#23 = EDGE_CURVE('', #6, #6, #13, .T.);
+#24 = EDGE_CURVE('', #6, #8, #17, .T.);
+#25 = EDGE_CURVE('', #8, #8, #22, .T.);
+#26 = CARTESIAN_POINT('', (0., -0., 15.));
+#27 = DIRECTION('', (0., -0., 1.));
+#28 = DIRECTION('', (1., 0., 0.));
+#29 = AXIS2_PLACEMENT_3D('', #26, #27, #28);
+#30 = CYLINDRICAL_SURFACE('', #29, 5.);
+#31 = CARTESIAN_POINT('', (0., 0., 0.));
+#32 = DIRECTION('', (0., -0., 1.));
+#33 = AXIS2_PLACEMENT_3D('', #31, #32, $);
+#34 = PLANE('', #33);
+#35 = CARTESIAN_POINT('', (0., 0., 30.));
+#36 = DIRECTION('', (0., -0., 1.));
+#37 = AXIS2_PLACEMENT_3D('', #35, #36, $);
+#38 = PLANE('', #37);
+#39 = ORIENTED_EDGE('', *, *, #23, .T.);
+#40 = ORIENTED_EDGE('', *, *, #25, .F.);
+#41 = EDGE_LOOP('', (#39));
+#42 = FACE_BOUND('', #41, .T.);
+#43 = EDGE_LOOP('', (#40));
+#44 = FACE_BOUND('', #43, .T.);
+#45 = ADVANCED_FACE('', (#42, #44), #30, .T.);
+#46 = ORIENTED_EDGE('', *, *, #23, .F.);
+#47 = EDGE_LOOP('', (#46));
+#48 = FACE_BOUND('', #47, .T.);
+#49 = ADVANCED_FACE('', (#48), #34, .F.);
+#50 = ORIENTED_EDGE('', *, *, #25, .T.);
+#51 = EDGE_LOOP('', (#50));
+#52 = FACE_BOUND('', #51, .T.);
+#53 = ADVANCED_FACE('', (#52), #38, .T.);
+#54 = CLOSED_SHELL('', (#45, #49, #53));
+#55 = MANIFOLD_SOLID_BREP('', #54);
+#56 = APPLICATION_CONTEXT('configuration controlled 3D design of mechanical parts and assemblies');
+#57 = PRODUCT_DEFINITION_CONTEXT('part definition', #56, 'design');
+#58 = PRODUCT_CONTEXT('', #56, 'mechanical');
+#59 = PRODUCT('UNIDENTIFIED_PRODUCT', '', $, (#58));
+#60 = PRODUCT_DEFINITION_FORMATION('', $, #59);
+#61 = PRODUCT_DEFINITION('design', $, #60, #57);
+#62 = PRODUCT_DEFINITION_SHAPE('', '', #61);
+#63 = ADVANCED_BREP_SHAPE_REPRESENTATION('', (#55), #4);
+#64 = SHAPE_DEFINITION_REPRESENTATION(#62, #63);
+#65 = COLOUR_RGB('', 0.89999998, 0.89999998, 0.89999998);
+#66 = FILL_AREA_STYLE_COLOUR('', #65);
+#67 = FILL_AREA_STYLE('', (#66));
+#68 = SURFACE_STYLE_FILL_AREA(#67);
+#69 = SURFACE_SIDE_STYLE('', (#68));
+#70 = SURFACE_STYLE_USAGE(.BOTH., #69);
+#71 = PRESENTATION_STYLE_ASSIGNMENT((#70));
+#72 = STYLED_ITEM('', (#71), #55);
+#73 = MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION('', (#72), #4);
+ENDSEC;
+END-ISO-10303-21;

@@ -1,0 +1,11 @@
+{
+  "id": "cadfusion",
+  "name": "CADFusion (ICML 2025)",
+  "type": "academic",
+  "input": "text",
+  "output": "cad_sequence",
+  "provider": "Academic (open source)",
+  "paper": "https://arxiv.org/abs/2501.08701",
+  "notes": "Diffusion-based text-to-CAD model combining CAD construction sequences with text conditioning. Trained on text-annotated ABC dataset. Requires Modal GPU inference. Modal runner: cadarena/eval/modal_cadfusion.py (not yet implemented).",
+  "benchmark_results": null
+}

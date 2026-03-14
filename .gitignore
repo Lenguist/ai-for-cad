@@ -20,6 +20,7 @@ __pycache__/
 .Python
 venv/
 .venv/
+.venv-*/
 env/
 
 # macOS
@@ -31,3 +32,6 @@ zoo-stuff
 
 # Papers (large PDFs tracked separately)
 feb8/papers/*.pdf
+
+# API tokens
+.hf-token

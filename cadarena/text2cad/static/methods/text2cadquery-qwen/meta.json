@@ -1,0 +1,19 @@
+{
+  "id": "text2cadquery-qwen",
+  "name": "Text-to-CadQuery (Qwen 3B)",
+  "type": "academic",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Academic (open source)",
+  "website": "https://arxiv.org/html/2505.06507v1",
+  "paper": "https://arxiv.org/html/2505.06507v1",
+  "model_hf": "ChrisTYZhang/text-to-cadquery",
+  "notes": "Fine-tuned Qwen 3B model for CadQuery generation. Uses normalized 0-1 units (not mm). Run via Modal GPU inference.",
+  "benchmark_results": {
+    "run_date": "2026-03-07",
+    "prompts_passed": 15,
+    "prompts_total": 20,
+    "valid_stl_pct": 75,
+    "avg_latency_s": null
+  }
+}

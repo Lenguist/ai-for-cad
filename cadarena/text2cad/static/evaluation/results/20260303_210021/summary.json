@@ -1,0 +1,50 @@
+{
+  "gpt-5": {
+    "total": 5,
+    "api_success": 0,
+    "api_success_pct": 0.0,
+    "syntax_valid": 0,
+    "syntax_valid_pct": 0.0,
+    "exec_valid": 0,
+    "exec_valid_pct": 0.0,
+    "stl_exported": 0,
+    "stl_exported_pct": 0.0,
+    "avg_latency_s": 0.83
+  },
+  "claude-opus-4-6": {
+    "total": 5,
+    "api_success": 5,
+    "api_success_pct": 100.0,
+    "syntax_valid": 5,
+    "syntax_valid_pct": 100.0,
+    "exec_valid": 4,
+    "exec_valid_pct": 80.0,
+    "stl_exported": 4,
+    "stl_exported_pct": 80.0,
+    "avg_latency_s": 1.96
+  },
+  "gemini-3.1-pro-preview": {
+    "total": 5,
+    "api_success": 0,
+    "api_success_pct": 0.0,
+    "syntax_valid": 0,
+    "syntax_valid_pct": 0.0,
+    "exec_valid": 0,
+    "exec_valid_pct": 0.0,
+    "stl_exported": 0,
+    "stl_exported_pct": 0.0,
+    "avg_latency_s": 0.13
+  },
+  "zoo-ml-ephant": {
+    "total": 5,
+    "api_success": 5,
+    "api_success_pct": 100.0,
+    "syntax_valid": 5,
+    "syntax_valid_pct": 100.0,
+    "exec_valid": 5,
+    "exec_valid_pct": 100.0,
+    "stl_exported": 5,
+    "stl_exported_pct": 100.0,
+    "avg_latency_s": 5.01
+  }
+}

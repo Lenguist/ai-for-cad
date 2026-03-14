@@ -1,0 +1,11 @@
+{
+  "id": "gpt-5.4",
+  "name": "GPT-5.4",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "OpenAI",
+  "website": "https://openai.com",
+  "notes": "GPT-5.4 via OpenAI API. Released March 2026. Prompted to output CadQuery Python assigning final shape to 'result'.",
+  "benchmark_results": null
+}

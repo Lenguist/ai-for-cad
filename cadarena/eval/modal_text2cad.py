@@ -1,236 +1,255 @@
 """
-Modal runner for Text2CAD (NeurIPS 2024 Spotlight).
+Modal runner for Text2CAD (NeurIPS 2024 Spotlight, SadilKhan/Text2CAD).
 
-Text2CAD generates CAD command sequences from text descriptions, using the
-DeepCAD format (sketch + extrude operations). This runner:
-  1. Loads the Text2CAD model weights from HuggingFace on an A10G GPU
-  2. Accepts a list of text prompts
-  3. Returns decoded CAD sequences + exported STL bytes
+Text2CAD generates CAD command sequences from natural language using a
+BERT-large encoder + custom 8-layer transformer decoder trained on the
+DeepCAD dataset with text annotations. Outputs STEP files.
 
-Usage (local, calls Modal):
-    python modal_text2cad.py --prompts "A cube 20mm" "A cylinder 10mm diameter"
-    python modal_text2cad.py --prompts-file prompts_text.txt --out results/text2cad/
+Pipeline:
+  1. Weights (Text2CAD_1.0.pth) pre-downloaded in image build from HF dataset
+  2. BERT-large-uncased pre-downloaded in image build
+  3. Prompts written to a temp file → YAML config → subprocess inference script
+  4. Output .stp files found in dated subdirectory created by the script
+  5. Each STEP converted to STL via pythonocc (BRepMesh + StlAPI_Writer)
 
-Requires:
-    pip install modal
-    modal token new   # authenticate once
+Notes:
+  - Unlike FlexCAD, Text2CAD IS text-conditioned — trained on natural language
+  - Outputs STEP (B-rep), not CadQuery. Score = STL valid (geometry correct,
+    dimensions not enforced by evaluation).
+  - No HF token needed — weights are in a public dataset repo.
 
-Environment variables needed in Modal secrets:
-    (none — model weights are downloaded from public HuggingFace)
-
-References:
-    Paper:   https://sadilkhan.github.io/text2cad-project/
-    GitHub:  https://github.com/SadilKhan/Text2CAD
-    Weights: https://huggingface.co/sadilkhan/Text2CAD (verify slug)
+Usage:
+    modal run eval/modal_text2cad.py                         # full benchmark
+    modal run eval/modal_text2cad.py --prompt "A cube 20mm"  # quick test
 """
 
 import json
-import sys
 import time
 from pathlib import Path
 
-# ── NOTE ──────────────────────────────────────────────────────────────────
-# This scaffold is ready to run once:
-#   1. modal is installed:  pip install modal
-#   2. You're authenticated: modal token new
-#   3. We confirm the HuggingFace model slug for Text2CAD weights
-#      (check: https://huggingface.co/sadilkhan)
-#
-# The GPU image build (~5-10 min first time) is cached by Modal automatically.
-# Subsequent cold starts take ~30-60s; warm inference ~2-5s per prompt.
-# ─────────────────────────────────────────────────────────────────────────
-
 import modal
-
-# ── Docker image ──────────────────────────────────────────────────────────
-# Builds once, cached. Installs Text2CAD + its CAD reconstruction dependencies.
 
 TEXT2CAD_IMAGE = (
     modal.Image.debian_slim(python_version="3.10")
     .apt_install(
         "git", "wget", "libgl1", "libglib2.0-0",
-        # OpenCASCADE dependencies for pythonocc (needed to export STEP/STL)
         "libboost-all-dev",
+        "libocct-foundation-dev",
+        "libocct-modeling-algorithms-dev",
+        "libocct-modeling-data-dev",
+        "libocct-visualization-dev",
+        "libocct-ocaf-dev",
     )
     .pip_install(
         "torch==2.2.0",
         "transformers>=4.40.0",
         "huggingface_hub>=0.22.0",
-        "numpy>=1.24.0",
-        "scipy>=1.11.0",
-        "trimesh>=4.0.0",
+        "loguru",
+        "rich",
+        "pyyaml",
+        "numpy",
+        "scipy",
         "tqdm",
+        "einops",
+        "pythonocc-core==7.7.2",
     )
-    # Clone Text2CAD repo (contains model code + reconstruction utilities)
     .run_commands(
+        # Clone the repo (contains CadSeqProc + Cad_VLM packages)
         "git clone https://github.com/SadilKhan/Text2CAD /opt/text2cad",
-        # Install Text2CAD's own requirements if present
-        "pip install -r /opt/text2cad/requirements.txt || true",
+        "pip install -r /opt/text2cad/Cad_VLM/requirements.txt 2>/dev/null || true",
+        # Pre-download BERT-large-uncased into the image (avoids cold-start re-download)
+        "python3 -c \"from transformers import AutoTokenizer, AutoModel; "
+        "AutoTokenizer.from_pretrained('bert-large-uncased', cache_dir='/opt/hf_cache'); "
+        "AutoModel.from_pretrained('bert-large-uncased', cache_dir='/opt/hf_cache')\"",
+        # Pre-download Text2CAD checkpoint (~400MB) from HF dataset repo
+        "python3 -c \"from huggingface_hub import hf_hub_download; "
+        "hf_hub_download(repo_id='SadilKhan/Text2CAD', filename='Text2CAD_1.0.pth', "
+        "repo_type='dataset', local_dir='/opt/text2cad_weights')\"",
     )
 )
 
 app = modal.App("cad-arena-text2cad")
 
-# ── Modal function ────────────────────────────────────────────────────────
 
 @app.function(
     image=TEXT2CAD_IMAGE,
-    gpu="A10G",           # ~24GB VRAM — sufficient for Text2CAD
-    timeout=600,          # 10 min max per batch
-    memory=16384,         # 16GB RAM
+    gpu="A10G",
+    timeout=900,
+    memory=16384,
 )
-def run_text2cad(prompts: list[str], model_variant: str = "base") -> list[dict]:
+def run_text2cad(prompts: list[str]) -> list[dict]:
     """
-    Run Text2CAD inference on a list of prompts.
+    Run Text2CAD inference on a list of text prompts.
 
-    Args:
-        prompts: list of text descriptions
-        model_variant: "base" or "large" (default: "base")
+    All prompts are processed in a single subprocess call (more efficient
+    than spawning one process per prompt). The script saves .stp files
+    in a dated subdirectory; we collect them and convert to STL.
 
-    Returns:
-        list of dicts, one per prompt:
-        {
-            "prompt": str,
-            "success": bool,
-            "stl_bytes": bytes | None,   # STL mesh bytes if successful
-            "step_bytes": bytes | None,  # STEP bytes if successful
-            "cad_sequence": list | None, # raw decoded CAD commands
-            "error": str | None,
-            "latency_s": float,
+    Returns list of dicts: prompt, stl_bytes, step_bytes, success, error, latency_s
+    """
+    import sys, os, subprocess, tempfile, traceback, yaml
+
+    CHECKPOINT = "/opt/text2cad_weights/Text2CAD_1.0.pth"
+    HF_CACHE = "/opt/hf_cache"
+
+    results = [
+        {"prompt": p, "success": False, "stl_bytes": None,
+         "step_bytes": None, "error": None, "latency_s": 0.0}
+        for p in prompts
+    ]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        prompt_file = tmp / "prompts.txt"
+        log_dir = tmp / "output"
+        log_dir.mkdir()
+        cfg_path = tmp / "config.yaml"
+
+        prompt_file.write_text("\n".join(prompts))
+
+        config = {
+            "text_encoder": {
+                "text_embedder": {
+                    "model_name": "bert_large_uncased",
+                    "max_seq_len": 512,
+                    "cache_dir": HF_CACHE,
+                },
+                "adaptive_layer": {
+                    "in_dim": 1024, "out_dim": 1024,
+                    "num_heads": 8, "dropout": 0.1,
+                },
+            },
+            "cad_decoder": {
+                "tdim": 1024, "cdim": 256,
+                "num_layers": 8, "num_heads": 8,
+                "dropout": 0.1, "ca_level_start": 2,
+            },
+            "test": {
+                "batch_size": 1,
+                "num_workers": 4,
+                "prefetch_factor": 2,
+                "log_dir": str(log_dir),
+                "checkpoint_path": CHECKPOINT,
+                "nucleus_prob": 0,
+                "sampling_type": "max",
+                "prompt_file": str(prompt_file),
+            },
+            "debug": False,
+            "info": "Inference",
         }
-    """
-    import sys
-    import traceback
-    import torch
-    sys.path.insert(0, "/opt/text2cad")
+        with open(cfg_path, "w") as f:
+            yaml.dump(config, f)
 
-    # ── TODO: update these paths once we confirm the HF model slug ────────
-    # Currently a placeholder — needs to be verified against:
-    # https://huggingface.co/sadilkhan
-    HF_MODEL_ID = "sadilkhan/Text2CAD"   # VERIFY THIS SLUG
-
-    results = []
-
-    print(f"[Text2CAD] Loading model: {HF_MODEL_ID}")
-    t_load = time.time()
-
-    try:
-        # ── Model loading ─────────────────────────────────────────────────
-        # Text2CAD uses a T5-based encoder + custom CAD decoder.
-        # The exact loading API depends on the repo structure.
-        # This is the expected interface based on the paper/repo README.
-
-        from huggingface_hub import snapshot_download
-        model_dir = snapshot_download(HF_MODEL_ID)
-
-        # Import Text2CAD model class (adjust import path to match repo)
-        try:
-            from text2cad.model import Text2CADModel          # option A
-        except ImportError:
-            from model.text2cad import Text2CADModel          # option B
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        print(f"[Text2CAD] Device: {device}, VRAM: {torch.cuda.get_device_properties(0).total_memory // 1e9:.0f}GB")
-
-        model = Text2CADModel.from_pretrained(model_dir)
-        model = model.to(device).eval()
-        print(f"[Text2CAD] Model loaded in {time.time()-t_load:.1f}s")
-
-    except Exception as e:
-        # Model loading failed — return error for all prompts
-        err = f"Model load failed: {e}\n{traceback.format_exc()}"
-        print(f"[Text2CAD] ERROR: {err}")
-        return [{"prompt": p, "success": False, "error": err, "latency_s": 0.0,
-                 "stl_bytes": None, "step_bytes": None, "cad_sequence": None}
-                for p in prompts]
-
-    # ── Per-prompt inference ──────────────────────────────────────────────
-    for prompt in prompts:
         t0 = time.time()
-        row = {"prompt": prompt, "success": False, "stl_bytes": None,
-               "step_bytes": None, "cad_sequence": None, "error": None}
-        try:
-            # Generate CAD command sequence from text
-            with torch.no_grad():
-                cad_sequence = model.generate(prompt)   # returns list of CAD commands
+        proc = subprocess.run(
+            ["python3", "Cad_VLM/test_user_input.py", "-c", str(cfg_path)],
+            capture_output=True, text=True, timeout=750,
+            cwd="/opt/text2cad",
+        )
+        elapsed = time.time() - t0
+        print(f"[Text2CAD] inference subprocess finished in {elapsed:.1f}s "
+              f"(returncode={proc.returncode})")
+        if proc.stdout:
+            print(f"[Text2CAD] stdout: {proc.stdout[-500:]}")
+        if proc.returncode != 0:
+            print(f"[Text2CAD] stderr: {proc.stderr[-800:]}")
 
-            row["cad_sequence"] = cad_sequence
+        # The script creates: log_dir/YYYY-MM-DD/HH:MM_d256_nl8_ca2/
+        # Find that subdirectory by looking for output.pkl
+        stp_dir = None
+        for pkl in sorted(log_dir.rglob("output.pkl")):
+            stp_dir = pkl.parent
+            break
 
-            # ── Reconstruct geometry ──────────────────────────────────────
-            # Text2CAD uses a DeepCAD-compatible reconstruction pipeline.
-            # This converts command sequences → B-rep → STEP/STL.
+        if stp_dir is None:
+            err = f"No output.pkl found — inference failed. stderr: {proc.stderr[-300:]}"
+            for r in results:
+                r["error"] = err
+            return results
+
+        # Collect per-prompt results (outputs saved as {index}/pred.stp)
+        for i, (prompt, row) in enumerate(zip(prompts, results)):
+            t1 = time.time()
+            stp_file = stp_dir / str(i) / "pred.stp"
+            if not stp_file.exists():
+                row["error"] = f"No pred.stp for prompt index {i}"
+                print(f"[Text2CAD] ✗ {prompt[:60]!r} — no STP output")
+                continue
+
+            row["step_bytes"] = stp_file.read_bytes()
+
+            # STEP → STL via pythonocc
             try:
-                from text2cad.reconstruction import reconstruct_cad  # adjust to repo
-                step_bytes, stl_bytes = reconstruct_cad(cad_sequence)
-                row["stl_bytes"] = stl_bytes
-                row["step_bytes"] = step_bytes
-                row["success"] = True
+                from OCC.Extend.DataExchange import read_step_file
+                from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+                from OCC.Core.StlAPI import StlAPI_Writer
+
+                shape = read_step_file(str(stp_file))
+                mesh = BRepMesh_IncrementalMesh(shape, 0.1, False, 0.5)
+                mesh.Perform()
+
+                stl_path = stp_dir / str(i) / "pred.stl"
+                writer = StlAPI_Writer()
+                writer.Write(shape, str(stl_path))
+
+                if stl_path.exists() and stl_path.stat().st_size > 0:
+                    row["stl_bytes"] = stl_path.read_bytes()
+                    row["success"] = True
+                    print(f"[Text2CAD] ✓ {prompt[:60]!r}")
+                else:
+                    row["error"] = "STEP→STL produced empty file"
+                    print(f"[Text2CAD] ✗ {prompt[:60]!r} — empty STL")
+
             except Exception as e:
-                # Sequence generated but reconstruction failed
-                row["error"] = f"Reconstruction failed: {e}"
-                row["success"] = False  # partial success — we have the sequence
+                row["error"] = f"STEP→STL failed: {e}\n{traceback.format_exc()}"
+                print(f"[Text2CAD] ✗ {prompt[:60]!r} — {e}")
 
-        except Exception as e:
-            row["error"] = f"Inference failed: {e}\n{traceback.format_exc()}"
-
-        row["latency_s"] = round(time.time() - t0, 2)
-        results.append(row)
-        status = "✓" if row["success"] else "✗"
-        print(f"[Text2CAD] {status} {prompt[:60]!r}  ({row['latency_s']}s)")
+            row["latency_s"] = round(time.time() - t1, 2)
 
     return results
 
 
-# ── Local entry point ─────────────────────────────────────────────────────
-
 @app.local_entrypoint()
-def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="Run Text2CAD via Modal")
-    parser.add_argument("--prompts", nargs="+", help="Text prompts to run")
-    parser.add_argument("--prompts-file", help="File with one prompt per line")
-    parser.add_argument("--out", default="results/text2cad", help="Output directory")
-    args = parser.parse_args()
-
-    # Collect prompts
-    prompts = []
-    if args.prompts:
-        prompts.extend(args.prompts)
-    if args.prompts_file:
-        prompts.extend(Path(args.prompts_file).read_text().strip().splitlines())
-    if not prompts:
-        # Default: run Tier 1 prompts from our benchmark
+def main(
+    prompt: str = "",
+    out: str = "results/text2cad",
+):
+    """
+    Args:
+        prompt: single prompt for a quick test (empty = run full benchmark)
+        out: output directory
+    """
+    import sys
+    if prompt:
+        prompts = [prompt]
+    else:
         sys.path.insert(0, str(Path(__file__).parent))
         from prompts import PROMPTS
-        prompts = [p["prompt"] for p in PROMPTS if p["tier"] == 1]
-        print(f"No prompts specified — running {len(prompts)} Tier 1 benchmark prompts")
+        prompts = [p["prompt"] for p in PROMPTS]
+        print(f"Running all {len(prompts)} benchmark prompts")
 
-    print(f"\nSubmitting {len(prompts)} prompt(s) to Modal (Text2CAD on A10G)...")
-
-    out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
+    print(f"Submitting {len(prompts)} prompt(s) → Modal (Text2CAD)...")
     t0 = time.time()
     results = run_text2cad.remote(prompts)
-    total = time.time() - t0
 
-    # Save results
-    out_file = out_dir / "results.jsonl"
+    out_dir = Path(out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     n_ok = 0
     for r in results:
-        # Don't serialize bytes to JSONL — save separately
-        stl_bytes = r.pop("stl_bytes", None)
-        step_bytes = r.pop("step_bytes", None)
-        if stl_bytes:
-            slug = r["prompt"][:40].replace(" ", "_").replace("/", "-")
-            (out_dir / f"{slug}.stl").write_bytes(stl_bytes)
-        if step_bytes:
-            slug = r["prompt"][:40].replace(" ", "_").replace("/", "-")
-            (out_dir / f"{slug}.step").write_bytes(step_bytes)
-        with open(out_file, "a") as f:
-            f.write(json.dumps(r) + "\n")
-        if r["success"]:
+        slug = r["prompt"][:40].replace(" ", "_").replace("/", "-")
+        stl = r.pop("stl_bytes", None)
+        step = r.pop("step_bytes", None)
+        if stl:
+            (out_dir / f"{slug}.stl").write_bytes(stl)
             n_ok += 1
+        if step:
+            (out_dir / f"{slug}.stp").write_bytes(step)
+        status = "✓" if r["success"] else "✗"
+        err = f"  [{r['error'][:60]}]" if r.get("error") else ""
+        print(f"  {status}  {r['prompt'][:60]!r}{err}")
+        with open(out_dir / "results.jsonl", "a") as f:
+            f.write(json.dumps(r) + "\n")
 
-    print(f"\nDone: {n_ok}/{len(results)} successful in {total:.1f}s")
-    print(f"Results: {out_file}")
+    print(f"\nDone: {n_ok}/{len(results)} successful in {time.time()-t0:.1f}s")
+    print(f"Output: {out_dir}/")

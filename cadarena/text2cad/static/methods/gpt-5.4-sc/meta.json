@@ -1,0 +1,12 @@
+{
+  "id": "gpt-5.4-sc",
+  "name": "GPT-5.4 (Self-Correcting)",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "OpenAI",
+  "website": "https://openai.com",
+  "base_model": "gpt-5.4",
+  "notes": "GPT-5.4 with iterative self-correction. On execution failure, error fed back in multi-turn conversation (up to 3 retries).",
+  "benchmark_results": null
+}

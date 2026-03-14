@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CAD Arena — Human Review</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a2a3a;
+    color: #e0e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+  }
+
+  /* Blueprint grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  header {
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  header h1 { font-size: 15px; color: #7ab4e8; letter-spacing: 2px; text-transform: uppercase; }
+  #progress { color: #aaa; font-size: 12px; }
+  #method-label { color: #f0c060; font-size: 12px; }
+
+  #setup {
+    max-width: 600px; margin: 60px auto; padding: 30px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+  }
+  #setup h2 { color: #7ab4e8; margin-bottom: 16px; font-size: 14px; }
+  #setup label { display: block; margin-bottom: 6px; color: #aaa; }
+  #setup input, #setup select {
+    width: 100%; padding: 8px 10px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e0e8f0; font-family: inherit; font-size: 13px;
+    border-radius: 3px; margin-bottom: 14px;
+  }
+  #setup button {
+    width: 100%; padding: 10px;
+    background: #4a80b4; border: none; color: #fff;
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    border-radius: 3px; letter-spacing: 1px;
+  }
+  #setup button:hover { background: #5a90c4; }
+
+  #review-layout {
+    display: none;
+    grid-template-columns: 1fr 340px;
+    height: calc(100vh - 48px);
+  }
+
+  /* Left: viewer */
+  #viewer-pane {
+    border-right: 1px solid rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
+  }
+  #prompt-bar {
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.25);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  #prompt-bar .pid { color: #7ab4e8; font-size: 11px; letter-spacing: 1px; margin-bottom: 4px; }
+  #prompt-bar .ptext { color: #e0e8f0; font-size: 13px; line-height: 1.5; }
+  #canvas-wrap {
+    flex: 1; position: relative; background: #0d1a26;
+  }
+  canvas#three { width: 100%; height: 100%; display: block; }
+  #stl-status {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    color: #556; font-size: 12px; text-align: center; pointer-events: none;
+  }
+
+  /* Right: controls */
+  #control-pane {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  .section-title {
+    color: #7ab4e8; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 6px; margin-bottom: 8px;
+  }
+
+  /* Verdict */
+  #verdict-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .verdict-btn {
+    padding: 10px; border: 2px solid transparent;
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    border-radius: 3px; transition: all 0.15s; letter-spacing: 1px;
+  }
+  #btn-pass {
+    background: rgba(50,120,60,0.3); border-color: #3d7a52; color: #6fcf8a;
+  }
+  #btn-pass:hover, #btn-pass.active {
+    background: rgba(50,120,60,0.6); color: #fff;
+  }
+  #btn-fail {
+    background: rgba(120,40,40,0.3); border-color: #8a3a3a; color: #cf6f6f;
+  }
+  #btn-fail:hover, #btn-fail.active {
+    background: rgba(120,40,40,0.6); color: #fff;
+  }
+
+  /* Notes */
+  #notes {
+    width: 100%; min-height: 60px; padding: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e0e8f0; font-family: inherit; font-size: 12px;
+    border-radius: 3px; resize: vertical;
+  }
+
+  /* Metrics */
+  .metric-row { display: flex; justify-content: space-between; padding: 4px 0; }
+  .metric-key { color: #7a9ab8; }
+  .metric-val { color: #e0e8f0; }
+  .metric-val.ok  { color: #6fcf8a; }
+  .metric-val.bad { color: #cf6f6f; }
+  .metric-val.na  { color: #556; }
+
+  /* Navigation */
+  #nav { display: flex; gap: 8px; }
+  #nav button {
+    flex: 1; padding: 9px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e0e8f0; font-family: inherit; font-size: 12px; cursor: pointer;
+    border-radius: 3px;
+  }
+  #nav button:hover { background: rgba(255,255,255,0.15); }
+  #btn-save-next {
+    background: #4a80b4 !important;
+    border-color: #4a80b4 !important;
+    color: #fff !important;
+  }
+
+  /* Thumbnail strip */
+  #thumb-strip {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .thumb {
+    width: 28px; height: 28px; border-radius: 2px;
+    font-size: 10px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #7a9ab8;
+  }
+  .thumb.pass    { background: rgba(50,120,60,0.4); color: #6fcf8a; }
+  .thumb.fail    { background: rgba(120,40,40,0.4); color: #cf6f6f; }
+  .thumb.active  { border-color: #7ab4e8 !important; color: #7ab4e8 !important; }
+
+  /* Export */
+  #export-btn {
+    width: 100%; padding: 9px;
+    background: rgba(180,140,40,0.2); border: 1px solid #b48c28;
+    color: #f0c060; font-family: inherit; font-size: 12px; cursor: pointer;
+    border-radius: 3px; letter-spacing: 1px;
+  }
+  #export-btn:hover { background: rgba(180,140,40,0.4); }
+
+  #export-status { color: #6fcf8a; font-size: 11px; text-align: center; min-height: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- Setup screen -->
+<div id="setup">
+  <h2>CAD Arena — Human Review</h2>
+  <p style="color:#7a9ab8;margin-bottom:20px;font-size:12px;line-height:1.6">
+    Load a method's output folder to review each STL.<br>
+    Mark Pass / Fail. Results saved to <code>human_review.json</code>.
+  </p>
+
+  <label>Method ID (folder name under text2cad/static/methods/)</label>
+  <input type="text" id="method-input" placeholder="e.g. claude-opus-4-6" />
+
+  <label>Load result files (<code>*.json</code> from outputs/ folder)</label>
+  <input type="file" id="json-files" multiple accept=".json" />
+
+  <label>Load STL files (<code>*.stl</code> from outputs/ folder)</label>
+  <input type="file" id="stl-files" multiple accept=".stl" />
+
+  <label>Load existing review (<code>human_review.json</code> — optional, to resume)</label>
+  <input type="file" id="review-file" accept=".json" />
+
+  <button id="start-btn">Start Review</button>
+</div>
+
+<!-- Review UI -->
+<header style="display:none" id="review-header">
+  <h1>CAD Arena Review</h1>
+  <span id="method-label"></span>
+  <span id="progress"></span>
+</header>
+<div id="review-layout">
+  <div id="viewer-pane">
+    <div id="prompt-bar">
+      <div class="pid" id="pid-label"></div>
+      <div class="ptext" id="prompt-text"></div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="three"></canvas>
+      <div id="stl-status">Loading...</div>
+    </div>
+  </div>
+
+  <div id="control-pane">
+    <div>
+      <div class="section-title">Verdict</div>
+      <div id="verdict-btns">
+        <button class="verdict-btn" id="btn-pass">✓ PASS</button>
+        <button class="verdict-btn" id="btn-fail">✗ FAIL</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Notes (optional)</div>
+      <textarea id="notes" placeholder="Why fail? Wrong shape, missing feature, self-intersecting…"></textarea>
+    </div>
+
+    <div>
+      <div class="section-title">Automated Metrics</div>
+      <div id="metrics-display"></div>
+    </div>
+
+    <div>
+      <div class="section-title">Navigation</div>
+      <div id="nav">
+        <button id="btn-prev">← Prev</button>
+        <button id="btn-save-next">Save → Next</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">All Prompts</div>
+      <div id="thumb-strip"></div>
+    </div>
+
+    <div>
+      <button id="export-btn">Export human_review.json</button>
+      <div id="export-status"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Three.js CDN -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+// ── State ────────────────────────────────────────────────────────────────
+let methodId = '';
+let records  = [];   // [{prompt_id, tier, prompt, exec_result, mesh_quality, vlm_score, ...}]
+let stlBlobs = {};   // {stem: ObjectURL}
+let reviews  = {};   // {prompt_id: {pass: bool, notes: str}}
+let current  = 0;
+
+// ── Three.js ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('three');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(canvas.offsetWidth || 800, canvas.offsetHeight || 600);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1a26);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 10000);
+camera.position.set(2, 2, 3);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dLight.position.set(3, 5, 4);
+scene.add(dLight);
+scene.add(new THREE.DirectionalLight(0x8aaccc, 0.4).position.set(-3, -2, -2) && dLight);
+
+// Grid
+const grid = new THREE.GridHelper(4, 10, 0x2a4a6a, 0x1a3a5a);
+scene.add(grid);
+
+let currentMesh = null;
+
+function resizeRenderer() {
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resizeRenderer).observe(canvas.parentElement);
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+
+// ── STL loader ────────────────────────────────────────────────────────────
+const loader = new STLLoader();
+
+function loadSTL(url) {
+  document.getElementById('stl-status').style.display = 'flex';
+  document.getElementById('stl-status').textContent = 'Loading...';
+  if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
+
+  loader.load(url,
+    (geometry) => {
+      document.getElementById('stl-status').style.display = 'none';
+      geometry.computeBoundingBox();
+      const bb = geometry.boundingBox;
+      const center = new THREE.Vector3();
+      bb.getCenter(center);
+      geometry.translate(-center.x, -center.y, -center.z);
+
+      const size = new THREE.Vector3();
+      bb.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = maxDim > 0 ? 2 / maxDim : 1;
+
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0x4a80b4, specular: 0x334466,
+        shininess: 40, side: THREE.DoubleSide,
+      });
+      currentMesh = new THREE.Mesh(geometry, mat);
+      currentMesh.scale.setScalar(scale);
+      scene.add(currentMesh);
+
+      // Reposition camera
+      camera.position.set(2.5, 2, 2.5);
+      controls.reset();
+    },
+    undefined,
+    (err) => {
+      document.getElementById('stl-status').textContent = 'Failed to load STL';
+      console.error(err);
+    }
+  );
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', async () => {
+  methodId = document.getElementById('method-input').value.trim();
+  if (!methodId) { alert('Enter a method ID'); return; }
+
+  const jsonInput = document.getElementById('json-files');
+  const stlInput  = document.getElementById('stl-files');
+  const revInput  = document.getElementById('review-file');
+
+  // Load result JSONs
+  const jsonFiles = [...jsonInput.files].filter(f => f.name !== 'summary.json');
+  if (!jsonFiles.length) { alert('Select at least one result JSON file'); return; }
+
+  records = [];
+  for (const f of jsonFiles) {
+    const text = await f.text();
+    try { records.push(JSON.parse(text)); } catch(e) {}
+  }
+  records.sort((a, b) => {
+    const ta = a.tier ?? 0, tb = b.tier ?? 0;
+    if (ta !== tb) return ta - tb;
+    return (a.prompt_id || '').localeCompare(b.prompt_id || '');
+  });
+
+  // Load STL blobs
+  for (const f of [...stlInput.files]) {
+    stlBlobs[f.name.replace('.stl', '')] = URL.createObjectURL(f);
+  }
+
+  // Load existing review
+  if (revInput.files.length) {
+    const text = await revInput.files[0].text();
+    try { reviews = JSON.parse(text); } catch(e) {}
+  }
+
+  // Show UI
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('review-header').style.display = 'flex';
+  document.getElementById('review-layout').style.display = 'grid';
+  document.getElementById('method-label').textContent = methodId;
+
+  buildThumbs();
+  goTo(0);
+});
+
+// ── Navigation ───────────────────────────────────────────────────────────
+function goTo(idx) {
+  if (idx < 0 || idx >= records.length) return;
+  current = idx;
+
+  const rec = records[idx];
+  const pid = rec.prompt_id;
+
+  // Header progress
+  document.getElementById('progress').textContent =
+    `${idx + 1} / ${records.length}`;
+
+  // Prompt
+  document.getElementById('pid-label').textContent =
+    `${pid} | Tier ${rec.tier ?? '?'}`;
+  document.getElementById('prompt-text').textContent = rec.prompt || '';
+
+  // Metrics
+  renderMetrics(rec);
+
+  // STL
+  const url = stlBlobs[pid];
+  if (url) {
+    loadSTL(url);
+  } else {
+    document.getElementById('stl-status').style.display = 'flex';
+    document.getElementById('stl-status').textContent = 'No STL available';
+    if (currentMesh) { scene.remove(currentMesh); currentMesh = null; }
+  }
+
+  // Restore verdict
+  const existing = reviews[pid];
+  document.getElementById('btn-pass').classList.toggle('active', existing?.pass === true);
+  document.getElementById('btn-fail').classList.toggle('active', existing?.pass === false);
+  document.getElementById('notes').value = existing?.notes || '';
+
+  updateThumbs();
+}
+
+function saveCurrentAndGo(nextIdx) {
+  const rec = records[current];
+  const pid = rec.prompt_id;
+  const passActive = document.getElementById('btn-pass').classList.contains('active');
+  const failActive = document.getElementById('btn-fail').classList.contains('active');
+  if (passActive || failActive) {
+    reviews[pid] = {
+      pass:  passActive,
+      notes: document.getElementById('notes').value.trim(),
+    };
+  }
+  updateThumbs();
+  goTo(nextIdx);
+}
+
+document.getElementById('btn-save-next').addEventListener('click', () => {
+  saveCurrentAndGo(current + 1 < records.length ? current + 1 : current);
+});
+document.getElementById('btn-prev').addEventListener('click', () => {
+  saveCurrentAndGo(current - 1 >= 0 ? current - 1 : 0);
+});
+
+document.getElementById('btn-pass').addEventListener('click', () => {
+  document.getElementById('btn-pass').classList.add('active');
+  document.getElementById('btn-fail').classList.remove('active');
+});
+document.getElementById('btn-fail').addEventListener('click', () => {
+  document.getElementById('btn-fail').classList.add('active');
+  document.getElementById('btn-pass').classList.remove('active');
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'p' || e.key === 'P') {
+    document.getElementById('btn-pass').click();
+  } else if (e.key === 'f' || e.key === 'F') {
+    document.getElementById('btn-fail').click();
+  } else if (e.key === 'Enter' || e.key === 'ArrowRight') {
+    document.getElementById('btn-save-next').click();
+  } else if (e.key === 'ArrowLeft') {
+    document.getElementById('btn-prev').click();
+  }
+});
+
+// ── Thumbnails ────────────────────────────────────────────────────────────
+function buildThumbs() {
+  const strip = document.getElementById('thumb-strip');
+  strip.innerHTML = '';
+  records.forEach((rec, i) => {
+    const d = document.createElement('div');
+    d.className = 'thumb';
+    d.textContent = rec.prompt_id?.replace('t', '').replace('_', '.') || i + 1;
+    d.title = rec.prompt_id;
+    d.addEventListener('click', () => saveCurrentAndGo(i));
+    strip.appendChild(d);
+  });
+}
+
+function updateThumbs() {
+  const thumbs = document.querySelectorAll('.thumb');
+  thumbs.forEach((t, i) => {
+    const pid = records[i]?.prompt_id;
+    const rev = reviews[pid];
+    t.classList.remove('pass', 'fail', 'active');
+    if (rev?.pass === true)  t.classList.add('pass');
+    if (rev?.pass === false) t.classList.add('fail');
+    if (i === current)       t.classList.add('active');
+  });
+}
+
+// ── Metrics display ───────────────────────────────────────────────────────
+function metricRow(key, val, cls = '') {
+  return `<div class="metric-row">
+    <span class="metric-key">${key}</span>
+    <span class="metric-val ${cls}">${val}</span>
+  </div>`;
+}
+
+function renderMetrics(rec) {
+  const er = rec.exec_result || {};
+  const mq = rec.mesh_quality || {};
+  let html = '';
+
+  // Validity
+  const stl = er.stl_exported;
+  html += metricRow('Valid STL', stl ? '✓' : '✗', stl ? 'ok' : 'bad');
+
+  if (er.bbox) {
+    const b = er.bbox;
+    html += metricRow('Bounding box',
+      `${b.x?.toFixed(1)}×${b.y?.toFixed(1)}×${b.z?.toFixed(1)} mm`);
+  }
+
+  // Mesh quality
+  if (mq.watertight !== undefined) {
+    html += metricRow('Watertight', mq.watertight ? '✓' : '✗', mq.watertight ? 'ok' : 'bad');
+  }
+  if (mq.positive_volume !== undefined) {
+    html += metricRow('Positive vol', mq.positive_volume ? '✓' : '✗', mq.positive_volume ? 'ok' : 'bad');
+  }
+  if (mq.volume_mm3 != null) {
+    html += metricRow('Volume', `${mq.volume_mm3.toFixed(0)} mm³`);
+  }
+  if (mq.no_self_intersections != null) {
+    html += metricRow('No self-int.', mq.no_self_intersections ? '✓' : '✗',
+      mq.no_self_intersections ? 'ok' : 'bad');
+  }
+
+  // VLM score
+  if (rec.vlm_score != null) {
+    html += metricRow('VLM score', `${rec.vlm_score}/10`);
+  }
+  if (rec.vlm_score_detail?.reasoning) {
+    html += `<div style="color:#7a9ab8;font-size:11px;margin-top:4px;line-height:1.5">
+      "${rec.vlm_score_detail.reasoning}"</div>`;
+  }
+
+  // Latency / attempts
+  if (rec.latency_s) html += metricRow('Latency', `${rec.latency_s}s`);
+  if (rec.attempts > 1) html += metricRow('Attempts', rec.attempts, 'na');
+
+  document.getElementById('metrics-display').innerHTML = html || '<div style="color:#445">No metrics yet</div>';
+}
+
+// ── Export ────────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+  // Save current card first
+  const rec = records[current];
+  if (rec) {
+    const passActive = document.getElementById('btn-pass').classList.contains('active');
+    const failActive = document.getElementById('btn-fail').classList.contains('active');
+    if (passActive || failActive) {
+      reviews[rec.prompt_id] = {
+        pass:  passActive,
+        notes: document.getElementById('notes').value.trim(),
+      };
+    }
+  }
+
+  // Build output structure
+  const out = {
+    method_id: methodId,
+    reviewed:  Object.keys(reviews).length,
+    total:     records.length,
+    results:   reviews,
+  };
+
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `human_review_${methodId}.json`;
+  a.click();
+
+  document.getElementById('export-status').textContent =
+    `Exported ${Object.keys(reviews).length} reviews`;
+  setTimeout(() => document.getElementById('export-status').textContent = '', 3000);
+});
+</script>
+</body>
+</html>

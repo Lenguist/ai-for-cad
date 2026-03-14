@@ -1,0 +1,6 @@
+{
+  "syntax_valid": true,
+  "exec_valid": false,
+  "exec_error": "Sketch.polygon() got an unexpected keyword argument 'makeRegular'",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/mbondarenko/Desktop/ai-for-cad/eval/results/20260308_183440/gemini-2.5-flash/_runner.py\", line 29, in <module>\n    exec(code, exec_globals)\n  File \"<string>\", line 15, in <module>\nTypeError: Sketch.polygon() got an unexpected keyword argument 'makeRegular'\n"
+}

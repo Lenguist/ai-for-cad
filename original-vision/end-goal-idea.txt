@@ -1,0 +1,24 @@
+End Goal: Function-Based CAD Prompting
+======================================
+
+The ideal AI-for-CAD interaction is function/requirement-driven, not geometry-driven.
+
+Example prompt:
+  "Design a rotational-to-planar motion mechanism that fits in a 5x5x5cm box,
+   is reliable for 100,000 cycles, and can sustain 50N lateral force."
+
+What this requires the AI to do:
+- Understand the functional requirement (motion type, constraints)
+- Select an appropriate mechanism (cam, rack-and-pinion, scotch yoke, etc.)
+- Break it into components with correct geometry + tolerances
+- Reason about material properties, manufacturing constraints
+- Output actual CAD geometry or assembly
+
+Why this is hard:
+- Mechanism selection is a design space search problem
+- Physics constraints need to propagate through geometry
+- Tolerancing, assembly fits, material choice all interact
+- Current AI-for-CAD tools skip all of this and go straight to geometry
+
+This is the real "AI Mechanical Engineer" problem. CAD generation is a small
+downstream step — the hard part is mechanism design and constraint reasoning.

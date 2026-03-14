@@ -1,0 +1,11 @@
+{
+  "id": "gemini-3.1-pro",
+  "name": "Gemini 3.1 Pro",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Google",
+  "website": "https://ai.google.dev",
+  "notes": "Gemini 3.1 Pro via Google GenAI API. Most capable Gemini model as of March 2026. 1M token context. Prompted to output CadQuery Python.",
+  "benchmark_results": null
+}

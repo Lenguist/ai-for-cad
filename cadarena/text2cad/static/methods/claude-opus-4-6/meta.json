@@ -1,0 +1,18 @@
+{
+  "id": "claude-opus-4-6",
+  "name": "Claude Opus 4.6",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Anthropic",
+  "website": "https://anthropic.com",
+  "paper": null,
+  "notes": "Frontier LLM baseline. Prompted to return CadQuery Python code directly.",
+  "benchmark_results": {
+    "run_date": "2026-03-08",
+    "prompts_passed": 19,
+    "prompts_total": 20,
+    "valid_stl_pct": 95,
+    "avg_latency_s": 6.9
+  }
+}

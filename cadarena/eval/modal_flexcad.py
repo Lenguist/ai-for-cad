@@ -53,12 +53,15 @@ FLEXCAD_IMAGE = (
 
 app = modal.App("cad-arena-flexcad")
 
+hf_secret = modal.Secret.from_name("huggingface")
+
 
 @app.function(
     image=FLEXCAD_IMAGE,
     gpu="A10G",
     timeout=900,
     memory=24576,
+    secrets=[hf_secret],
 )
 def run_flexcad(prompts: list[str]) -> list[dict]:
     """
@@ -111,7 +114,7 @@ def run_flexcad(prompts: list[str]) -> list[dict]:
                         "--num_samples", "1",
                         "--model_name", "8B",
                         "--mask_type", "unconditional",
-                        "--output_path", str(out_jsonl),
+                        "--out_path", str(out_jsonl),
                     ],
                     capture_output=True, text=True, timeout=300,
                     env={**os.environ, "CUDA_VISIBLE_DEVICES": "0"},
@@ -168,25 +171,29 @@ def run_flexcad(prompts: list[str]) -> list[dict]:
 
 
 @app.local_entrypoint()
-def main():
-    import argparse, sys
-    p = argparse.ArgumentParser()
-    p.add_argument("--prompts", nargs="+")
-    p.add_argument("--out", default="results/flexcad")
-    args = p.parse_args()
-
-    if args.prompts:
-        prompts = args.prompts
+def main(
+    prompt: str = "",
+    out: str = "results/flexcad",
+):
+    """
+    Args:
+        prompt: single prompt for a quick test (empty = run full benchmark)
+        out: output directory
+    """
+    import sys
+    if prompt:
+        prompts = [prompt]
     else:
         sys.path.insert(0, str(Path(__file__).parent))
         from prompts import PROMPTS
         prompts = [p["prompt"] for p in PROMPTS]
+        print(f"Running all {len(prompts)} benchmark prompts")
 
     print(f"Submitting {len(prompts)} prompts → Modal (FlexCAD 8B)...")
     t0 = time.time()
     results = run_flexcad.remote(prompts)
 
-    out_dir = Path(args.out)
+    out_dir = Path(out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     n_ok = 0

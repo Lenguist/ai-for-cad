@@ -1,0 +1,18 @@
+{
+  "id": "gemini-2.5-flash",
+  "name": "Gemini 2.5 Flash",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Google",
+  "website": "https://deepmind.google/gemini",
+  "paper": null,
+  "notes": "Frontier LLM baseline. Prompted to return CadQuery Python code. Gemini result reflects free-tier rate limiting, not model quality ceiling.",
+  "benchmark_results": {
+    "run_date": "2026-03-08",
+    "prompts_passed": 14,
+    "prompts_total": 20,
+    "valid_stl_pct": 70,
+    "avg_latency_s": 3.1
+  }
+}

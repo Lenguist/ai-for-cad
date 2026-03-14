@@ -1,0 +1,11 @@
+{
+  "id": "scadlm",
+  "name": "ScadLM",
+  "type": "academic",
+  "input": "text",
+  "output": "openscad",
+  "provider": "Academic (open source)",
+  "paper": "https://arxiv.org/abs/2411.18714",
+  "notes": "LLM fine-tuned to generate OpenSCAD code from text descriptions. No GPU required for inference (uses API). Output is .scad files which are rendered to STL via OpenSCAD CLI. For initial testing, falls back to a generic LLM with OpenSCAD system prompt (requires OpenSCAD installed for execution).",
+  "benchmark_results": null
+}

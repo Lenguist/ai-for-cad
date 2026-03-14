@@ -1,0 +1,18 @@
+{
+  "id": "zoo-ml-ephant",
+  "name": "Zoo ML-ephant",
+  "type": "commercial",
+  "input": "text",
+  "output": "kcl",
+  "provider": "Zoo",
+  "website": "https://zoo.dev",
+  "paper": null,
+  "notes": "Commercial text-to-CAD product. Returns KCL (Zoo's native geometry language). Tied with Claude at top of leaderboard.",
+  "benchmark_results": {
+    "run_date": "2026-03-08",
+    "prompts_passed": 19,
+    "prompts_total": 20,
+    "valid_stl_pct": 95,
+    "avg_latency_s": 11.1
+  }
+}

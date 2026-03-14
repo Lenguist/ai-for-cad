@@ -1,0 +1,12 @@
+{
+  "id": "flexcad",
+  "name": "FlexCAD (ICML 2025)",
+  "type": "academic",
+  "input": "text",
+  "output": "cad_sequence",
+  "provider": "Academic (open source)",
+  "paper": "https://arxiv.org/abs/2501.04785",
+  "model_hf": "zhangyulin/FlexCAD",
+  "notes": "LLaMA-3-8B fine-tuned with LoRA on ABC dataset CAD sequences. Generates CAD feature sequences that are reconstructed to OBJ/STL via a 3-step pipeline (sample.py → parser.py → visual_obj.py). IMPORTANT: model was not trained on natural language prompts — uses unconditional sampling. Text prompts are stored for record only. Run via Modal A10G GPU.",
+  "benchmark_results": null
+}

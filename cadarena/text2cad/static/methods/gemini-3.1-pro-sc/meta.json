@@ -1,0 +1,12 @@
+{
+  "id": "gemini-3.1-pro-sc",
+  "name": "Gemini 3.1 Pro (Self-Correcting)",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Google",
+  "website": "https://ai.google.dev",
+  "base_model": "gemini-3.1-pro",
+  "notes": "Gemini 3.1 Pro with iterative self-correction. On execution failure, error fed back via multi-turn contents list (up to 3 retries).",
+  "benchmark_results": null
+}

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Methods — CAD Arena</title>
+  <style>
+    :root {
+      --bg: #4a80b4;
+      --fg: #ffffff;
+      --muted: rgba(255,255,255,0.6);
+      --border: rgba(255,255,255,0.18);
+      --card: rgba(0,0,0,0.1);
+      --card-hover: rgba(0,0,0,0.18);
+      --nav-bg: rgba(55,105,160,0.95);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Nav */
+    nav {
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { font-family: monospace; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .nav-links { display: flex; gap: 24px; font-size: 14px; font-weight: 500; color: var(--muted); }
+    .nav-links a:hover { color: var(--fg); text-decoration: none; }
+
+    /* Blueprint grid hero */
+    .hero {
+      padding: 72px 24px 56px;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-inner { max-width: 1000px; margin: 0 auto; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--fg); background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.35); border-radius: 20px;
+      padding: 5px 14px; margin-bottom: 24px;
+    }
+    .hero-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fg); display: inline-block; }
+    h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 16px; }
+    .hero-sub { font-size: 17px; color: var(--muted); max-width: 700px; line-height: 1.7; margin-bottom: 32px; }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; gap: 40px; flex-wrap: wrap;
+    }
+    .stat-item {}
+    .stat-value { font-family: monospace; font-size: 28px; font-weight: 800; color: var(--fg); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+
+    /* Filters / legend */
+    .legend {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .legend-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .legend-label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.05em; margin-right: 4px; }
+
+    /* Badges */
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+    }
+    .badge-academic    { background: rgba(96,165,250,0.2);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.3); }
+    .badge-commercial  { background: rgba(52,211,153,0.2);  color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
+    .badge-baseline    { background: rgba(251,191,36,0.2);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.3); }
+    .badge-opensource  { background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.3); }
+
+    .badge-available   { background: rgba(74,222,128,0.15); color: #86efac; border: 1px solid rgba(74,222,128,0.25); }
+    .badge-restricted  { background: rgba(251,191,36,0.15); color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
+    .badge-unavailable { background: rgba(248,113,113,0.15); color: #fca5a5; border: 1px solid rgba(248,113,113,0.25); }
+    .badge-benchmarked { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+
+    /* Sections */
+    .section { padding: 64px 24px; border-bottom: 1px solid var(--border); }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-title { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 36px; }
+
+    /* Table */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th {
+      text-align: left; padding: 10px 14px;
+      color: var(--muted); font-weight: 700; font-family: monospace;
+      font-size: 10px; letter-spacing: 0.08em; white-space: nowrap;
+    }
+    td { padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--card-hover); }
+
+    .model-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .model-venue { font-family: monospace; font-size: 11px; color: var(--muted); }
+    .model-note { color: var(--muted); font-size: 12px; line-height: 1.55; max-width: 340px; }
+    .badge-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+
+    .output-chip {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 3px;
+      background: rgba(255,255,255,0.08); color: var(--muted);
+      border: 1px solid var(--border); font-family: monospace;
+    }
+    .score { font-family: monospace; font-size: 13px; font-weight: 700; }
+    .score-high { color: #86efac; }
+    .score-mid  { color: #fcd34d; }
+    .score-low  { color: #fca5a5; }
+    .score-none { color: rgba(255,255,255,0.25); }
+
+    .link-pill {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px;
+      border: 1px solid var(--border); color: var(--muted);
+      transition: background 0.15s;
+    }
+    .link-pill:hover { background: var(--card); color: var(--fg); text-decoration: none; }
+
+    /* Note box */
+    .note-box {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px; padding: 18px 22px; font-size: 13px; color: var(--muted);
+      margin-top: 28px;
+    }
+    .note-box strong { color: var(--fg); }
+
+    /* Footer */
+    footer {
+      padding: 32px 24px; border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted);
+    }
+    .footer-logo { font-family: monospace; font-weight: 700; color: var(--fg); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">CAD Arena</span>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/results">Results</a>
+      <a href="/methods.html" style="color:#fff">Methods</a>
+      <a href="https://github.com">GitHub →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow"><span class="hero-dot"></span>TEXT-TO-CAD METHODS CATALOG</div>
+    <h1>All text-to-CAD methods</h1>
+    <p class="hero-sub">
+      An exhaustive catalog of academic models, commercial tools, and LLM baselines that
+      generate parametric CAD from text. Compiled from 173 papers, 60 companies, and direct
+      evaluation. Focused on runnable methods for the static and dynamic benchmarks.
+    </p>
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-value">5</div><div class="stat-label">Already benchmarked</div></div>
+      <div class="stat-item"><div class="stat-value">7</div><div class="stat-label">Academic models (weights available)</div></div>
+      <div class="stat-item"><div class="stat-value">9</div><div class="stat-label">LLM baselines to run</div></div>
+      <div class="stat-item"><div class="stat-value">4</div><div class="stat-label">Commercial APIs</div></div>
+      <div class="stat-item"><div class="stat-value">5</div><div class="stat-label">Weights not yet released</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-inner">
+    <span class="legend-label">TYPE</span>
+    <span class="badge badge-academic">ACADEMIC</span>
+    <span class="badge badge-commercial">COMMERCIAL</span>
+    <span class="badge badge-baseline">LLM BASELINE</span>
+    <span class="badge badge-opensource">OPEN SOURCE</span>
+    &nbsp;&nbsp;
+    <span class="legend-label">STATUS</span>
+    <span class="badge badge-benchmarked">BENCHMARKED</span>
+    <span class="badge badge-available">AVAILABLE</span>
+    <span class="badge badge-restricted">RESTRICTED</span>
+    <span class="badge badge-unavailable">WEIGHTS NOT RELEASED</span>
+  </div>
+</div>
+
+
+<!-- SECTION 1: Already benchmarked -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">Currently benchmarked</div>
+    <div class="section-sub">5 methods run on the 20-prompt static benchmark. Results live on the leaderboard.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Type</th>
+            <th>Output</th>
+            <th>Valid STL</th>
+            <th>Prompts</th>
+            <th>Latency</th>
+            <th>Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="model-name">Claude Opus 4.6</div>
+              <div class="model-venue">Anthropic · 2026</div>
+            </td>
+            <td><span class="badge badge-baseline">LLM BASELINE</span></td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td><span class="score score-high">95%</span></td>
+            <td>19 / 20</td>
+            <td>6.9s</td>
+            <td><a class="link-pill" href="https://anthropic.com">API</a></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Zoo ML-ephant</div>
+              <div class="model-venue">Zoo · 2024</div>
+            </td>
+            <td><span class="badge badge-commercial">COMMERCIAL</span></td>
+            <td><span class="output-chip">KCL</span></td>
+            <td><span class="score score-high">95%</span></td>
+            <td>19 / 20</td>
+            <td>11.1s</td>
+            <td><a class="link-pill" href="https://zoo.dev">zoo.dev</a></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Text-to-CadQuery (Qwen 3B)</div>
+              <div class="model-venue">arXiv 2025 · ChrisTYZhang</div>
+            </td>
+            <td><span class="badge badge-academic">ACADEMIC</span></td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td><span class="score score-high">75%</span></td>
+            <td>15 / 20</td>
+            <td>—</td>
+            <td>
+              <a class="link-pill" href="https://arxiv.org/html/2505.06507v1">Paper</a>
+              <a class="link-pill" href="https://huggingface.co/ChrisTYZhang/text-to-cadquery">HF</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Gemini 2.5 Flash</div>
+              <div class="model-venue">Google · 2025</div>
+            </td>
+            <td><span class="badge badge-baseline">LLM BASELINE</span></td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td><span class="score score-mid">70%</span></td>
+            <td>14 / 20</td>
+            <td>3.1s</td>
+            <td><a class="link-pill" href="https://deepmind.google">API</a></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">GPT-5</div>
+              <div class="model-venue">OpenAI · 2025</div>
+            </td>
+            <td><span class="badge badge-baseline">LLM BASELINE</span></td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td><span class="score score-low">60%</span></td>
+            <td>12 / 20</td>
+            <td>16.1s</td>
+            <td><a class="link-pill" href="https://openai.com">API</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box">
+      <strong>Note on Gemini result:</strong> 13 of 14 failures were due to free-tier rate limiting, not model capability. Paid tier likely closer to 90%+ valid. Re-run planned.
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 2: Academic models, weights available -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">Academic models — weights available</div>
+    <div class="section-sub">Fine-tuned models with released weights. Runnable on GPU via Modal or local inference.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Output</th>
+            <th>Backbone</th>
+            <th>VRAM</th>
+            <th>Reported perf.</th>
+            <th>Run via</th>
+            <th>Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="model-name">Text2CAD</div>
+              <div class="model-venue">NeurIPS 2024 Spotlight · Khan et al.</div>
+              <div class="model-note">Landmark paper. BERT-Large encoder + custom autoregressive decoder. 363M params. Trained on 170K models with 660K text annotations at 4 abstraction levels.</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span><br><span class="output-chip">→ STEP via CadQuery</span></td>
+            <td>BERT-Large + custom decoder</td>
+            <td>~8GB</td>
+            <td>Median CD: 0.370</td>
+            <td>Modal / local</td>
+            <td>
+              <a class="link-pill" href="https://sadilkhan.github.io/text2cad-project/">Project</a>
+              <a class="link-pill" href="https://github.com/SadilKhan/Text2CAD">GitHub</a>
+              <a class="link-pill" href="https://huggingface.co/SadilKhan/Text2CAD">HF</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">FlexCAD</div>
+              <div class="model-venue">ICLR 2025 · Microsoft Research</div>
+              <div class="model-note">LLaMA-3-8B + LoRA. Controllable at sketch / extrusion / face / loop levels. Text input or masked CAD for conditional generation.</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span></td>
+            <td>LLaMA-3-8B + LoRA</td>
+            <td>16–24GB (10GB quantized)</td>
+            <td>Coverage 65–68%</td>
+            <td>Modal A100</td>
+            <td>
+              <a class="link-pill" href="https://arxiv.org/abs/2411.05823">Paper</a>
+              <a class="link-pill" href="https://huggingface.co/Microsoft/FlexCAD">HF</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CADFusion</div>
+              <div class="model-venue">ICML 2025 · Microsoft Research</div>
+              <div class="model-note">LLaMA-3-8B + LoRA. Two-stage: sequential learning + visual feedback via DPO (LLaVA-OneVision judges outputs). LVM Score: 8.96/10.</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span></td>
+            <td>LLaMA-3-8B + LoRA</td>
+            <td>16–24GB</td>
+            <td>Mean CD: 19.89</td>
+            <td>Modal A100</td>
+            <td>
+              <a class="link-pill" href="https://arxiv.org/abs/2501.19054">Paper</a>
+              <a class="link-pill" href="https://huggingface.co/Microsoft/CADFusion">HF</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CAD-GPT (text mode)</div>
+              <div class="model-venue">AAAI 2025</div>
+              <div class="model-note">LLaVA-1.5-7B + 3D Spatial Unfolding Mechanism. Maps 3D space to 1D token sequences. Text-to-CAD mode available (image optional). Weights promised but not released as of March 2026.</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span></td>
+            <td>LLaVA-1.5-7B</td>
+            <td>~16GB</td>
+            <td>Text CD: 28.33</td>
+            <td>—</td>
+            <td>
+              <a class="link-pill" href="https://arxiv.org/abs/2412.19663">Paper</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">ScadLM</div>
+              <div class="model-venue">Open source · KrishKrosh</div>
+              <div class="model-note">Agentic LLM pipeline generating iteratively refined OpenSCAD code. Works with any LLM backend. Fully open source.</div>
+            </td>
+            <td><span class="output-chip">OpenSCAD</span><br><span class="output-chip">→ STL</span></td>
+            <td>Any LLM (configurable)</td>
+            <td>No GPU (API calls)</td>
+            <td>—</td>
+            <td>Local / API</td>
+            <td>
+              <a class="link-pill" href="https://github.com/KrishKrosh/ScadLM">GitHub</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CQAsk</div>
+              <div class="model-venue">Open source · OpenOrion</div>
+              <div class="model-note">LLM-powered CadQuery generation with iterative error correction. Outputs STEP/BREP. Fully open source.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span><br><span class="output-chip">→ STEP/STL</span></td>
+            <td>Any LLM (configurable)</td>
+            <td>No GPU (API calls)</td>
+            <td>—</td>
+            <td>Local</td>
+            <td>
+              <a class="link-pill" href="https://github.com/OpenOrion/CQAsk">GitHub</a>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CADAM (Adam AI)</div>
+              <div class="model-venue">Open source · Adam AI (YC W25)</div>
+              <div class="model-note">Open-source text-to-CAD model by Adam AI. Parametric CAD output. Mechanical engineering focus.</div>
+            </td>
+            <td><span class="output-chip">Parametric CAD</span><br><span class="output-chip">→ STEP</span></td>
+            <td>Undisclosed</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Local / API</td>
+            <td>
+              <a class="link-pill" href="https://github.com/Adam-CAD/CADAM">GitHub</a>
+              <a class="link-pill" href="https://adam.new">Website</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 3: LLM Baselines to add -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">LLM baselines — not yet benchmarked</div>
+    <div class="section-sub">Zero-shot LLMs prompted to return CadQuery or OpenSCAD. Easy to run via API, no GPU needed.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Output</th>
+            <th>Provider</th>
+            <th>Reported / expected perf.</th>
+            <th>Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="model-name">Claude Sonnet 4.6</div>
+              <div class="model-venue">Anthropic · 2026</div>
+              <div class="model-note">Same generation as Opus 4.6. Faster and cheaper — likely comparable accuracy on Tier 1–3.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>Anthropic API</td>
+            <td>~90%+ expected</td>
+            <td>⭐ High</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">GPT-4o</div>
+              <div class="model-venue">OpenAI · 2024</div>
+              <div class="model-note">93% Invalid Ratio on Text2CAD benchmark zero-shot, but 96.5% compile rate with verification loops (CADCodeVerify). Strong baseline.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>OpenAI API</td>
+            <td>~80–90% expected</td>
+            <td>⭐ High</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Gemini 2.5 Pro</div>
+              <div class="model-venue">Google · 2025</div>
+              <div class="model-note">Paid tier, no rate limiting. Re-run of Flash also needed to isolate rate-limit vs model quality.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>Google API</td>
+            <td>~85–95% expected</td>
+            <td>⭐ High</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">DeepSeek-V3</div>
+              <div class="model-venue">DeepSeek · 2024</div>
+              <div class="model-note">Open weights, API available. 51.96% Invalid Ratio on Text-to-CadQuery benchmark (competitive with GPT-4 class).</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>DeepSeek API / local</td>
+            <td>~48% valid (text-to-CadQuery benchmark)</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Qwen2.5-72B (zero-shot)</div>
+              <div class="model-venue">Alibaba · 2024</div>
+              <div class="model-note">Backbone of Text-to-CadQuery family. Zero-shot performance not isolated but fine-tuned version scores 75% — baseline expected lower but worth testing.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>HF / API</td>
+            <td>~40–60% expected</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Claude with OpenSCAD prompt</div>
+              <div class="model-venue">Anthropic · 2026</div>
+              <div class="model-note">Same Claude Opus / Sonnet but prompted to return OpenSCAD instead of CadQuery. Tests whether output format matters for LLM accuracy.</div>
+            </td>
+            <td><span class="output-chip">OpenSCAD</span></td>
+            <td>Anthropic API</td>
+            <td>Comparable to CadQuery</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CodeLlama-34B (zero-shot)</div>
+              <div class="model-venue">Meta · 2023</div>
+              <div class="model-note">Code-specialized open-source LLM. 73.5% compile rate in Query2CAD paper. Open weights, self-hostable.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>HF / Modal</td>
+            <td>~40–55% expected</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">GPT-4o with chain-of-thought</div>
+              <div class="model-venue">OpenAI · 2024</div>
+              <div class="model-note">Testing whether step-by-step reasoning prompt (think dimensions → then write code) materially improves valid STL rate vs. direct prompt.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>OpenAI API</td>
+            <td>~85–95% expected</td>
+            <td>Medium (ablation)</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">LLM + iterative self-correction</div>
+              <div class="model-venue">Any LLM · methodology</div>
+              <div class="model-note">Run code → catch error → send error back to LLM → retry. CADCodeVerify (arXiv:2503.10285) shows GPT-4 goes from ~58% → 96.5% compile rate with this loop. Worth isolating as a method variant.</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>Any API</td>
+            <td>~90–96% expected</td>
+            <td>⭐ High (methodology)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 4: Commercial tools to add -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">Commercial tools — to benchmark</div>
+    <div class="section-sub">Products with accessible APIs. Not yet run on the benchmark.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Output</th>
+            <th>API?</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="model-name">Adam AI / CADAM</div>
+              <div class="model-venue">YC W25 · $4.1M seed</div>
+            </td>
+            <td><span class="output-chip">STEP</span></td>
+            <td>Yes (limited)</td>
+            <td><span class="badge badge-restricted">RESTRICTED</span></td>
+            <td class="model-note">Open-source CADAM + commercial API. Mechanical engineering focus. API not broadly available yet. Contact required.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Tripo AI</div>
+              <div class="model-venue">Commercial · 2024</div>
+            </td>
+            <td><span class="output-chip">STEP</span> <span class="output-chip">OBJ</span> <span class="output-chip">GLB</span></td>
+            <td>Yes (public)</td>
+            <td><span class="badge badge-available">AVAILABLE</span></td>
+            <td class="model-note">Public API for text-to-CAD. Multi-vertical. Engineering-grade STEP export. Straightforward to benchmark.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Autodesk Neural CAD</div>
+              <div class="model-venue">Autodesk · AU 2025</div>
+            </td>
+            <td><span class="output-chip">Fusion native</span></td>
+            <td>No public API</td>
+            <td><span class="badge badge-restricted">PRIVATE BETA</span></td>
+            <td class="model-note">Integrated into Fusion 360 / Forma. No public API yet. Benchmark access requires partnership.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">Sloyd AI</div>
+              <div class="model-venue">Commercial · 2023</div>
+            </td>
+            <td><span class="output-chip">Parametric 3D</span> <span class="output-chip">→ STEP/OBJ</span></td>
+            <td>Yes (public)</td>
+            <td><span class="badge badge-available">AVAILABLE</span></td>
+            <td class="model-note">Procedural + parametric generation. More game/creative assets but editable outputs. Public API available.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 5: Weights not yet released -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">Academic models — weights not yet released</div>
+    <div class="section-sub">Papers published, code/weights not available as of March 2026. Tracking for future benchmarking.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Output</th>
+            <th>Backbone</th>
+            <th>Reported perf.</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="model-name">CAD-Coder (text → CadQuery)</div>
+              <div class="model-venue">arXiv 2025 · arXiv:2505.19713</div>
+            </td>
+            <td><span class="output-chip">CadQuery</span></td>
+            <td>Qwen2.5-7B + GRPO</td>
+            <td>Mean CD: 6.54 (91% improvement vs SFT-only)</td>
+            <td class="model-note">Reinforcement learning with geometric reward (Chamfer Distance). Best academic text-to-CadQuery if weights released. Training: 8× A800, 146h.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CAD-Llama</div>
+              <div class="model-venue">CVPR 2025 · arXiv:2505.04481</div>
+            </td>
+            <td><span class="output-chip">SPCC (custom)</span></td>
+            <td>LLaMA-3-8B + LoRA</td>
+            <td>—</td>
+            <td class="model-note">Custom Python-like format (SPCC). No GitHub, weights not released. Evaluable only if SPCC → STL converter built.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">ReCAD</div>
+              <div class="model-venue">AAAI 2026 Oral · arXiv:2512.06328</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span></td>
+            <td>Qwen2.5-VL-7B + GRPO</td>
+            <td>—</td>
+            <td class="model-note">RL-enhanced with VLM feedback. Multimodal (text + image inputs). Weights not released, no GitHub.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">CAD-MLLM</div>
+              <div class="model-venue">arXiv 2024 · cad-mllm.github.io</div>
+            </td>
+            <td><span class="output-chip">CAD sequences</span></td>
+            <td>Vicuna-7B + DINOv2 + Michelangelo</td>
+            <td>—</td>
+            <td class="model-note">Most flexible input: text, image, point cloud, any combo. Dataset released (Omni-CAD ~450K). Model inference code marked TODO.</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="model-name">NURBGen</div>
+              <div class="model-venue">arXiv 2025 · arXiv:2511.06194</div>
+            </td>
+            <td><span class="output-chip">NURBS surfaces</span></td>
+            <td>LLM + NURBS solver</td>
+            <td>—</td>
+            <td class="model-note">High-fidelity NURBS output via LLM. Unique output format — requires NURBS→STL converter for evaluation.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note-box">
+      <strong>Watching:</strong> CAD-Coder is the highest priority here — RL + geometric reward with CadQuery output is the most promising academic approach. Will add as soon as weights drop.
+    </div>
+  </div>
+</div>
+
+
+<!-- SECTION 6: Out of scope -->
+<div class="section">
+  <div class="section-inner">
+    <div class="section-title">Out of scope for text2cad benchmark</div>
+    <div class="section-sub">Methods excluded because they don't take text as primary input — cataloged here for completeness.</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Examples</th>
+            <th>Why excluded</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Point cloud → CAD</strong></td>
+            <td>CAD-Recode, CAD-SIGNet, SECAD-Net, Point2Cyl, ComplexGen</td>
+            <td>Input is 3D scan / point cloud, not text. Reverse engineering task.</td>
+          </tr>
+          <tr>
+            <td><strong>Image → CAD</strong></td>
+            <td>CADCrafter, CADDreamer, CAD-Coder (image version), Scan2CAD</td>
+            <td>Input is image / photo. Different benchmark track needed.</td>
+          </tr>
+          <tr>
+            <td><strong>Unconditional generation</strong></td>
+            <td>DeepCAD, BrepGen, BrepGPT, AutoBrep, HoLa, BrepDiff, DTGBrepGen</td>
+            <td>No text conditioning — generates random CAD shapes. No text prompt to benchmark against.</td>
+          </tr>
+          <tr>
+            <td><strong>CAD editing (text + existing CAD)</strong></td>
+            <td>CAD-Editor, B-repLer, FlexCAD (conditional mode)</td>
+            <td>Requires an existing CAD model as additional input. Different task.</td>
+          </tr>
+          <tr>
+            <td><strong>Mesh-only output</strong></td>
+            <td>Meshy AI, Kaedim, Tripo (mesh mode)</td>
+            <td>Outputs triangle mesh, not parametric CAD. Not editable / not engineering-grade.</td>
+          </tr>
+          <tr>
+            <td><strong>Sketch / drawing → CAD</strong></td>
+            <td>Free2CAD, Sketch2CAD, PICASSO</td>
+            <td>Input is hand-drawn sketch, not text.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">CAD Arena</span>
+    <div style="display:flex;gap:24px;">
+      <span>Open research · 2026</span>
+      <a href="/">Home</a>
+      <a href="/results">Results</a>
+      <a href="https://github.com">GitHub</a>
+      <a href="mailto:contact@cadarena.ai">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

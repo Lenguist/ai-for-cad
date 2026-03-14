@@ -1,0 +1,18 @@
+{
+  "run_id": "20260303_210021",
+  "timestamp": "2026-03-03T21:00:22.148419",
+  "models": [
+    "gpt-5",
+    "claude-opus-4-6",
+    "gemini-3.1-pro-preview",
+    "zoo-ml-ephant"
+  ],
+  "prompt_ids": [
+    "t1_01",
+    "t1_02",
+    "t1_03",
+    "t1_04",
+    "t1_05"
+  ],
+  "execute": true
+}

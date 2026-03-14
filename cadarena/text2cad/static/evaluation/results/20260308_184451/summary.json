@@ -1,0 +1,26 @@
+{
+  "gpt-5": {
+    "total": 20,
+    "api_success": 20,
+    "api_success_pct": 100.0,
+    "syntax_valid": 0,
+    "syntax_valid_pct": 0.0,
+    "exec_valid": 0,
+    "exec_valid_pct": 0.0,
+    "stl_exported": 0,
+    "stl_exported_pct": 0.0,
+    "avg_latency_s": 26.64
+  },
+  "claude-opus-4-6": {
+    "total": 20,
+    "api_success": 20,
+    "api_success_pct": 100.0,
+    "syntax_valid": 0,
+    "syntax_valid_pct": 0.0,
+    "exec_valid": 0,
+    "exec_valid_pct": 0.0,
+    "stl_exported": 0,
+    "stl_exported_pct": 0.0,
+    "avg_latency_s": 5.89
+  }
+}

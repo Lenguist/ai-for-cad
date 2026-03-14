@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI for CAD: State of the Field Report</title>
+<style>
+body{font-family:Georgia,serif;max-width:900px;margin:0 auto;padding:40px 30px;color:#1a1a1a;line-height:1.6;font-size:14px}
+h1{font-size:28px;border-bottom:3px solid #333;padding-bottom:10px}
+h2{font-size:20px;border-bottom:1px solid #999;padding-bottom:5px;margin-top:35px;page-break-after:avoid}
+h3{font-size:16px;margin-top:25px;page-break-after:avoid}
+table{border-collapse:collapse;width:100%;margin:15px 0;font-size:13px;page-break-inside:avoid}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+th{background:#f0f0f0;font-weight:bold}
+tr:nth-child(even){background:#fafafa}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:15px;color:#444;font-style:italic}
+hr{border:none;border-top:1px solid #ccc;margin:30px 0}
+@media print{body{padding:0;font-size:12px}h1{font-size:24px}h2{font-size:17px}h3{font-size:14px}table{font-size:11px}}
+</style>
+</head>
+<body>
+<h1 id="ai-for-cad-state-of-the-field-report">AI for CAD: State of the Field Report</h1>
+<p><strong>Compiled: February 2026</strong>
+<strong>Sources: 173 research papers, 60 companies, 2 comprehensive surveys, and individual paper analysis</strong></p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>Artificial intelligence is rapidly transforming Computer-Aided Design. What began in 2021 with DeepCAD — the first deep generative model for CAD sequences — has exploded into a field with 170+ papers, $7B+ in startup funding, and every major CAD vendor racing to ship AI features. The core research question has evolved from "can we generate CAD at all?" to "can we generate engineering-grade, editable, parametric CAD from natural language or images?" The answer, as of early 2026, is: partially — simple to moderate parts yes, complex constrained assemblies not yet.</p>
+<p>This report synthesizes the full landscape: the research approaches, key benchmarks, datasets, open problems, the startup ecosystem, and what the incumbents are doing.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-how-the-field-is-structured">How the Field is Structured</a></li>
+<li><a href="#2-cad-representations-the-core-technical-challenge">CAD Representations: The Core Technical Challenge</a></li>
+<li><a href="#3-generation-approaches">Generation Approaches</a></li>
+<li><a href="#4-key-benchmarks-and-datasets">Key Benchmarks and Datasets</a></li>
+<li><a href="#5-quantitative-results-where-models-stand">Quantitative Results: Where Models Stand</a></li>
+<li><a href="#6-reconstruction-from-the-real-world-back-to-cad">Reconstruction: From the Real World Back to CAD</a></li>
+<li><a href="#7-cad-analysis-and-understanding">CAD Analysis and Understanding</a></li>
+<li><a href="#8-the-llm-revolution-in-cad">The LLM Revolution in CAD</a></li>
+<li><a href="#9-industry-landscape">Industry Landscape</a></li>
+<li><a href="#10-open-problems-and-research-gaps">Open Problems and Research Gaps</a></li>
+<li><a href="#11-key-takeaways">Key Takeaways</a></li>
+<li><a href="#12-paper-reference-index">Paper Reference Index</a></li>
+</ol>
+<hr />
+<h2 id="1-how-the-field-is-structured">1. How the Field is Structured</h2>
+<p>The "Geometric Deep Learning for CAD" survey (Heidari &amp; Iosifidis, 2025, arXiv:2402.17695) provides the clearest taxonomy. The field breaks into two major branches:</p>
+<p><strong>CAD Analysis with GDL (understanding existing CAD):</strong>
+- Classification and retrieval (finding similar parts)
+- Segmentation (identifying machining features, faces, operations)
+- Assembly prediction (how parts fit together)</p>
+<p><strong>CAD Construction with Generative Deep Learning (creating new CAD):</strong>
+- 2D sketch generation (engineering sketches with constraints)
+- 3D CAD command generation (sketch-and-extrude sequences)
+- Direct B-rep synthesis (generating boundary representations directly)
+- 3D CAD from point clouds (scan-to-CAD)
+- 3D CAD from images (photo/sketch to CAD)</p>
+<p>The "LLMs for CAD" survey (Zhang et al., 2025, arXiv:2505.08137) adds a parallel taxonomy for the LLM-specific work:
+- Data generation (using LLMs to create CAD training datasets)
+- CAD code generation (17 papers — the largest category)
+- Parametric CAD generation (9 papers)
+- Model evaluation (using VLMs to judge CAD quality)
+- Text generation (descriptions, comments on CAD programs)</p>
+<p><strong>Paper counts from our database by category:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Papers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Generation (text/image/sketch to CAD)</td>
+<td>68</td>
+</tr>
+<tr>
+<td>Reconstruction (point cloud/scan/image to CAD)</td>
+<td>35</td>
+</tr>
+<tr>
+<td>Analysis (understanding, retrieval, segmentation)</td>
+<td>20</td>
+</tr>
+<tr>
+<td>Survey papers</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Datasets</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Optimization (topology, generative design)</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Adjacent (general 3D generation, sim-to-real)</td>
+<td>14</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>173</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-cad-representations-the-core-technical-challenge">2. CAD Representations: The Core Technical Challenge</h2>
+<p>The single most important technical question in the field is: <strong>how do you represent a CAD model in a way that neural networks can learn?</strong></p>
+<p>CAD models are fundamentally different from images, text, or even meshes. A CAD model is:
+- <strong>Sequential</strong>: built through a series of operations (sketch, extrude, fillet, boolean)
+- <strong>Parametric</strong>: every dimension is a parameter that can be changed
+- <strong>Constrained</strong>: geometric relationships (parallel, perpendicular, coincident) must hold
+- <strong>Topologically structured</strong>: represented as B-rep (boundary representation) with faces, edges, vertices, and their relationships</p>
+<p>The field has converged on several representation strategies:</p>
+<h3 id="21-cad-command-sequences">2.1 CAD Command Sequences</h3>
+<p>Pioneered by <strong>DeepCAD</strong> (Wu et al., 2021, ICCV, arXiv:2105.09492). Represents a CAD model as a sequence of commands: sketch primitives (line, arc, circle) interleaved with extrusion commands. Each command is a fixed-size vector of quantized parameters. The sequence is padded to a fixed length (N_c = 60 commands in DeepCAD).</p>
+<p>Key insight from DeepCAD: "Our specification of a CAD model is akin to natural language. The vocabulary consists of individual CAD commands expressed sequentially to form sentences." This analogy — CAD as language — has driven most subsequent work.</p>
+<p>Used by: DeepCAD, SkexGen, Text2CAD (Khan et al., NeurIPS 2024), FlexCAD (ICLR 2025), CAD-GPT, Diffusion-CAD, and many others.</p>
+<p><strong>Strengths:</strong> Human-interpretable, editable in CAD software, large datasets available (DeepCAD: 178,238 models, Fusion 360: 8,625).
+<strong>Weaknesses:</strong> Limited to sketch-and-extrude operations; fillets, chamfers, sweeps, lofts are not represented. Fixed sequence length limits complexity.</p>
+<h3 id="22-direct-b-rep-generation">2.2 Direct B-rep Generation</h3>
+<p>Rather than generating the sequence of operations, generate the boundary representation directly — the actual surfaces, edges, and vertices.</p>
+<p>Key papers:
+- <strong>BrepGen</strong> (Xu et al., SIGGRAPH 2024, arXiv:2401.15563) — diffusion model generating structured latent geometry for B-rep
+- <strong>SolidGen</strong> (Jayaraman et al., 2022, arXiv:2203.13944) — autoregressive B-rep generation
+- <strong>BrepGPT</strong> (2025, SIGGRAPH Asia, arXiv:2511.22171) — autoregressive with Voronoi half-patch representation
+- <strong>AutoBrep</strong> (2025, SIGGRAPH Asia, arXiv:2512.03018) — unified topology and geometry
+- <strong>DTGBrepGen</strong> (2025, CVPR, arXiv:2503.13110) — decoupled topology and geometry
+- <strong>HoLa</strong> (2025, SIGGRAPH, arXiv:2504.14257) — holistic latent representation
+- <strong>BrepDiff</strong> (2025, SIGGRAPH) — single-stage B-rep diffusion</p>
+<p><strong>Strengths:</strong> Can produce more complex shapes than command sequences. Output is directly a solid model.
+<strong>Weaknesses:</strong> Harder to edit. No construction history. Datasets with clean B-rep annotations are scarce.</p>
+<h3 id="23-cad-code-generation">2.3 CAD Code Generation</h3>
+<p>Instead of learning a neural representation, use LLMs to generate executable code in CAD scripting languages: OpenSCAD, CadQuery (Python), FreeCAD Python, or proprietary macro languages.</p>
+<p>Key papers:
+- <strong>Text-to-CadQuery</strong> (2025, arXiv:2505.06507) — generates CadQuery Python code from text
+- <strong>CAD-Recode</strong> (2025, ICCV, arXiv:2412.14042) — reverse-engineers CadQuery code from point clouds using Qwen2-1.5B with a point cloud projector
+- <strong>Generating CAD Code with VLMs</strong> (ICLR 2025, arXiv:2410.05340) — uses vision-language models to generate executable CAD code
+- <strong>EvoCAD</strong> (2025, arXiv:2510.11631) — evolutionary approach with VLMs
+- <strong>Generative AI for CAD Automation</strong> (Kumar et al., 2026, arXiv:2508.00843) — LLM + FreeCAD with iterative error refinement
+- <strong>ScadLM</strong>, <strong>CQAsk</strong> — open source projects</p>
+<p><strong>Strengths:</strong> Output is fully parametric and editable. Leverages the massive code training of foundation LLMs. Can produce complex shapes with booleans, fillets, etc. Human-readable.
+<strong>Weaknesses:</strong> Code execution can fail (syntax errors, geometric inconsistencies). Requires a CAD kernel to execute. Quality is highly dependent on the LLM's code generation ability.</p>
+<h3 id="24-hybrid-approaches">2.4 Hybrid Approaches</h3>
+<p>Several 2025 papers combine LLMs with learned geometric representations:
+- <strong>CADFusion</strong> (Wang et al., 2025, arXiv:2501.19054) — LLaMA-3 8B backbone with visual feedback training stage
+- <strong>CAD-Llama</strong> (CVPR 2025, arXiv:2505.04481) — leverages LLMs for parametric CAD generation
+- <strong>FlexCAD</strong> (ICLR 2025, arXiv:2411.05823) — fine-tuned LLMs for controllable CAD with multiple input conditions
+- <strong>ReCAD</strong> (2025, arXiv:2512.06328) — reinforcement learning enhanced VLM for parametric CAD
+- <strong>CAD-Coder</strong> (2025, arXiv:2505.19713) — chain-of-thought reasoning with geometric reward functions</p>
+<hr />
+<h2 id="3-generation-approaches">3. Generation Approaches</h2>
+<h3 id="31-the-deepcad-lineage-autoencoder-gandiffusion">3.1 The DeepCAD Lineage (Autoencoder + GAN/Diffusion)</h3>
+<p><strong>DeepCAD</strong> (Wu et al., 2021) established the template: train a Transformer autoencoder on command sequences, then use latent-GAN or diffusion to sample new designs from the latent space.</p>
+<p>The DeepCAD dataset contains <strong>178,238 CAD models</strong> from Onshape, each represented as a sequence of sketch-and-extrude operations. This is ~20x larger than the prior Fusion 360 Gallery dataset (~8,000 models).</p>
+<p>DeepCAD's autoencoder achieves <strong>99.50% command accuracy</strong> and <strong>97.98% parameter accuracy</strong> on reconstruction (with augmentation). For generation, it achieves Coverage (COV) of 78.13 and JSD of 3.76, comparable to point-cloud generative models while producing sharp, editable CAD models.</p>
+<p><strong>SkexGen</strong> (Xu et al., ICML 2022, arXiv:2207.04632) improved on DeepCAD with disentangled codebooks for topology, geometry, and extrusion — giving users finer control over generation.</p>
+<p><strong>Diffusion-CAD</strong> (2024) formulated CAD generation as continuous denoising diffusion over command sequences, adding multiple control mechanisms: command-type control, dimension control, partial sketch completion, structural control (symmetry, perpendicularity), and class-conditional generation.</p>
+<h3 id="32-text-to-cad">3.2 Text-to-CAD</h3>
+<p>The most commercially relevant direction. Key approaches:</p>
+<p><strong>Text2CAD</strong> (Khan et al., NeurIPS 2024, arXiv:2409.17106) — generates sequential CAD designs from beginner-to-expert level text prompts. Uses the DeepCAD dataset augmented with text descriptions generated by VLMs. Four levels of text complexity: abstract, simplified, generalized geometric, and detailed geometric.</p>
+<p><strong>CAD-GPT</strong> (2025, arXiv:2412.19663) — multimodal LLM enhanced with spatial reasoning to synthesize CAD construction sequences from text and image inputs. Uses LLaVA-1.5 7B as backbone, maps 3D space to 1D tokens for spatial reasoning.</p>
+<p><strong>NURBGen</strong> (2025, arXiv:2511.06194) — LLM-driven NURBS modeling for high-fidelity text-to-CAD with precise surface control.</p>
+<p><strong>Text-to-CadQuery</strong> (2025, arXiv:2505.06507) — a code-generation approach that produces CadQuery Python scripts from text, yielding real STEP/BREP geometry.</p>
+<h3 id="33-image-to-cad">3.3 Image-to-CAD</h3>
+<p>Bridging vision to engineering models:</p>
+<p><strong>CADCrafter</strong> (CVPR 2025, arXiv:2504.04753) — generates editable CAD models from unconstrained real-world images.</p>
+<p><strong>CADDreamer</strong> (CVPR 2025, arXiv:2502.20732) — single-view image to parametric CAD.</p>
+<p><strong>Img2CAD</strong> (2024, arXiv:2407.15886) — VLM-assisted decomposition of images into CAD primitives.</p>
+<p><strong>From 2D CAD Drawings to 3D Parametric Models</strong> (AAAI 2025, arXiv:2412.11892) — vision-language approach for converting engineering drawings to 3D.</p>
+<h3 id="34-direct-b-rep-generation">3.4 Direct B-rep Generation</h3>
+<p>The 2024-2025 period saw a burst of B-rep generation papers, many at top graphics venues:</p>
+<p><strong>BrepGen</strong> (SIGGRAPH 2024) pioneered structured latent diffusion for B-rep. The 2025 SIGGRAPH/SIGGRAPH Asia cycle brought <strong>BrepDiff</strong>, <strong>Stitch-A-Shape</strong>, <strong>HoLa</strong>, <strong>CLR-Wire</strong> (SIGGRAPH 2025) and <strong>BrepGPT</strong>, <strong>AutoBrep</strong> (SIGGRAPH Asia 2025) — collectively representing a major push toward generating B-rep directly.</p>
+<p><strong>DTGBrepGen</strong> (CVPR 2025, arXiv:2503.13110) decouples topology and geometry prediction, improving structural validity.</p>
+<hr />
+<h2 id="4-key-benchmarks-and-datasets">4. Key Benchmarks and Datasets</h2>
+<h3 id="41-datasets">4.1 Datasets</h3>
+<p>From the GDL survey (Heidari &amp; Iosifidis, 2025), here are the critical CAD datasets:</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Size</th>
+<th>Has B-Rep</th>
+<th>Has Mesh</th>
+<th>Has Sketch</th>
+<th>Categories</th>
+<th>Primary Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ABC</strong></td>
+<td>1M+</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>--</td>
+<td>Reconstruction</td>
+</tr>
+<tr>
+<td><strong>Fusion 360 Gallery</strong></td>
+<td>8,625</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>--</td>
+<td>Reconstruction</td>
+</tr>
+<tr>
+<td><strong>SketchGraphs</strong></td>
+<td>15M+</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>--</td>
+<td>Sketch generation</td>
+</tr>
+<tr>
+<td><strong>DeepCAD</strong></td>
+<td>178,238</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>--</td>
+<td>Command generation</td>
+</tr>
+<tr>
+<td><strong>CAD as Language</strong></td>
+<td>4.7M+</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>--</td>
+<td>Sketch generation</td>
+</tr>
+<tr>
+<td><strong>ShapeNet</strong></td>
+<td>3M+</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+<td>3,135</td>
+<td>Classification</td>
+</tr>
+<tr>
+<td><strong>Fusion 360 Assembly</strong></td>
+<td>154,468</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>--</td>
+<td>Joint prediction</td>
+</tr>
+<tr>
+<td><strong>AutoMate</strong></td>
+<td>3M+</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>--</td>
+<td>Joint prediction</td>
+</tr>
+<tr>
+<td><strong>MFCAD</strong></td>
+<td>15,488</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>16</td>
+<td>Segmentation</td>
+</tr>
+<tr>
+<td><strong>MFCAD++</strong></td>
+<td>59,655</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>25</td>
+<td>Segmentation</td>
+</tr>
+<tr>
+<td><strong>Fusion 360 Segmentation</strong></td>
+<td>35,680</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>8</td>
+<td>Segmentation</td>
+</tr>
+<tr>
+<td><strong>SolidLetters</strong></td>
+<td>96,000</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>26</td>
+<td>Classification</td>
+</tr>
+<tr>
+<td><strong>FabWave</strong></td>
+<td>5,373</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>52</td>
+<td>Classification</td>
+</tr>
+<tr>
+<td><strong>CC3D-Ops</strong></td>
+<td>37,000</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>--</td>
+<td>Segmentation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key observation from the survey:</strong> "The scarcity of annotated CAD data available in the B-Rep format" is the single biggest bottleneck. Most large-scale public databases (ABC) are predominantly unlabeled. Manually annotating B-Rep data requires engineering expertise and is extremely costly.</p>
+<p>The three foundational datasets are:
+1. <strong>ABC</strong> (Koch et al., CVPR 2019, arXiv:1812.06216) — 1M+ hand-designed CAD models from Onshape. First large-scale, real-world B-rep dataset.
+2. <strong>SketchGraphs</strong> (Seff et al., ICML 2020 Workshop, arXiv:2007.08506) — 15M+ real-world 2D CAD sketches from Onshape, represented as geometric constraint graphs. ~40% of new CAD designs are built from existing designs in repositories.
+3. <strong>DeepCAD dataset</strong> (Wu et al., ICCV 2021, arXiv:2105.09492) — 178,238 models with full CAD construction sequences. The standard benchmark for command-sequence generation.</p>
+<h3 id="42-evaluation-metrics">4.2 Evaluation Metrics</h3>
+<p>The field uses several metrics, none fully satisfactory:</p>
+<p><strong>For command sequence reconstruction:</strong>
+- <strong>Command Accuracy (ACC_cmd):</strong> % of correctly predicted command types
+- <strong>Parameter Accuracy (ACC_param):</strong> % of parameters within tolerance threshold (eta=3 out of 256 levels)
+- <strong>Invalid Ratio:</strong> % of generated sequences that fail to produce valid geometry</p>
+<p><strong>For shape quality (point-cloud based):</strong>
+- <strong>Chamfer Distance (CD):</strong> geometric distance between generated and reference shapes
+- <strong>Coverage (COV):</strong> % of reference shapes well-approximated by generated shapes
+- <strong>Minimum Matching Distance (MMD):</strong> fidelity of generated shapes
+- <strong>Jensen-Shannon Divergence (JSD):</strong> distributional similarity between sets</p>
+<p><strong>For code generation:</strong>
+- <strong>Parsing Rate:</strong> % of generated code that executes without error
+- <strong>Intersection over Union (IoU):</strong> geometric overlap with ground truth
+- <strong>Visual fidelity scores:</strong> using VLMs to compare rendered output to specification</p>
+<hr />
+<h2 id="5-quantitative-results-where-models-stand">5. Quantitative Results: Where Models Stand</h2>
+<h3 id="51-deepcad-benchmark-results-autoencoding">5.1 DeepCAD Benchmark Results (Autoencoding)</h3>
+<p>From DeepCAD (Wu et al., 2021):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>ACC_cmd</th>
+<th>ACC_param</th>
+<th>Median CD (x10^3)</th>
+<th>Invalid Ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DeepCAD+Aug</td>
+<td><strong>99.50</strong></td>
+<td><strong>97.98</strong></td>
+<td><strong>0.752</strong></td>
+<td><strong>2.72</strong></td>
+</tr>
+<tr>
+<td>DeepCAD</td>
+<td>99.36</td>
+<td>97.47</td>
+<td>0.787</td>
+<td>3.30</td>
+</tr>
+<tr>
+<td>Alt-Regression</td>
+<td>--</td>
+<td>--</td>
+<td>2.142</td>
+<td>4.32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-text-to-cad-benchmark-comparison">5.2 Text-to-CAD Benchmark Comparison</h3>
+<p>The most comprehensive comparison comes from combining results across recent papers. All numbers are Chamfer Distance (CD) ×10^3 unless noted:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Params</th>
+<th>Median CD</th>
+<th>Mean CD</th>
+<th>IR (%)</th>
+<th>Visual Eval</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Text2CAD (NeurIPS 2024)</td>
+<td>363M</td>
+<td>0.370</td>
+<td>26.42</td>
+<td>3.5%</td>
+<td>58.80% (Gemini)</td>
+</tr>
+<tr>
+<td><strong>Text-to-CadQuery</strong> (Qwen2.5-3B)</td>
+<td>3B</td>
+<td><strong>0.191</strong></td>
+<td>10.23</td>
+<td>6.5%</td>
+<td><strong>69.30%</strong> (Gemini)</td>
+</tr>
+<tr>
+<td>Text-to-CadQuery (CodeGPT-small)</td>
+<td>124M</td>
+<td>0.234</td>
+<td>13.52</td>
+<td>--</td>
+<td>60.28% (Gemini)</td>
+</tr>
+<tr>
+<td><strong>CAD-Coder</strong> (Qwen2.5-7B + GRPO)</td>
+<td>7B</td>
+<td>0.17</td>
+<td><strong>6.54</strong></td>
+<td><strong>1.45%</strong></td>
+<td>--</td>
+</tr>
+<tr>
+<td>CAD-Coder (SFT only)</td>
+<td>7B</td>
+<td>--</td>
+<td>74.55</td>
+<td>--</td>
+<td>--</td>
+</tr>
+<tr>
+<td><strong>CADFusion</strong> (LLaMA-3-8B + DPO)</td>
+<td>8B</td>
+<td>--</td>
+<td>19.89</td>
+<td>6.20</td>
+<td><strong>8.96/10</strong> (LVM)</td>
+</tr>
+<tr>
+<td>GPT-4o (zero-shot)</td>
+<td>--</td>
+<td>--</td>
+<td>133.52</td>
+<td>93.00%</td>
+<td>5.13/10 (LVM)</td>
+</tr>
+<tr>
+<td>Claude-3.7-Sonnet (zero-shot)</td>
+<td>--</td>
+<td>--</td>
+<td>186.53</td>
+<td>47.03%</td>
+<td>--</td>
+</tr>
+<tr>
+<td>DeepSeek-V3 (zero-shot)</td>
+<td>--</td>
+<td>--</td>
+<td>186.69</td>
+<td>51.96%</td>
+<td>--</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key findings:</strong>
+- <strong>Text-to-CadQuery</strong> shows that generating CadQuery code outperforms command sequences: 48.6% reduction in median CD over Text2CAD, with a model 10x smaller (124M vs 363M).
+- <strong>CAD-Coder</strong> demonstrates that RL (GRPO) with geometric reward is transformative: SFT alone gives Mean CD=74.55, adding GRPO reduces it to 6.54 — a 91% improvement. Training cost: 146 hours on 8× A800 GPUs.
+- <strong>CADFusion</strong> shows visual feedback (DPO with VLM scoring) works: LVM Score improves from 7.69 (SL-only) to 8.96 (5 SL+VF iterations).
+- <strong>Zero-shot LLMs fail catastrophically</strong> at CAD: GPT-4o has 93% Invalid Ratio, Claude-3.7 has 47%.</p>
+<h3 id="53-image-to-cad-benchmark-cad-gpt">5.3 Image-to-CAD Benchmark (CAD-GPT)</h3>
+<p>From CAD-GPT (AAAI 2025, arXiv:2412.19663), which adds spatial localization tokens to LLaVA-1.5 7B:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Input</th>
+<th>IR (%)</th>
+<th>Median CD</th>
+<th>ACC_cmd</th>
+<th>ACC_param</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CAD-GPT</strong></td>
+<td>Image</td>
+<td><strong>1.61</strong></td>
+<td><strong>9.77</strong></td>
+<td>99.21</td>
+<td>98.87</td>
+</tr>
+<tr>
+<td>HNC-CAD (prior best)</td>
+<td>Image</td>
+<td>18.64</td>
+<td>18.64</td>
+<td>--</td>
+<td>--</td>
+</tr>
+<tr>
+<td>GPT-4 (few-shot)</td>
+<td>Image</td>
+<td>64.37</td>
+<td>62.64</td>
+<td>--</td>
+<td>--</td>
+</tr>
+<tr>
+<td><strong>CAD-GPT</strong></td>
+<td>Text</td>
+<td><strong>7.43</strong></td>
+<td><strong>28.33</strong></td>
+<td>98.73</td>
+<td>98.12</td>
+</tr>
+<tr>
+<td>GPT-4 (few-shot)</td>
+<td>Text</td>
+<td>76.97</td>
+<td>187.52</td>
+<td>--</td>
+<td>--</td>
+</tr>
+<tr>
+<td>LLaMA-3.1 (few-shot)</td>
+<td>Text</td>
+<td>98.68</td>
+<td>--</td>
+<td>--</td>
+<td>--</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key insight:</strong> Image-to-CAD (median CD=9.77) is significantly easier than text-to-CAD (median CD=28.33) — images provide more precise geometric specification than language.</p>
+<h3 id="54-point-cloud-to-cad-cad-recode">5.4 Point-Cloud-to-CAD (CAD-Recode)</h3>
+<p>From CAD-Recode (ICCV 2025, arXiv:2412.14042), using Qwen2-1.5B with point cloud projector:</p>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Mean CD</th>
+<th>Median CD</th>
+<th>IoU (%)</th>
+<th>IR (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DeepCAD test</td>
+<td>0.30</td>
+<td>0.16</td>
+<td>92.0</td>
+<td>0.4</td>
+</tr>
+<tr>
+<td>Fusion360 test</td>
+<td>0.35</td>
+<td>0.15</td>
+<td>87.8</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>CC3D (real scans)</td>
+<td>0.76</td>
+<td>0.31</td>
+<td>74.2</td>
+<td>0.3</td>
+</tr>
+<tr>
+<td>Prior best (CAD-SIGNet)</td>
+<td>3.33</td>
+<td>2.36</td>
+<td>81.5</td>
+<td>--</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key insight:</strong> CAD-Recode achieves ~10× improvement over prior methods, trained on 1M procedurally generated CadQuery scripts (12 hours on one H100). Demonstrates that synthetic data at scale can substitute for expensive human-annotated datasets.</p>
+<h3 id="55-controllable-generation-flexcad">5.5 Controllable Generation (FlexCAD)</h3>
+<p>From FlexCAD (ICLR 2025, arXiv:2411.05823), using LLaMA-3-8B with LoRA:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>COV (%)</th>
+<th>MMD</th>
+<th>JSD</th>
+<th>PV (%)</th>
+<th>Realism (human)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FlexCAD (sketch-level)</td>
+<td>65.6</td>
+<td>1.19</td>
+<td>0.82</td>
+<td>93.4</td>
+<td>39.6%</td>
+</tr>
+<tr>
+<td>FlexCAD (extrusion-level)</td>
+<td>68.5</td>
+<td>1.19</td>
+<td>1.32</td>
+<td>93.3</td>
+<td>42.1%</td>
+</tr>
+<tr>
+<td>SkexGen</td>
+<td>55.2</td>
+<td>--</td>
+<td>--</td>
+<td>72.6</td>
+<td>21.3%</td>
+</tr>
+<tr>
+<td>GPT-4o (no fine-tune)</td>
+<td>40.1</td>
+<td>--</td>
+<td>--</td>
+<td>48.9</td>
+<td>12.8%</td>
+</tr>
+</tbody>
+</table>
+<p>FlexCAD's hierarchy-aware masking enables controllable editing at any level of the CAD hierarchy: sketch, extrusion, face, loop, or curve.</p>
+<h3 id="56-cad-code-verification-cadcodeverify">5.6 CAD Code Verification (CADCodeVerify)</h3>
+<p>From "Generating CAD Code with VLMs" (ICLR 2025, arXiv:2410.05340):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Compile Rate</th>
+<th>IoGT</th>
+<th>Point Cloud Dist</th>
+<th>Hausdorff Dist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-4 + CADCodeVerify</td>
+<td><strong>96.5%</strong></td>
+<td><strong>0.944</strong></td>
+<td><strong>0.127</strong></td>
+<td><strong>0.419</strong></td>
+</tr>
+<tr>
+<td>GPT-4 + 3D-Premise</td>
+<td>91.0%</td>
+<td>0.921</td>
+<td>0.137</td>
+<td>0.452</td>
+</tr>
+<tr>
+<td>GPT-4 (no refinement)</td>
+<td>91.0%</td>
+<td>0.912</td>
+<td>0.142</td>
+<td>--</td>
+</tr>
+<tr>
+<td>Human-in-the-loop</td>
+<td>--</td>
+<td>--</td>
+<td>0.120</td>
+<td>--</td>
+</tr>
+</tbody>
+</table>
+<p>Uses automated VLM-based verification: renders the CAD object, generates Yes/No questions about it, answers via chain-of-thought, and provides feedback. Human-in-the-loop only marginally outperforms the automated approach.</p>
+<h3 id="57-llm-based-freecad-generation-kumar-et-al-2026">5.7 LLM-based FreeCAD Generation (Kumar et al., 2026)</h3>
+<p>From "Generative AI for CAD Automation" (arXiv:2508.00843), testing GPT-4 with FreeCAD across 10 complexity levels:</p>
+<table>
+<thead>
+<tr>
+<th>Complexity</th>
+<th>Task</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 (Basic cube)</td>
+<td>Simple shape creation</td>
+<td>Success, 1st attempt, 19s</td>
+</tr>
+<tr>
+<td>2 (Cylinder)</td>
+<td>Defined radius/height</td>
+<td>Success, 1st attempt, 20s</td>
+</tr>
+<tr>
+<td>3 (Filleted cuboid)</td>
+<td>Edge fillets</td>
+<td>Converged after 1 refinement, 42s</td>
+</tr>
+<tr>
+<td>4 (Boolean union)</td>
+<td>Box + cylinder merge</td>
+<td>Success, 1st attempt, 22s</td>
+</tr>
+<tr>
+<td>5 (Boolean subtraction)</td>
+<td>Hole through solid</td>
+<td>Success, 1st attempt, 23s</td>
+</tr>
+<tr>
+<td>6 (Parametric plate + 4 holes)</td>
+<td>Fully constrained model</td>
+<td>Success, 1st attempt, 28s</td>
+</tr>
+<tr>
+<td>7 (Parametric hinge)</td>
+<td>Multiple segments, constraints</td>
+<td>Converged after 2 refinements, 54s</td>
+</tr>
+<tr>
+<td>8 (Involute gear)</td>
+<td>Specialized geometry</td>
+<td><strong>Failed</strong> (50 iterations, 836s)</td>
+</tr>
+<tr>
+<td>9 (Plate with cutouts)</td>
+<td>Complex feature constraints</td>
+<td>Converged after 2 refinements, 81s</td>
+</tr>
+<tr>
+<td>10 (Constrained frame)</td>
+<td>Reinforcement ribs, multiple constraints</td>
+<td><strong>Failed</strong> (50 iterations, 909s)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key finding:</strong> LLMs handle simple-to-moderate complexity (levels 1-7) well, but fail on highly specialized geometry (gears) and fully constrained parametric models.</p>
+<h3 id="58-llm-usage-in-cad-research">5.8 LLM Usage in CAD Research</h3>
+<p>From the LLM survey (Zhang et al., 2025), the most frequently used LLMs in CAD research:
+1. GPT-4o — 11 papers
+2. GPT-4 — 8 papers
+3. GPT-4V — 4 papers
+4. LLaVA variants — 3 papers
+5. ChatGPT — 2 papers</p>
+<p>The OpenAI GPT family dominates despite being closed-source, due to superior code generation and spatial reasoning capabilities.</p>
+<hr />
+<h2 id="6-reconstruction-from-the-real-world-back-to-cad">6. Reconstruction: From the Real World Back to CAD</h2>
+<p>Reverse engineering — recovering editable CAD models from physical scans or images — is a critical practical problem. Key papers:</p>
+<p><strong>Point Cloud to CAD:</strong>
+- <strong>Point2CAD</strong> (Liu et al., 3DV 2024, arXiv:2312.04962) — detects geometric primitives and relationships from point clouds
+- <strong>CAD-Recode</strong> (Rukhovich et al., ICCV 2025, arXiv:2412.14042) — reverse-engineers CadQuery code from point clouds using Qwen2-1.5B with a lightweight point cloud projector. GPT-4o refactors code for interactive editing.
+- <strong>ComplexGen</strong> (Guo et al., SIGGRAPH 2022, arXiv:2205.14573) — reconstructs B-rep from point clouds via chain complexes
+- <strong>Point2Cyl</strong> (Uy et al., CVPR 2022, arXiv:2112.09329) — decomposes point clouds into extrusion cylinders
+- <strong>SECAD-Net</strong> (Li et al., CVPR 2023, arXiv:2303.12084) — self-supervised sketch-extrude reconstruction
+- <strong>CAD-SIGNet</strong> (Agarwal et al., CVPR 2024, arXiv:2305.02278) — infers sketch-and-extrude sequences from point clouds</p>
+<p><strong>Scan/Image to CAD:</strong>
+- <strong>Scan2CAD</strong> (Avetisyan et al., CVPR 2019, arXiv:1811.11187) — aligns CAD models to RGB-D scans
+- <strong>InverseCSG</strong> (Du et al., SIGGRAPH Asia 2018, arXiv:1811.10719) — converts meshes to CSG trees
+- <strong>CSGNet</strong> (Sharma et al., CVPR 2018, arXiv:1712.08290) — parses shapes into CSG programs
+- <strong>ExtrudeNet</strong> (Ren et al., ECCV 2022, arXiv:2209.15632) — unsupervised sketch-and-extrude decomposition</p>
+<p><strong>Sketch to CAD:</strong>
+- <strong>Free2CAD</strong> (Li et al., SIGGRAPH 2022, arXiv:2205.01762) — converts freehand drawings to CAD commands
+- <strong>Sketch2CAD</strong> (Li et al., SIGGRAPH Asia 2020) — interactive sequential sketching to CAD
+- <strong>PICASSO</strong> (WACV 2025, arXiv:2407.13394) — feed-forward parametric sketch inference</p>
+<hr />
+<h2 id="7-cad-analysis-and-understanding">7. CAD Analysis and Understanding</h2>
+<h3 id="71-b-rep-learning">7.1 B-Rep Learning</h3>
+<p>The foundational works for learning on B-rep:
+- <strong>UV-Net</strong> (Jayaraman et al., CVPR 2021, arXiv:2006.10211) — learns features from B-rep via UV-grid sampling. The UV-Net encoder is the standard backbone for B-rep representation learning.
+- <strong>BRepNet</strong> (Lambourne et al., CVPR 2021, arXiv:2104.00706) — first GNN specifically for B-rep segmentation, operating on coedge topology.</p>
+<h3 id="72-cad-segmentation">7.2 CAD Segmentation</h3>
+<p>Identifying machining features (chamfer, pocket, hole, slot, etc.) from B-rep geometry:
+- <strong>CADNet / Hierarchical CADNet</strong> — GNN encoding face geometry and topology for machining feature classification. Released the <strong>MFCAD++</strong> dataset (59,655 models, 25 features).
+- <strong>SB-GCN</strong> (Colligan et al., 2022) — structured B-rep graph convolutional network for machining feature recognition.</p>
+<h3 id="73-assembly">7.3 Assembly</h3>
+<ul>
+<li><strong>AutoMate</strong> (Jones et al., SIGGRAPH Asia 2021/2024, arXiv:2305.09174) — 92,529 assemblies from Onshape with 541,635 mate annotations</li>
+<li><strong>JoinABLe</strong> (Willis et al., CVPR 2022, arXiv:2111.12772) — bottom-up joint prediction between B-rep parts using GAT v2</li>
+</ul>
+<h3 id="74-semantic-understanding">7.4 Semantic Understanding</h3>
+<ul>
+<li><strong>CADTalk</strong> (Yuan et al., SIGGRAPH 2024, arXiv:2311.16703) — adds semantic comments to CAD programs</li>
+<li><strong>CAD-Assistant</strong> (ICCV 2025, arXiv:2412.13810) — tool-augmented VLLMs as generic CAD task solvers</li>
+</ul>
+<hr />
+<h2 id="8-the-llm-revolution-in-cad">8. The LLM Revolution in CAD</h2>
+<p>The LLM-for-CAD survey (Zhang et al., 2025) identifies this as a nascent but rapidly growing area. Key findings:</p>
+<h3 id="81-two-paradigms">8.1 Two Paradigms</h3>
+<p><strong>Paradigm 1: CAD Code Generation (dominant, 17 papers)</strong>
+LLMs generate executable code (Python, OpenSCAD, CadQuery, FreeCAD scripts) that is then run through a CAD kernel. Almost all approaches use an iterative refinement loop: generate code, execute, if errors feed them back to the LLM and retry.</p>
+<p>The survey notes: "Nearly all approaches utilize LLMs to generate intermediate representations rather than directly outputting 3D CAD models or 2D CAD drawings. Directly generating accurate 3D or 2D CAD outputs remains a significant challenge for current models."</p>
+<p><strong>Paradigm 2: Parametric Sequence Generation (9 papers)</strong>
+LLMs are fine-tuned to generate parametric data (JSON-like sequences of sketch/extrude commands) rather than executable code. This avoids code execution issues but requires custom parsers.</p>
+<h3 id="82-the-visual-feedback-loop">8.2 The Visual Feedback Loop</h3>
+<p>A critical 2025 innovation: training LLMs with visual feedback. <strong>CADFusion</strong> (Wang et al., ICML 2025, arXiv:2501.19054) uses LLaMA-3-8B-Instruct with two alternating training stages:
+1. <strong>Sequential Learning (SL):</strong> Fine-tune on 20K text-parametric pairs with human-annotated captions (human annotation boosts LVM score from 6.56 to 7.69)
+2. <strong>Visual Feedback (VF):</strong> Direct Preference Optimization (DPO) where LLaVA-OneVision-Qwen2-7B scores rendered objects on shape quality/quantity/distribution. Generates ~1,500 preference pairs per iteration from 1,000 text prompts.</p>
+<p>The two stages alternate for 5 iterations, preventing skill degradation. Result: LVM Score improves 8.28→8.76→8.89→8.96 across iterations.</p>
+<p><strong>CADCodeVerify</strong> (ICLR 2025, arXiv:2410.05340) takes a different approach: fully automated VLM-based verification at inference time. Renders CAD output, generates Yes/No verification questions, answers them with chain-of-thought, and feeds corrective feedback back to the code generator. Achieves within 5% of human-in-the-loop performance.</p>
+<p>Both approaches are directly relevant to this project's pipeline (render → VLM describe → compare → iterate).</p>
+<h3 id="83-multi-agent-systems">8.3 Multi-Agent Systems</h3>
+<p><strong>From Idea to CAD</strong> (2025, arXiv:2503.04417) — multi-agent LLM system for collaborative CAD design. Multiple LLM agents with different roles (conceptual designer, detailer, verifier) collaborate to go from idea to finished model.</p>
+<p><strong>CADDesigner</strong> (2025, arXiv:2508.01031) — general-purpose agent for conceptual CAD from high-level specifications.</p>
+<h3 id="84-cad-editing-with-language">8.4 CAD Editing with Language</h3>
+<ul>
+<li><strong>CAD-Editor</strong> (2025, arXiv:2502.03997) — locate-then-infill framework for text-based CAD editing</li>
+<li><strong>B-repLer</strong> (2025, arXiv:2508.10201) — language-guided editing of B-rep CAD models</li>
+</ul>
+<hr />
+<h2 id="9-industry-landscape">9. Industry Landscape</h2>
+<h3 id="91-funding-overview">9.1 Funding Overview</h3>
+<p>The AI-for-CAD startup ecosystem has attracted massive investment:</p>
+<table>
+<thead>
+<tr>
+<th>Company</th>
+<th>Total Funding</th>
+<th>Stage</th>
+<th>Focus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project Prometheus</td>
+<td><strong>$6.2B</strong></td>
+<td>Mega-round</td>
+<td>Physical AI for engineering (Bezos-backed)</td>
+</tr>
+<tr>
+<td>Divergent Technologies</td>
+<td>$400M+</td>
+<td>Late</td>
+<td>AI generative design + additive manufacturing</td>
+</tr>
+<tr>
+<td>nTop</td>
+<td>$95M+</td>
+<td>Series D</td>
+<td>Computational design for advanced manufacturing</td>
+</tr>
+<tr>
+<td>Machina Labs</td>
+<td>$72M+</td>
+<td>Series B</td>
+<td>AI-powered robotic manufacturing</td>
+</tr>
+<tr>
+<td>Luma AI</td>
+<td>$70M+</td>
+<td>Series B</td>
+<td>3D capture/generation</td>
+</tr>
+<tr>
+<td>Zoo (formerly KittyCAD)</td>
+<td>$30M+</td>
+<td>Series A</td>
+<td>Text-to-CAD, open-source CAD kernel</td>
+</tr>
+<tr>
+<td>Vizcom</td>
+<td>$20M+</td>
+<td>Series A</td>
+<td>AI sketch-to-rendering</td>
+</tr>
+<tr>
+<td>Kaedim</td>
+<td>$15M+</td>
+<td>Series A</td>
+<td>Image to 3D</td>
+</tr>
+<tr>
+<td>Hyperganic</td>
+<td>$13M+</td>
+<td>Series A</td>
+<td>AI voxel-based design for AM</td>
+</tr>
+<tr>
+<td>Adam AI</td>
+<td>$4.1M</td>
+<td>Seed (YC W25)</td>
+<td>Text-to-CAD for mechanical engineering</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-pure-play-ai-for-cad-startups">9.2 Pure-Play AI-for-CAD Startups</h3>
+<p><strong>Zoo (formerly KittyCAD)</strong> — The most prominent text-to-CAD startup. API-first approach with an open-source CAD kernel in Rust. ML models generate STEP/BREP from natural language. Freemium pricing: 40 free min/month, then $0.50/min. Backed by Sequoia Capital.</p>
+<p><strong>Adam AI</strong> (YC W25) — $4.1M seed. Open-source CADAM project. Plans Onshape integration. Focused specifically on mechanical engineering.</p>
+<p><strong>Katalyst Labs</strong> — Open-source AI copilot for hardware design. Acquired by Rubix LS in 2025-2026, indicating strategic value in the design-to-manufacturing chain.</p>
+<p><strong>Tripo AI</strong> — Text-to-CAD API for programmatic access. Multi-vertical (gaming, architecture, product design).</p>
+<p><strong>Open source projects:</strong>
+- <strong>ScadLM</strong> (github.com/KrishKrosh/ScadLM) — agentic AI for OpenSCAD generation
+- <strong>CQAsk</strong> (github.com/OpenOrion/CQAsk) — LLM-powered CadQuery generation
+- <strong>CADAM</strong> (github.com/Adam-CAD/CADAM) — Adam AI's open-source text-to-CAD</p>
+<h3 id="93-incumbent-moves">9.3 Incumbent Moves</h3>
+<p><strong>Autodesk — Neural CAD (announced AU 2025):</strong> Dedicated foundation models for geometry generation. Two models: one for product geometry (Fusion integration), one for buildings (Forma). Accepts text, sketch, and image inputs. Claims it can automate "80-90% of routine design tasks."</p>
+<p><strong>Siemens — Altair acquisition ($10B, 2024) + Industrial Copilot:</strong> Now owns the deepest AI simulation portfolio (HyperWorks, SimSolid, Inspire). Partnership with Microsoft on generative AI for engineering workflows. Altair ranked #1 by ABI Research for AI in engineering.</p>
+<p><strong>Synopsys acquired Ansys ($35B, 2024):</strong> Creates combined electronic + mechanical AI simulation. Ansys SimAI predicts simulation results in near real-time using ML.</p>
+<p><strong>PTC/Onshape:</strong> Cloud-native, API-first architecture makes Onshape the most AI-ready among major CAD platforms. Natural integration target for startups (Adam AI plans Onshape integration).</p>
+<h3 id="94-ma-activity-2024-2026">9.4 M&amp;A Activity (2024-2026)</h3>
+<table>
+<thead>
+<tr>
+<th>Acquirer</th>
+<th>Target</th>
+<th>Value</th>
+<th>Significance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Synopsys</td>
+<td>Ansys</td>
+<td>$35B</td>
+<td>Electronic + mechanical AI simulation</td>
+</tr>
+<tr>
+<td>Siemens</td>
+<td>Altair</td>
+<td>~$10B</td>
+<td>AI simulation/optimization powerhouse</td>
+</tr>
+<tr>
+<td>Rubix LS</td>
+<td>Katalyst Labs</td>
+<td>Undisclosed</td>
+<td>Open-source AI CAD copilot</td>
+</tr>
+<tr>
+<td>Altair/Siemens</td>
+<td>Gen3D</td>
+<td>Undisclosed</td>
+<td>Generative design technology</td>
+</tr>
+<tr>
+<td>nTop</td>
+<td>Cloudfluid</td>
+<td>Undisclosed</td>
+<td>GPU-native CFD solver</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-open-problems-and-research-gaps">10. Open Problems and Research Gaps</h2>
+<h3 id="101-data-scarcity">10.1 Data Scarcity</h3>
+<p>The biggest bottleneck. From the GDL survey: "The scarcity of annotated CAD data available in the B-Rep format" limits the field. Most large-scale CAD databases are unlabeled, and manual annotation requires engineering expertise. There is no ImageNet-scale labeled B-rep dataset.</p>
+<h3 id="102-complexity-ceiling">10.2 Complexity Ceiling</h3>
+<p>Current models excel at simple mechanical parts (brackets, flanges, basic enclosures) but struggle with:
+- Complex constrained assemblies
+- Involute gears, splines, and specialized geometry
+- Parts with 10+ features and hierarchical dependencies
+- Real engineering parts with tolerances and manufacturing constraints</p>
+<p>The FreeCAD generation benchmark (Kumar et al., 2026) shows clear failure at complexity levels 8-10 (gears, fully constrained parametric frames).</p>
+<h3 id="103-the-representation-gap">10.3 The Representation Gap</h3>
+<p>Command sequences (DeepCAD-style) only handle sketch-and-extrude. Real CAD models use fillets, chamfers, sweeps, lofts, patterns, mirrors, shells, drafts, and more. No current representation captures the full range of CAD operations.</p>
+<h3 id="104-evaluation">10.4 Evaluation</h3>
+<p>There is no agreed-upon benchmark for text-to-CAD. Chamfer Distance measures geometric similarity but not parametric editability, manufacturing feasibility, or constraint satisfaction. The field needs standardized benchmarks that evaluate:
+- Geometric accuracy
+- Parametric editability (can you change a dimension and have the model update correctly?)
+- Constraint satisfaction (are perpendicularity, symmetry, etc. maintained?)
+- Manufacturing feasibility</p>
+<h3 id="105-assembly-level-generation">10.5 Assembly-Level Generation</h3>
+<p>Almost all work focuses on single parts. Generating multi-part assemblies with correct joint relationships is barely explored (AutoMate and JoinABLe are analysis, not generation).</p>
+<h3 id="106-engineering-intent">10.6 Engineering Intent</h3>
+<p>No model captures "why" — the functional purpose, load paths, material choices, or manufacturing process that drove a design. Current models mimic form without understanding function.</p>
+<h3 id="107-bridging-research-and-industry">10.7 Bridging Research and Industry</h3>
+<p>The LLM survey notes that the most common model used in research (GPT-4o) is closed-source and expensive. Deploying LLM-based CAD generation at scale with acceptable latency and cost remains unsolved. The "3D CAD software market is projected to grow from USD 13.40 billion in 2025 to USD 24.23 billion by 2034" — the commercial opportunity is clear but the technology isn't production-ready for complex parts.</p>
+<hr />
+<h2 id="11-key-takeaways">11. Key Takeaways</h2>
+<ol>
+<li>
+<p><strong>The field is in a "Cambrian explosion" phase.</strong> 173 papers, 68 on generation alone, with publication velocity accelerating sharply in 2024-2025 (42 papers in 2024, 37 in 2025).</p>
+</li>
+<li>
+<p><strong>Three generation paradigms are competing:</strong> (a) learned command sequences (DeepCAD lineage), (b) direct B-rep synthesis (BrepGen lineage), and (c) LLM code generation (the newest and most commercially practical approach). None yet produces engineering-grade output for complex parts.</p>
+</li>
+<li>
+<p><strong>LLMs are transforming the field.</strong> The code generation approach — generating CadQuery/FreeCAD code — is emerging as the most practical path. Text-to-CadQuery shows even a 124M parameter model generating CadQuery code outperforms a 363M model generating command sequences. But zero-shot LLMs fail catastrophically: GPT-4o has 93% Invalid Ratio, Claude-3.7 has 47%. Fine-tuning or RL is essential.</p>
+</li>
+<li>
+<p><strong>RL with geometric reward is the biggest performance lever.</strong> CAD-Coder shows GRPO training reduces Mean CD from 74.55 (SFT-only) to 6.54 — a 91% improvement. CADFusion shows visual DPO improves LVM scores from 7.69 to 8.96. These are the most impactful techniques to emerge in 2025.</p>
+</li>
+<li>
+<p><strong>The visual feedback loop works.</strong> Both CADFusion (training-time DPO with VLM scoring) and CADCodeVerify (inference-time VLM verification) demonstrate that visual feedback is effective. CADCodeVerify achieves within 5% of human-in-the-loop performance. This directly validates this project's pipeline architecture.</p>
+</li>
+<li>
+<p><strong>Data is the bottleneck, not architecture.</strong> The DeepCAD dataset (178K models) is the standard, but it's limited to simple sketch-and-extrude shapes. CAD-Recode's key insight: 1M procedurally generated CadQuery scripts can substitute for expensive human-annotated data (achieving 92% IoU, 10× better than prior methods). Synthetic data generation is a viable path forward.</p>
+</li>
+<li>
+<p><strong>The industry is betting big.</strong> $6.2B (Project Prometheus) + $35B (Ansys acquisition) + $10B (Altair acquisition) = the largest players believe AI will fundamentally transform engineering design. But no one has a production-quality text-to-CAD system for real engineering parts yet.</p>
+</li>
+<li>
+<p><strong>Onshape's architecture is the natural AI integration target.</strong> Cloud-native, API-first, data-rich — multiple startups (Adam AI, etc.) are building on it.</p>
+</li>
+<li>
+<p><strong>The open-source ecosystem is emerging.</strong> ScadLM, CQAsk, CADAM, Zoo's CAD kernel — all open source. CadQuery is converging as the standard output format: 6 of the 10 most recent papers use it, citing executability, interpretability, and compatibility with pre-trained LLMs.</p>
+</li>
+<li>
+<p><strong>Image-to-CAD is easier than text-to-CAD.</strong> CAD-GPT shows median CD of 9.77 from images vs 28.33 from text. Images provide more precise geometric specification — relevant for this project's search pipeline which retrieves images.</p>
+</li>
+<li>
+<p><strong>Key unsolved problems:</strong> assembly-level generation, complex constrained geometry (gears, splines), engineering intent capture, standardized benchmarks, and the data scarcity problem for B-rep annotations.</p>
+</li>
+<li>
+<p><strong>The most promising near-term recipe</strong> for practical text-to-CAD (like this project) based on the evidence: fine-tuned open LLM (Qwen/LLaMA 3-8B) → CadQuery code generation → iterative error correction → RL with geometric reward (GRPO/DPO) → visual feedback via VLM comparison. This matches the pipeline architecture in this project.</p>
+</li>
+</ol>
+<hr />
+<h2 id="12-paper-reference-index">12. Paper Reference Index</h2>
+<h3 id="seminal-must-read-papers">Seminal / Must-Read Papers</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Year</th>
+<th>Venue</th>
+<th>Why It Matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td><strong>DeepCAD</strong> (Wu et al.)</td>
+<td>2021</td>
+<td>ICCV</td>
+<td>First generative model for CAD; established the field; 178K model dataset</td>
+</tr>
+<tr>
+<td>34</td>
+<td><strong>Geometric DL for CAD Survey</strong> (Heidari &amp; Iosifidis)</td>
+<td>2025</td>
+<td>arXiv</td>
+<td>Most comprehensive technical survey; dataset overview; taxonomy</td>
+</tr>
+<tr>
+<td>20</td>
+<td><strong>LLMs for CAD Survey</strong> (Zhang et al.)</td>
+<td>2025</td>
+<td>ACM Computing Surveys</td>
+<td>First systematic LLM+CAD survey; covers all code gen and parametric gen work</td>
+</tr>
+<tr>
+<td>44</td>
+<td><strong>BrepGen</strong> (Xu et al.)</td>
+<td>2024</td>
+<td>SIGGRAPH</td>
+<td>First diffusion model for direct B-rep generation</td>
+</tr>
+<tr>
+<td>42</td>
+<td><strong>Text2CAD</strong> (Khan et al.)</td>
+<td>2024</td>
+<td>NeurIPS</td>
+<td>Key text-to-CAD benchmark with multi-level text prompts</td>
+</tr>
+<tr>
+<td>79</td>
+<td><strong>SkexGen</strong> (Xu et al.)</td>
+<td>2022</td>
+<td>ICML</td>
+<td>Disentangled codebooks for controlled CAD generation</td>
+</tr>
+<tr>
+<td>102</td>
+<td><strong>BRepNet</strong> (Lambourne et al.)</td>
+<td>2021</td>
+<td>CVPR</td>
+<td>First GNN for B-rep; foundational for B-rep learning</td>
+</tr>
+<tr>
+<td>103</td>
+<td><strong>UV-Net</strong> (Jayaraman et al.)</td>
+<td>2021</td>
+<td>CVPR</td>
+<td>Standard B-rep encoder backbone</td>
+</tr>
+<tr>
+<td>113</td>
+<td><strong>SketchGraphs</strong> (Seff et al.)</td>
+<td>2020</td>
+<td>ICML WS</td>
+<td>15M sketch dataset; enables sketch generation research</td>
+</tr>
+<tr>
+<td>123</td>
+<td><strong>ABC</strong> (Koch et al.)</td>
+<td>2019</td>
+<td>CVPR</td>
+<td>1M+ CAD model dataset; standard for geometric DL</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2025-highlights-most-important-recent-papers">2025 Highlights (Most Important Recent Papers)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Paper</th>
+<th>Venue</th>
+<th>Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15</td>
+<td><strong>FlexCAD</strong></td>
+<td>ICLR 2025</td>
+<td>Unified controllable CAD gen with fine-tuned LLMs</td>
+</tr>
+<tr>
+<td>16</td>
+<td><strong>CAD Code with VLMs</strong></td>
+<td>ICLR 2025</td>
+<td>Vision-language models generating executable CAD code</td>
+</tr>
+<tr>
+<td>26</td>
+<td><strong>CAD-Recode</strong></td>
+<td>ICCV 2025</td>
+<td>Reverse-engineering CadQuery code from point clouds</td>
+</tr>
+<tr>
+<td>17</td>
+<td><strong>CAD-Llama</strong></td>
+<td>CVPR 2025</td>
+<td>LLM for parametric CAD model generation</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>CADCrafter</strong></td>
+<td>CVPR 2025</td>
+<td>CAD from unconstrained images</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>DTGBrepGen</strong></td>
+<td>CVPR 2025</td>
+<td>Decoupled topology/geometry B-rep generation</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Stitch-A-Shape</strong></td>
+<td>SIGGRAPH 2025</td>
+<td>Bottom-up B-rep generation from local patches</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>BrepDiff</strong></td>
+<td>SIGGRAPH 2025</td>
+<td>Single-stage B-rep diffusion</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>BrepGPT</strong></td>
+<td>SIGGRAPH Asia 2025</td>
+<td>Autoregressive B-rep with Voronoi half-patch</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>AutoBrep</strong></td>
+<td>SIGGRAPH Asia 2025</td>
+<td>Unified topology/geometry autoregressive B-rep</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>CADFusion</strong></td>
+<td>arXiv</td>
+<td>Text-to-CAD with LLM visual feedback</td>
+</tr>
+<tr>
+<td>21</td>
+<td><strong>Text-to-CadQuery</strong></td>
+<td>arXiv</td>
+<td>CadQuery code from text — practical for real engineering</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>CAD-Coder</strong></td>
+<td>arXiv</td>
+<td>Chain-of-thought + geometric reward for text-to-CAD</td>
+</tr>
+</tbody>
+</table>
+<h3 id="by-category-selected-key-papers">By Category — Selected Key Papers</h3>
+<p><strong>Text/Language to CAD:</strong> #42, #43, #21, #5, #14, #15, #17, #22
+<strong>Image to CAD:</strong> #11, #12, #47, #29
+<strong>Point Cloud to CAD:</strong> #26, #50, #63, #68, #82, #83
+<strong>B-Rep Generation:</strong> #44, #2, #3, #6, #7, #8, #10, #87
+<strong>2D Sketch Generation:</strong> #99, #104, #81
+<strong>CAD Analysis:</strong> #45, #78, #94, #102, #103
+<strong>Assembly:</strong> #53, #84, #106
+<strong>Datasets:</strong> #46, #101, #113, #123, #154
+<strong>Surveys:</strong> #20, #34, #35, #38, #62
+<strong>Topology Optimization + AI:</strong> #60, #39, #109</p>
+<p><em>Paper numbers refer to the papers-database.md index.</em></p>
+<hr />
+<p><strong>End of Report</strong></p>
+<p><em>This report is based on 173 cataloged papers (116 with PDFs downloaded), 60 companies, and deep reading of key survey papers and individual research contributions. For the full structured database of all papers, see papers-database.md. For the complete companies analysis, see companies.md.</em></p>
+</body>
+</html>

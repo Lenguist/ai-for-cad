@@ -1,0 +1,12 @@
+{
+  "syntax_valid": true,
+  "exec_valid": true,
+  "bbox": {
+    "x": 15.011,
+    "y": 13.0,
+    "z": 30.0
+  },
+  "bbox_volume_mm3": 5854.332,
+  "stl_exported": true,
+  "stl_size_bytes": 26284
+}

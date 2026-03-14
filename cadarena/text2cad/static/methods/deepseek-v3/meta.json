@@ -1,0 +1,11 @@
+{
+  "id": "deepseek-v3",
+  "name": "DeepSeek V3",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "DeepSeek",
+  "website": "https://www.deepseek.com",
+  "notes": "DeepSeek V3 via DeepSeek API (OpenAI-compatible endpoint at api.deepseek.com). Prompted to output CadQuery Python.",
+  "benchmark_results": null
+}

@@ -1,0 +1,13 @@
+{
+  "id": "text2cad",
+  "name": "Text2CAD (NeurIPS 2024)",
+  "type": "academic",
+  "input": "text",
+  "output": "cad_sequence",
+  "provider": "Academic (open source)",
+  "paper": "https://arxiv.org/abs/2409.17106",
+  "website": "https://sadilkhan.github.io/text2cad-project/",
+  "model_hf": "SadilKhan/Text2CAD",
+  "notes": "T5-based text-to-CAD model trained on ABC dataset. Generates CAD construction sequences (sketch-and-extrude), not CadQuery code. Requires STEP/STL reconstruction from sequences. Run via Modal GPU (A10G). Note: output format is CAD command sequences, not directly executable Python.",
+  "benchmark_results": null
+}

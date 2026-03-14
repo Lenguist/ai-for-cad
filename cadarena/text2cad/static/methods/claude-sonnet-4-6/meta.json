@@ -1,0 +1,11 @@
+{
+  "id": "claude-sonnet-4-6",
+  "name": "Claude Sonnet 4.6",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "Anthropic",
+  "website": "https://www.anthropic.com",
+  "notes": "Claude Sonnet 4.6 via Anthropic API. Prompted to output CadQuery Python assigning final shape to 'result'.",
+  "benchmark_results": null
+}

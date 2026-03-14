@@ -1,0 +1,18 @@
+{
+  "id": "gpt-5",
+  "name": "GPT-5",
+  "type": "baseline",
+  "input": "text",
+  "output": "cadquery",
+  "provider": "OpenAI",
+  "website": "https://openai.com",
+  "paper": null,
+  "notes": "Frontier LLM baseline. Token truncation killed all Tier 4 prompts.",
+  "benchmark_results": {
+    "run_date": "2026-03-08",
+    "prompts_passed": 12,
+    "prompts_total": 20,
+    "valid_stl_pct": 60,
+    "avg_latency_s": 16.1
+  }
+}

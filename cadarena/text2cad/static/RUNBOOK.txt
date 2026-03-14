@@ -1,0 +1,375 @@
+================================================================================
+  CAD ARENA — TEXT2CAD STATIC BENCHMARK RUNBOOK
+  All commands to run the full evaluation pipeline from scratch.
+================================================================================
+
+REPO ROOT:  /Users/mbondarenko/Desktop/ai-for-cad/
+CADARENA:   /Users/mbondarenko/Desktop/ai-for-cad/cadarena/
+THIS DIR:   /Users/mbondarenko/Desktop/ai-for-cad/cadarena/text2cad/static/
+
+================================================================================
+  0. ONE-TIME SETUP
+================================================================================
+
+--- Create and activate the cadarena Python env ---
+
+python -m venv /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+
+pip install -r /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/requirements.txt
+
+# Optional but recommended for better STL renders in VLM scoring:
+pip install pyrender pillow
+
+--- Set API keys (add to ~/.zshrc or create cadarena/eval/.env) ---
+
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
+export GOOGLE_API_KEY=AIza...
+export DEEPSEEK_API_KEY=...
+export ZOO_API_TOKEN=...
+
+# Or write them to cadarena/eval/.env (never committed):
+echo 'ANTHROPIC_API_KEY=sk-ant-...' >> /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/.env
+echo 'OPENAI_API_KEY=sk-...'       >> /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/.env
+echo 'GOOGLE_API_KEY=AIza...'      >> /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/.env
+echo 'DEEPSEEK_API_KEY=...'        >> /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/.env
+echo 'ZOO_API_TOKEN=...'           >> /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/.env
+
+--- Activate env shortcut (add to ~/.zshrc) ---
+
+alias cadarena='source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate && cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena'
+
+================================================================================
+  1. STEP 1 — GENERATE (run each method)
+================================================================================
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/text2cad/static
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+
+--- LLM baselines (API only, no GPU) ---
+
+python run.py --method claude-opus-4-6
+python run.py --method claude-sonnet-4-6
+python run.py --method gpt-5
+python run.py --method gpt-5.4
+python run.py --method gemini-2.5-flash
+python run.py --method gemini-3.1-pro
+python run.py --method deepseek-v3
+
+--- Self-correcting variants (slower, uses local CadQuery executor between turns) ---
+
+python run.py --method claude-opus-4-6-sc
+python run.py --method claude-sonnet-4-6-sc
+python run.py --method gpt-5.4-sc
+python run.py --method gemini-3.1-pro-sc
+
+--- Commercial (Zoo ML-ephant, returns STL directly) ---
+
+python run.py --method zoo-ml-ephant
+
+--- Academic (Modal GPU required — see section 1b below) ---
+
+python run.py --method text2cadquery-qwen
+python run.py --method text2cad
+python run.py --method flexcad
+python run.py --method cadfusion
+
+--- Useful flags ---
+
+python run.py --method claude-opus-4-6 --dry-run         # preview without calling API
+python run.py --method claude-opus-4-6 --tiers 1 2       # only run tier 1 and 2
+python run.py --method claude-opus-4-6 --prompts t1_01 t2_03   # specific prompts only
+python run.py --method claude-opus-4-6 --resume          # skip already-completed prompts
+python run.py --method claude-opus-4-6 --no-execute      # API call only, skip CadQuery
+
+--- Outputs written to ---
+
+methods/<method_id>/outputs/<prompt_id>.json   # result + exec metrics
+methods/<method_id>/outputs/<prompt_id>.py     # generated CadQuery code
+methods/<method_id>/outputs/<prompt_id>.stl    # exported mesh (if valid)
+methods/<method_id>/outputs/summary.json       # per-method aggregate
+
+================================================================================
+  1b. MODAL SETUP (for academic GPU models)
+================================================================================
+
+pip install modal
+modal setup   # authenticate — workspace: maksym-d-bondarenko
+
+--- Deploy runners ---
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+
+modal deploy modal_text2cadquery.py    # Qwen 3B — tested, 75% pass rate
+modal deploy modal_flexcad.py          # FlexCAD — ICML 2025 (unconditional sampling!)
+modal deploy modal_text2cad.py         # Text2CAD NeurIPS 2024 (scaffold, verify HF slug)
+# modal_cadfusion.py — NOT YET WRITTEN
+
+--- Then run as usual ---
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/text2cad/static
+python run.py --method text2cadquery-qwen
+
+--- Modal GPU notes ---
+  - text2cadquery-qwen: A10G, Qwen 3B, uses 0-1 normalized units (not mm)
+  - flexcad: A10G, LLaMA-3-8B LoRA — outputs CAD sequences, NOT CadQuery
+             WARNING: model is unconditional — text prompts are stored but ignored
+  - text2cad: A10G, T5-based — outputs CAD sequences, NOT CadQuery
+
+================================================================================
+  2. STEP 2 — MESH VALIDATION
+================================================================================
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+
+--- Run on a single method ---
+
+python validate_mesh.py --method claude-opus-4-6
+
+--- Run on all methods that have outputs ---
+
+python validate_mesh.py --all
+
+--- Run on specific prompts only ---
+
+python validate_mesh.py --method gpt-5.4 --prompts t1_01 t2_03
+
+--- What it checks (written into each <pid>.json as "mesh_quality") ---
+  watertight           — no open edges (bool)
+  positive_volume      — volume > 0 (bool)
+  no_self_intersections — no self-intersecting faces (bool)
+  vertex_count / face_count
+  volume_mm3
+
+--- Legend in terminal output ---
+  [WVS] = watertight + positive Volume + no Self-intersections
+  lowercase = failed that check,  ? = unknown
+
+================================================================================
+  3. STEP 3 — VLM SCORING
+================================================================================
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+
+--- Run on a single method (uses Claude Sonnet by default) ---
+
+python score_vlm.py --method claude-opus-4-6
+
+--- Run on all methods ---
+
+python score_vlm.py --all
+
+--- Use Gemini instead of Claude for scoring ---
+
+python score_vlm.py --method zoo-ml-ephant --model gemini
+
+--- Specific prompts ---
+
+python score_vlm.py --method gpt-5.4 --prompts t1_01 t3_02
+
+--- What it does ---
+  1. Loads each .stl from outputs/
+  2. Renders to 512x512 PNG (pyrender if installed, else matplotlib fallback)
+  3. Sends image + original prompt to Claude Sonnet with a 0-10 rubric
+  4. Scores: geometric correctness (0-5) + dimensional accuracy (0-5) = total (0-10)
+  5. Writes vlm_score and vlm_score_detail into each <pid>.json
+
+--- Cost estimate ---
+  ~$0.01 per STL with Claude Sonnet (image input)
+  20 prompts × 10 methods = 200 calls ≈ $2
+
+================================================================================
+  4. STEP 4 — HUMAN REVIEW
+================================================================================
+
+--- Open the review tool in your browser ---
+
+open /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval/review.html
+
+  Or just double-click review.html in Finder.
+
+--- Setup in the browser ---
+  1. Enter Method ID (e.g. "claude-opus-4-6")
+  2. Load result files: select all *.json from methods/<id>/outputs/
+     (exclude summary.json manually or it'll just be ignored)
+  3. Load STL files: select all *.stl from methods/<id>/outputs/
+  4. Optionally load existing human_review_<method>.json to resume
+  5. Click "Start Review"
+
+--- Keyboard shortcuts ---
+  P        — mark PASS
+  F        — mark FAIL
+  Enter    — save + next prompt
+  →        — save + next prompt
+  ←        — previous prompt
+
+--- When done ---
+  Click "Export human_review.json" → downloads human_review_<method>.json
+
+--- Merge back into the output JSONs ---
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+python import_human_review.py ~/Downloads/human_review_claude-opus-4-6.json
+
+  This writes human_pass (true/false) and human_notes into each <pid>.json.
+  Run aggregate.py after this to include human results in the table.
+
+================================================================================
+  5. STEP 5 — AGGREGATE INTO TABLES
+================================================================================
+
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+
+--- Run on all methods ---
+
+python aggregate.py
+
+--- Run on specific methods only ---
+
+python aggregate.py --methods claude-opus-4-6 gpt-5.4 zoo-ml-ephant
+
+--- Custom output dir ---
+
+python aggregate.py --out my_snapshot/
+
+--- Outputs written to ---
+
+text2cad/static/evaluation/results/
+  summary_table.md     ← main paper table (markdown)
+  summary_table.csv    ← same as CSV
+  per_tier.csv         ← valid_stl_pct / watertight_pct / vlm / human by tier (T1-T4)
+  per_prompt.csv       ← full method × prompt matrix with all metrics
+
+================================================================================
+  FULL PIPELINE (copy-paste all at once, after env + keys are set)
+================================================================================
+
+source /Users/mbondarenko/Desktop/ai-for-cad/.venv-cadarena/bin/activate
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/text2cad/static
+
+# --- Generate all LLM baselines ---
+python run.py --method claude-opus-4-6
+python run.py --method claude-sonnet-4-6
+python run.py --method gpt-5
+python run.py --method gpt-5.4
+python run.py --method gemini-2.5-flash
+python run.py --method gemini-3.1-pro
+python run.py --method deepseek-v3
+python run.py --method zoo-ml-ephant
+python run.py --method claude-opus-4-6-sc
+python run.py --method claude-sonnet-4-6-sc
+python run.py --method gpt-5.4-sc
+python run.py --method gemini-3.1-pro-sc
+python run.py --method text2cadquery-qwen  # needs Modal
+
+# --- Mesh + VLM ---
+cd /Users/mbondarenko/Desktop/ai-for-cad/cadarena/eval
+python validate_mesh.py --all
+python score_vlm.py --all
+
+# --- Human review: open review.html, do it, then import ---
+# python import_human_review.py ~/Downloads/human_review_*.json
+
+# --- Aggregate ---
+python aggregate.py
+
+cat /Users/mbondarenko/Desktop/ai-for-cad/cadarena/text2cad/static/evaluation/results/summary_table.md
+
+================================================================================
+  DATASET
+================================================================================
+
+  File:     text2cad/static/dataset/prompts.json
+  Prompts:  20 total across 4 tiers
+
+  Tier 1 (t1_*) — Primitives: cube, cylinder, sphere, cone, torus          (5 prompts)
+  Tier 2 (t2_*) — Simple parts: box with hole, bracket, washer, etc.       (5 prompts)
+  Tier 3 (t3_*) — Compound parts: flanged pipe, L-bracket, gear blank...   (5 prompts)
+  Tier 4 (t4_*) — Complex: multi-feature housing, assembly-ready parts...  (5 prompts)
+
+================================================================================
+  METHODS
+================================================================================
+
+  LLM Baselines:
+    claude-opus-4-6       Anthropic Claude Opus 4.6         → CadQuery
+    claude-sonnet-4-6     Anthropic Claude Sonnet 4.6        → CadQuery
+    gpt-5                 OpenAI GPT-5                       → CadQuery
+    gpt-5.4               OpenAI GPT-5.4 (Mar 2026)          → CadQuery
+    gemini-2.5-flash      Google Gemini 2.5 Flash            → CadQuery
+    gemini-3.1-pro        Google Gemini 3.1 Pro (Mar 2026)   → CadQuery
+    deepseek-v3           DeepSeek V3                        → CadQuery
+
+  Self-Correcting (SC = baseline + error feedback loop, up to 3 retries):
+    claude-opus-4-6-sc
+    claude-sonnet-4-6-sc
+    gpt-5.4-sc
+    gemini-3.1-pro-sc
+
+  Commercial:
+    zoo-ml-ephant         Zoo ML-ephant API                  → KCL + STL
+
+  Academic (Modal GPU):
+    text2cadquery-qwen    Qwen 3B fine-tuned (75% pass)      → CadQuery
+    text2cad              T5 NeurIPS 2024                    → CAD sequences
+    flexcad               LLaMA-3-8B ICML 2025               → CAD sequences (unconditional)
+    cadfusion             Diffusion ICML 2025                → CAD sequences (runner TODO)
+
+================================================================================
+  EVALUATION CRITERIA (what aggregate.py reports)
+================================================================================
+
+  valid_stl_pct         % prompts producing a non-empty STL (compiles + executes)
+  watertight_pct        % STLs that are watertight (no open edges) — via trimesh
+  pos_volume_pct        % STLs with positive volume
+  vlm_score_avg         Average VLM geometry score 0-10 (Claude Sonnet judge)
+  human_pct             % prompts marked PASS by human reviewer
+  avg_latency_s         Average wall-clock time per prompt (seconds)
+  avg_attempts          Average generation attempts (>1 for SC models)
+
+================================================================================
+  FILE STRUCTURE
+================================================================================
+
+cadarena/
+  eval/
+    models.py                  — API client classes for all methods
+    execute.py                 — CadQuery subprocess executor
+    validate_mesh.py           — Step 2: trimesh mesh quality checks
+    score_vlm.py               — Step 3: VLM 0-10 scoring
+    review.html                — Step 4: local browser human review UI
+    import_human_review.py     — Step 4b: merge human review back into JSONs
+    aggregate.py               — Step 5: produce summary tables
+    modal_text2cadquery.py     — Modal runner: Qwen 3B
+    modal_flexcad.py           — Modal runner: FlexCAD
+    modal_text2cad.py          — Modal runner: Text2CAD (scaffold)
+    requirements.txt
+    .env                       ← NOT committed (API keys)
+
+  text2cad/static/
+    RUNBOOK.txt                ← YOU ARE HERE
+    run.py                     — Step 1: generate outputs for a method
+    dataset/
+      prompts.json             — 20 canonical prompts (4 tiers)
+    methods/
+      <method_id>/
+        meta.json              — method metadata
+        generate.py            — shim: calls run.py --method <id>
+        outputs/               — created by run.py
+          <pid>.json           — result + all metrics written by each step
+          <pid>.py             — generated code
+          <pid>.stl            — exported mesh
+          summary.json         — per-method aggregate
+    evaluation/
+      criteria.md              — full list of all metrics (from papers)
+      results/                 — created by aggregate.py
+        summary_table.md
+        summary_table.csv
+        per_tier.csv
+        per_prompt.csv
+
+================================================================================
