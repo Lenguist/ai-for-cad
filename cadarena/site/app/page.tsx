@@ -643,7 +643,7 @@ export default function Home() {
             Once launched, any model can be submitted for evaluation. If you
             have a text-to-CAD model and want it on the leaderboard,{" "}
             <a
-              href="mailto:contact@cadarena.ai"
+              href="mailto:contact@cadarena.dev"
               style={{ color: "var(--accent)", textDecoration: "none" }}
             >
               get in touch
@@ -990,7 +990,7 @@ export default function Home() {
               Get notified when the leaderboard launches and the preprint drops.
             </p>
             <a
-              href="mailto:contact@cadarena.ai"
+              href="mailto:contact@cadarena.dev"
               style={{
                 display: "inline-block",
                 background: "rgba(255,255,255,0.9)",
@@ -1002,7 +1002,7 @@ export default function Home() {
                 fontSize: 15,
               }}
             >
-              contact@cadarena.ai →
+              contact@cadarena.dev →
             </a>
           </div>
 
@@ -1050,7 +1050,7 @@ export default function Home() {
               GitHub
             </a>
             <a
-              href="mailto:contact@cadarena.ai"
+              href="mailto:contact@cadarena.dev"
               style={{ color: "var(--muted)", textDecoration: "none" }}
             >
               Contact

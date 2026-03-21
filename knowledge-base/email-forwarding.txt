@@ -1,0 +1,37 @@
+Date: 2026-03-21
+
+Problem
+-------
+Needed a professional contact email (contact@cadarena.dev) for the CAD Arena project
+without paying for a full email hosting service.
+
+Solution
+--------
+ImprovMX email forwarding — free tier, no SMTP needed.
+All mail sent to contact@cadarena.dev forwards to maksym.d.bondarenko@gmail.com.
+
+Steps Taken
+-----------
+1. Domain cadarena.dev was already registered via Vercel (expires Mar 8, 2027).
+   DNS is managed by Vercel nameservers (ns1.vercel-dns.com / ns2.vercel-dns.com).
+
+2. Signed up at improvmx.com, added cadarena.dev as a domain, and created the alias:
+     contact@cadarena.dev → maksym.d.bondarenko@gmail.com
+
+3. Followed ImprovMX's Generic DNS Configuration guide:
+   https://improvmx.com/guides/generic-dns-configuration
+
+   Added the following records in Vercel's DNS panel (Vercel dashboard → cadarena.dev → DNS Records):
+     Name: @   Type: MX    Value: mx1.improvmx.com          Priority: 10
+     Name: @   Type: MX    Value: mx2.improvmx.com          Priority: 20
+     Name: @   Type: TXT   Value: v=spf1 include:spf.improvmx.com ~all
+
+4. Clicked "Check again" in ImprovMX — forwarding activated once DNS propagated.
+
+Notes
+-----
+- ImprovMX free plan supports unlimited aliases and unlimited forwarding.
+- No Gmail confirmation required to receive forwarded mail.
+- To send FROM contact@cadarena.dev (not just receive), would need ImprovMX Premium ($9/mo)
+  or configure Gmail "Send mail as" with an SMTP provider.
+- Vercel auto-renews the domain at $13/yr.
