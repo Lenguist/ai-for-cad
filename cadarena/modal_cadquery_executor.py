@@ -24,6 +24,7 @@ image = (
         "cadquery=2.4.0",
         channels=["cadquery", "conda-forge"],
     )
+    .pip_install("fastapi[standard]")
 )
 
 
