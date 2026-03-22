@@ -19,7 +19,7 @@ const MODEL_TAGS: Record<string, string> = {
 
 const MODELS = ["claude-opus-4-6", "zoo-ml-ephant", "gemini-2.5-flash", "gpt-5", "text2cadquery-qwen"];
 const TIERS = [1, 2, 3, 4];
-const TIER_LABELS = ["", "Basic primitives", "Multi-feature parts", "Assemblies", "Complex geometry"];
+const TIER_LABELS = ["", "Simple Primitives", "Single Part with Features", "Multi-Feature Parts", "Complex Functional"];
 
 export default function ResultsPage() {
   const results = resultsData.results;
@@ -60,18 +60,37 @@ export default function ResultsPage() {
           <Link href="/" style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 18, fontWeight: 700, color: "var(--accent)", textDecoration: "none", letterSpacing: "-0.02em" }}>
             CAD Arena
           </Link>
-          <Link href="/" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>
-            ← Home
-          </Link>
+          <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+            <Link href="/results" style={{ color: "var(--foreground)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Results</Link>
+            <Link href="/try" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Try</Link>
+            <Link href="/methods" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Methods</Link>
+            <a href="https://github.com/Lenguist/ai-for-cad" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>GitHub →</a>
+          </div>
         </div>
       </nav>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px" }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", marginBottom: 8, letterSpacing: "-0.02em" }}>
-          Benchmark Results
-        </h1>
-        <p style={{ color: "var(--muted)", fontSize: 15, marginBottom: 40 }}>
-          5 models × 20 prompts across 4 difficulty tiers. Click any cell to see the generated code and 3D rendering.
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", letterSpacing: "-0.02em", margin: 0 }}>
+            Benchmark Results
+          </h1>
+          <span style={{
+            fontFamily: "var(--font-geist-mono), monospace",
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+            padding: "4px 10px", borderRadius: 4,
+            background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)",
+          }}>
+            STATIC
+          </span>
+        </div>
+        <p style={{ color: "var(--muted)", fontSize: 15, marginBottom: 8, lineHeight: 1.6 }}>
+          20 hand-selected prompts run once across 5 models, results reviewed manually.
+          This is a fixed snapshot — not a live leaderboard.
+          Click any cell to see the generated code and 3D rendering.
+        </p>
+        <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 40 }}>
+          See <Link href="/methods" style={{ color: "var(--accent)", textDecoration: "none" }}>Methods</Link> for
+          how each model was run and scored.
         </p>
 
         {/* Summary row */}
