@@ -662,8 +662,8 @@ export default function Home() {
               </thead>
               <tbody>
                 {PRELIMINARY_RESULTS.map((row) => {
-                  const s = TYPE_STYLES[row.type];
                   const barColor = row.stl_pct >= 75 ? "rgba(255,255,255,0.95)" : row.stl_pct >= 50 ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.4)";
+                  const typeLabel = row.type === "commercial" ? "Commercial" : "LLM Baseline";
                   return (
                     <tr key={row.model} style={{ borderBottom: "1px solid var(--border)" }}>
                       <td style={{ padding: "14px 14px", color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
@@ -671,8 +671,8 @@ export default function Home() {
                       </td>
                       <td style={{ padding: "14px 14px", fontWeight: 700 }}>{row.model}</td>
                       <td style={{ padding: "14px 14px" }}>
-                        <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 5, background: s.bg, color: s.color, fontWeight: 600 }}>
-                          {s.label}
+                        <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 5, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
+                          {typeLabel}
                         </span>
                       </td>
                       <td style={{ padding: "14px 14px" }}>
