@@ -20,6 +20,7 @@ app = modal.App("cad-arena-executor")
 # CadQuery requires conda — it has complex OCC dependencies
 image = (
     modal.Image.micromamba(python_version="3.11")
+    .apt_install("libgl1-mesa-glx", "libglu1-mesa")
     .micromamba_install(
         "cadquery=2.4.0",
         channels=["cadquery", "conda-forge"],
