@@ -48,8 +48,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 1",
     label: "Simple Primitives",
-    expected: "~90%+ success",
-    color: "#4ade80",
+    color: "#16a34a",
     examples: [
       "A cube 20 × 20 × 20 mm",
       "A cylinder 10 mm diameter, 30 mm tall",
@@ -59,8 +58,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 2",
     label: "Single Part with Features",
-    expected: "~60–80% success",
-    color: "#60a5fa",
+    color: "#2563eb",
     examples: [
       "A rectangular plate 50 × 30 × 5 mm with a centered hole 8 mm diameter",
       "An L-shaped bracket, 40 mm arms, 5 mm thick, 30 mm tall",
@@ -70,8 +68,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 3",
     label: "Multi-Feature Parts",
-    expected: "~30–50% success",
-    color: "#fb923c",
+    color: "#ea580c",
     examples: [
       "A flanged shaft with 3 equally-spaced M4 bolt holes on the flange",
       "A box with a snap-fit lid, 50 × 40 × 30 mm",
@@ -81,8 +78,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 4",
     label: "Complex Functional Parts",
-    expected: "~5–20% success",
-    color: "#f87171",
+    color: "#dc2626",
     examples: [
       "A parametric living hinge, 100 mm span, 0.3 mm flex zone",
       "An S-curve pipe fitting, 15 mm inner diameter, 45° bend",
@@ -396,8 +392,8 @@ export default function Home() {
               <div
                 key={step.step}
                 style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
+                  background: "white",
+                  border: "1px solid #e2e8f0",
                   borderRadius: 12,
                   padding: 32,
                 }}
@@ -406,7 +402,7 @@ export default function Home() {
                   style={{
                     fontFamily: "var(--font-geist-mono), monospace",
                     fontSize: 12,
-                    color: "var(--accent)",
+                    color: "#4a80b4",
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                     marginBottom: 16,
@@ -421,11 +417,12 @@ export default function Home() {
                     fontWeight: 700,
                     marginBottom: 10,
                     letterSpacing: "-0.01em",
+                    color: "#1e3a5f",
                   }}
                 >
                   {step.title}
                 </h3>
-                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7 }}>
+                <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7 }}>
                   {step.desc}
                 </p>
               </div>
@@ -459,17 +456,17 @@ export default function Home() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
-              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", score: "95%", note: "Best overall. 19/20 prompts." },
-              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", score: "95%", note: "Native geometry engine. Returns KCL." },
-              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", score: "70%", note: "Qwen 3B fine-tuned. Unit normalization quirk." },
-              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", score: "70%", note: "Fastest. Hallucinates methods on T4." },
-              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", score: "60%", note: "Token limit cuts off complex prompts." },
+              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", score: "19/20", note: "Best overall. Perfect on T1–T3." },
+              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", score: "19/20", note: "Native geometry engine. Returns KCL." },
+              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", score: "14/20", note: "Qwen 3B fine-tuned. Unit normalization quirk." },
+              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", score: "14/20", note: "Fastest. Hallucinates methods on T4." },
+              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", score: "12/20", note: "Token limit cuts off complex prompts." },
             ].map((m) => (
               <div
                 key={m.name}
                 style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
+                  background: "white",
+                  border: "1px solid #e2e8f0",
                   borderRadius: 10,
                   padding: "18px 24px",
                   display: "flex",
@@ -481,19 +478,19 @@ export default function Home() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{m.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, color: "#1e3a5f" }}>{m.name}</div>
+                    <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-geist-mono), monospace" }}>
                       {m.type} · {m.venue}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--muted)", flex: 2 }}>{m.note}</div>
+                <div style={{ fontSize: 13, color: "#64748b", flex: 2 }}>{m.note}</div>
                 <div style={{
                   fontFamily: "var(--font-geist-mono), monospace",
                   fontWeight: 800,
                   fontSize: 18,
-                  color: "var(--foreground)",
-                  minWidth: 48,
+                  color: "#1e3a5f",
+                  minWidth: 56,
                   textAlign: "right",
                 }}>{m.score}</div>
               </div>
@@ -504,15 +501,15 @@ export default function Home() {
             style={{
               marginTop: 24,
               padding: 20,
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.2)",
+              background: "white",
+              border: "1px solid #e2e8f0",
               borderRadius: 10,
               fontSize: 14,
-              color: "var(--muted)",
+              color: "#64748b",
             }}
           >
             Have a text-to-CAD model and want it on the leaderboard?{" "}
-            <a href="mailto:contact@cadarena.dev" style={{ color: "var(--accent)", textDecoration: "none" }}>
+            <a href="mailto:contact@cadarena.dev" style={{ color: "#4a80b4", textDecoration: "none" }}>
               Get in touch
             </a>
             .
@@ -545,69 +542,48 @@ export default function Home() {
             produces a valid, executable 3D part.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
-            {PROMPT_TIERS.map((tier) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {PROMPT_TIERS.map((tier, i) => (
               <div
                 key={tier.tier}
                 style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  padding: 28,
-                  borderLeft: `3px solid ${tier.color}`,
+                  marginLeft: i * 44,
+                  background: "white",
+                  border: "1px solid #e2e8f0",
+                  borderLeft: `4px solid ${tier.color}`,
+                  borderRadius: 10,
+                  padding: "18px 22px",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: 16,
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-geist-mono), monospace",
-                        fontSize: 12,
-                        color: tier.color,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {tier.tier}
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>
-                      {tier.label}
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      padding: "3px 8px",
-                      borderRadius: 5,
-                      background: `${tier.color}18`,
-                      color: tier.color,
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {tier.expected}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+                  <span style={{
+                    fontFamily: "var(--font-geist-mono), monospace",
+                    fontSize: 11,
+                    color: tier.color,
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                  }}>
+                    {tier.tier}
+                  </span>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: "#1e3a5f" }}>
+                    {tier.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: "auto" }}>
+                    5 prompts
                   </span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {tier.examples.map((ex, i) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {tier.examples.map((ex, j) => (
                     <div
-                      key={i}
+                      key={j}
                       style={{
-                        background: "var(--background)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 6,
-                        padding: "8px 12px",
                         fontFamily: "var(--font-geist-mono), monospace",
                         fontSize: 12,
-                        color: "var(--muted)",
+                        color: "#475569",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 5,
+                        padding: "7px 11px",
                         lineHeight: 1.5,
                       }}
                     >
@@ -706,86 +682,6 @@ export default function Home() {
             These are <strong style={{ color: "var(--foreground)" }}>API-only results</strong> on 20 hand-selected prompts, run and reviewed manually.
             More models and prompts being added. Gemini result reflects free-tier rate limiting, not model quality.
           </p>
-        </div>
-      </section>
-
-      {/* Why it matters */}
-      <section
-        style={{
-          padding: "80px 24px",
-          borderTop: "1px solid var(--border)",
-          background: "var(--card)",
-        }}
-      >
-        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <h2
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              marginBottom: 8,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Why this doesn&apos;t exist yet
-          </h2>
-          <p style={{ color: "var(--muted)", marginBottom: 48, fontSize: 16 }}>
-            The 2025 survey{" "}
-            <em>Large Language Models for Computer-Aided Design</em> explicitly
-            identifies this as the field&apos;s most critical gap.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: 20,
-            }}
-          >
-            {[
-              {
-                title: "No cross-model comparison",
-                desc: "Sequence-based (Text2CAD), code-based (CAD-Coder), and B-rep direct (BrepGen) models are evaluated on different benchmarks with different metrics. You can't compare results across papers.",
-              },
-              {
-                title: "Academic ≠ commercial",
-                desc: "Commercial tools like Zoo and AdamCAD are never included in academic benchmark tables. Academic models are never in commercial tool comparisons. Nobody has done both.",
-              },
-              {
-                title: "No living leaderboard",
-                desc: "Every benchmark is a static snapshot tied to a paper. There's no place where new models submit and get ranked continuously — no SWE-bench equivalent for CAD.",
-              },
-              {
-                title: "No agreed-upon metrics",
-                desc: "Unlike image generation (FID, CLIP score) or code (pass@k), CAD has no community-consensus quality metric. Papers pick different metrics, making progress hard to track.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                style={{
-                  background: "var(--background)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  padding: 28,
-                }}
-              >
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                    marginBottom: 16,
-                  }}
-                />
-                <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
-                  {item.title}
-                </h3>
-                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
