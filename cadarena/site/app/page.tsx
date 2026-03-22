@@ -381,155 +381,131 @@ export default function Home() {
       </section>
 
       {/* Models */}
-      <section
-        id="models"
-        style={{
-          padding: "80px 24px",
-          borderTop: "1px solid var(--border)",
-        }}
-      >
+      <section id="models" className="blueprint-grid" style={{ padding: "80px 24px", borderTop: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <h2
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              marginBottom: 8,
-              letterSpacing: "-0.02em",
-            }}
-          >
+          <h2 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, letterSpacing: "-0.02em" }}>
             Models tested
           </h2>
           <p style={{ color: "var(--muted)", marginBottom: 40, fontSize: 16 }}>
             5 models evaluated on the full 20-prompt benchmark. More being added.
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ border: "1px solid rgba(255,255,255,0.3)" }}>
+            {/* header row */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 2fr 100px",
+              borderBottom: "1px solid rgba(255,255,255,0.3)",
+              background: "rgba(0,0,0,0.15)",
+            }}>
+              {["MODEL", "NOTES", "VALID STLs"].map((h, i) => (
+                <div key={h} style={{
+                  padding: "10px 20px",
+                  fontFamily: "var(--font-geist-mono), monospace",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  color: "rgba(255,255,255,0.4)",
+                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.15)" : "none",
+                  textAlign: i === 2 ? "right" : "left",
+                }}>{h}</div>
+              ))}
+            </div>
             {[
-              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", valid: 19, note: "Best overall. Perfect on T1–T3." },
-              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", valid: 19, note: "Native geometry engine. Returns KCL." },
-              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", valid: 14, note: "Qwen 3B fine-tuned. Unit normalization quirk." },
-              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", valid: 14, note: "Fastest. Hallucinates methods on T4." },
-              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", valid: 12, note: "Token limit cuts off complex prompts." },
-            ].map((m) => (
+              { name: "Claude Opus 4.6", type: "LLM Baseline · Anthropic", valid: 19, note: "Best overall. Perfect on T1–T3." },
+              { name: "Zoo / ML-ephant", type: "Commercial · zoo.dev", valid: 19, note: "Native geometry engine. Returns KCL." },
+              { name: "Text-to-CadQuery", type: "Academic · arXiv 2025", valid: 14, note: "Qwen 3B fine-tuned. Unit normalization quirk." },
+              { name: "Gemini 2.5 Flash", type: "LLM Baseline · Google", valid: 14, note: "Fastest. Hallucinates methods on T4." },
+              { name: "GPT-5", type: "LLM Baseline · OpenAI", valid: 12, note: "Token limit cuts off complex prompts." },
+            ].map((m, i, arr) => (
               <div
                 key={m.name}
                 style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  padding: "18px 24px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
-                  flexWrap: "wrap",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr 100px",
+                  borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.12)" : "none",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{m.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
-                      {m.type} · {m.venue}
-                    </div>
-                  </div>
+                <div style={{ padding: "18px 20px", borderRight: "1px solid rgba(255,255,255,0.15)" }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3 }}>{m.name}</div>
+                  <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)" }}>{m.type}</div>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--muted)", flex: 2 }}>{m.note}</div>
-                <div style={{ textAlign: "right", minWidth: 80 }}>
-                  <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 800, fontSize: 18, color: "var(--foreground)", lineHeight: 1 }}>{m.valid}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>valid STLs</div>
+                <div style={{ padding: "18px 20px", fontSize: 13, color: "var(--muted)", lineHeight: 1.6, borderRight: "1px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center" }}>
+                  {m.note}
+                </div>
+                <div style={{ padding: "18px 20px", textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end" }}>
+                  <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 800, fontSize: 22, lineHeight: 1 }}>{m.valid}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, letterSpacing: "0.05em" }}>of 20</div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div
-            style={{
-              marginTop: 24,
-              padding: 20,
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 10,
-              fontSize: 14,
-              color: "var(--muted)",
-            }}
-          >
-            Have a text-to-CAD model and want it on the leaderboard?{" "}
-            <a href="mailto:contact@cadarena.dev" style={{ color: "var(--accent)", textDecoration: "none" }}>
-              Get in touch
-            </a>
-            .
+          <div style={{ marginTop: 16, fontSize: 13, color: "var(--muted)" }}>
+            Have a model to add?{" "}
+            <a href="mailto:contact@cadarena.dev" style={{ color: "var(--accent)", textDecoration: "none" }}>contact@cadarena.dev</a>
           </div>
         </div>
       </section>
 
       {/* Benchmark prompts */}
-      <section
-        id="benchmark"
-        style={{
-          padding: "80px 24px",
-          borderTop: "1px solid var(--border)",
-        }}
-      >
+      <section id="benchmark" className="blueprint-grid" style={{ padding: "80px 24px", borderTop: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <h2
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              marginBottom: 8,
-              letterSpacing: "-0.02em",
-            }}
-          >
+          <h2 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, letterSpacing: "-0.02em" }}>
             Benchmark prompts
           </h2>
-          <p style={{ color: "var(--muted)", marginBottom: 48, fontSize: 16 }}>
-            20 prompts across 4 difficulty tiers. Fixed set for reproducible
-            evaluation. Models are scored on validity rate — whether the output
-            produces a valid, executable 3D part.
+          <p style={{ color: "var(--muted)", marginBottom: 40, fontSize: 16 }}>
+            20 prompts across 4 difficulty tiers. A prompt scores ✓ if it produces a valid, executable 3D part.
           </p>
 
-          {/* Staircase: T4 on top (narrowest/hardest), T1 at bottom (widest/easiest) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* 2-column table: tier label | examples. T4 on top (hardest). */}
+          <div style={{ border: "1px solid rgba(255,255,255,0.3)" }}>
             {[...PROMPT_TIERS].reverse().map((tier, i) => (
               <div
                 key={tier.tier}
                 style={{
-                  marginLeft: (3 - i) * 56,
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderLeft: `4px solid ${tier.color}`,
-                  borderRadius: 8,
-                  padding: "18px 22px",
+                  display: "grid",
+                  gridTemplateColumns: "200px 1fr",
+                  borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.2)" : "none",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-                  <span style={{
+                {/* Left column: tier label */}
+                <div style={{
+                  padding: "24px 20px",
+                  borderRight: "1px solid rgba(255,255,255,0.3)",
+                  borderLeft: `4px solid ${tier.color}`,
+                  background: "rgba(0,0,0,0.1)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}>
+                  <div style={{
                     fontFamily: "var(--font-geist-mono), monospace",
                     fontSize: 11,
-                    color: tier.color,
                     fontWeight: 700,
-                    letterSpacing: "0.08em",
+                    letterSpacing: "0.1em",
+                    color: tier.color,
                   }}>
-                    {tier.tier}
-                  </span>
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>
+                    {tier.tier.toUpperCase()}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.3 }}>
                     {tier.label}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: "auto" }}>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
                     5 prompts
-                  </span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {/* Right column: example prompts */}
+                <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 0 }}>
                   {tier.examples.map((ex, j) => (
                     <div
                       key={j}
                       style={{
                         fontFamily: "var(--font-geist-mono), monospace",
                         fontSize: 12,
-                        color: "var(--muted)",
-                        background: "rgba(0,0,0,0.12)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 5,
-                        padding: "7px 11px",
+                        color: "rgba(255,255,255,0.8)",
+                        padding: "10px 0",
+                        borderBottom: j < tier.examples.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
                         lineHeight: 1.5,
                       }}
                     >
