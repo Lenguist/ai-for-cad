@@ -123,7 +123,7 @@ export default function MethodsPage() {
           </p>
 
           {/* Prompt design — ruled table */}
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "rgba(255,255,255,0.6)", ...MONO, letterSpacing: "0.06em", textTransform: "uppercase" as const, fontSize: 11 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, marginBottom: 12, color: "rgba(255,255,255,0.6)", ...MONO, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
             Prompt tiers
           </h3>
           <div style={{ border: "1px solid rgba(255,255,255,0.3)", marginBottom: 32 }}>
