@@ -456,17 +456,17 @@ export default function Home() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
-              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", score: "19/20", note: "Best overall. Perfect on T1–T3." },
-              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", score: "19/20", note: "Native geometry engine. Returns KCL." },
-              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", score: "14/20", note: "Qwen 3B fine-tuned. Unit normalization quirk." },
-              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", score: "14/20", note: "Fastest. Hallucinates methods on T4." },
-              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", score: "12/20", note: "Token limit cuts off complex prompts." },
+              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", valid: 19, note: "Best overall. Perfect on T1–T3." },
+              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", valid: 19, note: "Native geometry engine. Returns KCL." },
+              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", valid: 14, note: "Qwen 3B fine-tuned. Unit normalization quirk." },
+              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", valid: 14, note: "Fastest. Hallucinates methods on T4." },
+              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", valid: 12, note: "Token limit cuts off complex prompts." },
             ].map((m) => (
               <div
                 key={m.name}
                 style={{
-                  background: "white",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderRadius: 10,
                   padding: "18px 24px",
                   display: "flex",
@@ -478,21 +478,17 @@ export default function Home() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2, color: "#1e3a5f" }}>{m.name}</div>
-                    <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-geist-mono), monospace" }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{m.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
                       {m.type} · {m.venue}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, color: "#64748b", flex: 2 }}>{m.note}</div>
-                <div style={{
-                  fontFamily: "var(--font-geist-mono), monospace",
-                  fontWeight: 800,
-                  fontSize: 18,
-                  color: "#1e3a5f",
-                  minWidth: 56,
-                  textAlign: "right",
-                }}>{m.score}</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", flex: 2 }}>{m.note}</div>
+                <div style={{ textAlign: "right", minWidth: 80 }}>
+                  <div style={{ fontFamily: "var(--font-geist-mono), monospace", fontWeight: 800, fontSize: 18, color: "var(--foreground)", lineHeight: 1 }}>{m.valid}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>valid STLs</div>
+                </div>
               </div>
             ))}
           </div>
@@ -501,15 +497,15 @@ export default function Home() {
             style={{
               marginTop: 24,
               padding: 20,
-              background: "white",
-              border: "1px solid #e2e8f0",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.2)",
               borderRadius: 10,
               fontSize: 14,
-              color: "#64748b",
+              color: "var(--muted)",
             }}
           >
             Have a text-to-CAD model and want it on the leaderboard?{" "}
-            <a href="mailto:contact@cadarena.dev" style={{ color: "#4a80b4", textDecoration: "none" }}>
+            <a href="mailto:contact@cadarena.dev" style={{ color: "var(--accent)", textDecoration: "none" }}>
               Get in touch
             </a>
             .
@@ -542,16 +538,17 @@ export default function Home() {
             produces a valid, executable 3D part.
           </p>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {PROMPT_TIERS.map((tier, i) => (
+          {/* Staircase: T4 on top (narrowest/hardest), T1 at bottom (widest/easiest) */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {[...PROMPT_TIERS].reverse().map((tier, i) => (
               <div
                 key={tier.tier}
                 style={{
-                  marginLeft: i * 44,
-                  background: "white",
-                  border: "1px solid #e2e8f0",
+                  marginLeft: (3 - i) * 56,
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderLeft: `4px solid ${tier.color}`,
-                  borderRadius: 10,
+                  borderRadius: 8,
                   padding: "18px 22px",
                 }}
               >
@@ -565,10 +562,10 @@ export default function Home() {
                   }}>
                     {tier.tier}
                   </span>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#1e3a5f" }}>
+                  <span style={{ fontWeight: 700, fontSize: 15 }}>
                     {tier.label}
                   </span>
-                  <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: "auto" }}>
+                  <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: "auto" }}>
                     5 prompts
                   </span>
                 </div>
@@ -579,9 +576,9 @@ export default function Home() {
                       style={{
                         fontFamily: "var(--font-geist-mono), monospace",
                         fontSize: 12,
-                        color: "#475569",
-                        background: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        color: "var(--muted)",
+                        background: "rgba(0,0,0,0.12)",
+                        border: "1px solid var(--border)",
                         borderRadius: 5,
                         padding: "7px 11px",
                         lineHeight: 1.5,
