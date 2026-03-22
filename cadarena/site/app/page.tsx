@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { MODELS, TYPE_STYLES } from "./data/models";
 
 const PRELIMINARY_RESULTS = [
   {
@@ -94,10 +93,6 @@ const PROMPT_TIERS = [
 
 
 export default function Home() {
-  const academicCount = MODELS.filter((m) => m.type === "academic").length;
-  const commercialCount = MODELS.filter((m) => m.type === "commercial").length;
-  const baselineCount = MODELS.filter((m) => m.type === "baseline").length;
-
   return (
     <div style={{ background: "var(--background)", minHeight: "100vh" }}>
       {/* Nav */}
@@ -150,22 +145,10 @@ export default function Home() {
           </div>
           <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
             <Link href="/results" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Results</Link>
-            {["Models", "Benchmark", "Eval", "Vision", "Paper"].map((item) => (
-              <a
-                key={item}
-                href={item === "Eval" ? "/eval-review.html" : item === "Vision" ? "/vision.html" : `#${item.toLowerCase()}`}
-                style={{
-                  color: "var(--muted)",
-                  textDecoration: "none",
-                  fontSize: 14,
-                  fontWeight: 500,
-                }}
-              >
-                {item}
-              </a>
-            ))}
+            <Link href="/try" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Try</Link>
+            <Link href="/methods" style={{ color: "var(--muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Methods</Link>
             <a
-              href="https://github.com"
+              href="https://github.com/Lenguist/ai-for-cad"
               style={{
                 color: "var(--muted)",
                 textDecoration: "none",
@@ -259,10 +242,9 @@ export default function Home() {
               lineHeight: 1.7,
             }}
           >
-            Enter a text prompt. Compare outputs from{" "}
-            <strong style={{ color: "var(--foreground)" }}>13+ models</strong>{" "}
-            — academic and commercial — side by side. Vote for the best result.
-            Watch the leaderboard evolve.
+            Compare outputs from{" "}
+            <strong style={{ color: "var(--foreground)" }}>LLM baselines, academic, and commercial models</strong>{" "}
+            — side by side — on a fixed set of 20 curated prompts across 4 difficulty tiers.
           </p>
 
           <div
@@ -321,8 +303,8 @@ export default function Home() {
         >
           {[
             { value: "173", label: "Papers analyzed" },
-            { value: "13+", label: "Models compared" },
-            { value: "~200", label: "Benchmark prompts" },
+            { value: "5", label: "Models tested" },
+            { value: "20", label: "Benchmark prompts" },
             { value: "4", label: "Difficulty tiers" },
           ].map((stat, i) => (
             <div
@@ -401,13 +383,13 @@ export default function Home() {
               {
                 step: "02",
                 title: "Compare model outputs",
-                desc: "See outputs from 13+ models rendered side-by-side in 3D. Inspect geometry, download STEP files, view the generated code.",
+                desc: "See outputs from multiple models rendered side-by-side in 3D. Inspect geometry, view the generated code, see where each model fails.",
                 icon: "⚙️",
               },
               {
                 step: "03",
-                title: "Vote + see metrics",
-                desc: "Cast a pairwise vote. Results feed into Elo-based rankings. Automated metrics (validity, Chamfer distance, VLM score) run in parallel.",
+                title: "Browse the results",
+                desc: "Explore the full benchmark grid — 20 prompts × 5 models. Click any cell to see the 3D output, source code, and failure analysis.",
                 icon: "📊",
               },
             ].map((step) => (
@@ -460,177 +442,67 @@ export default function Home() {
           borderTop: "1px solid var(--border)",
         }}
       >
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <h2
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              marginBottom: 48,
-              flexWrap: "wrap",
-              gap: 16,
+              fontSize: 32,
+              fontWeight: 700,
+              marginBottom: 8,
+              letterSpacing: "-0.02em",
             }}
           >
-            <div>
-              <h2
+            Models tested
+          </h2>
+          <p style={{ color: "var(--muted)", marginBottom: 40, fontSize: 16 }}>
+            5 models evaluated on the full 20-prompt benchmark. More being added.
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { name: "Claude Opus 4.6", type: "LLM Baseline", venue: "Anthropic", score: "95%", note: "Best overall. 19/20 prompts." },
+              { name: "Zoo / ML-ephant", type: "Commercial", venue: "zoo.dev", score: "95%", note: "Native geometry engine. Returns KCL." },
+              { name: "Text-to-CadQuery", type: "Academic", venue: "arXiv 2025", score: "70%", note: "Qwen 3B fine-tuned. Unit normalization quirk." },
+              { name: "Gemini 2.5 Flash", type: "LLM Baseline", venue: "Google", score: "70%", note: "Fastest. Hallucinates methods on T4." },
+              { name: "GPT-5", type: "LLM Baseline", venue: "OpenAI", score: "60%", note: "Token limit cuts off complex prompts." },
+            ].map((m) => (
+              <div
+                key={m.name}
                 style={{
-                  fontSize: 32,
-                  fontWeight: 700,
-                  marginBottom: 8,
-                  letterSpacing: "-0.02em",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
+                  padding: "18px 24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  flexWrap: "wrap",
                 }}
               >
-                Models included
-              </h2>
-              <p style={{ color: "var(--muted)", fontSize: 16 }}>
-                {academicCount} academic &nbsp;·&nbsp; {commercialCount}{" "}
-                commercial &nbsp;·&nbsp; {baselineCount} LLM baselines
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {(["academic", "commercial", "baseline"] as const).map((type) => {
-                const s = TYPE_STYLES[type];
-                return (
-                  <span
-                    key={type}
-                    style={{
-                      fontSize: 12,
-                      padding: "4px 10px",
-                      borderRadius: 6,
-                      background: s.bg,
-                      color: s.color,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {s.label}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {MODELS.map((model) => {
-              const s = TYPE_STYLES[model.type];
-              return (
-                <Link
-                  key={model.name}
-                  href={`/models/${model.slug}`}
-                  style={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 10,
-                    padding: 22,
-                    transition: "border-color 0.2s, background 0.2s",
-                    textDecoration: "none",
-                    color: "inherit",
-                    display: "block",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: 15,
-                          marginBottom: 2,
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        {model.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "var(--muted)",
-                          fontFamily: "var(--font-geist-mono), monospace",
-                        }}
-                      >
-                        {model.venue} · {model.year}
-                      </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{m.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-geist-mono), monospace" }}>
+                      {m.type} · {m.venue}
                     </div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "3px 8px",
-                        borderRadius: 5,
-                        background: s.bg,
-                        color: s.color,
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                        letterSpacing: "0.03em",
-                      }}
-                    >
-                      {s.label}
-                    </span>
                   </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      marginBottom: 12,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        background: "var(--card-hover)",
-                        color: "var(--muted)",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      IN: {model.input}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 4,
-                        background: "var(--card-hover)",
-                        color: "var(--muted)",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      OUT: {model.output}
-                    </span>
-                  </div>
-
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      lineHeight: 1.6,
-                      margin: 0,
-                    }}
-                  >
-                    {model.note}
-                  </p>
-                </Link>
-              );
-            })}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--muted)", flex: 2 }}>{m.note}</div>
+                <div style={{
+                  fontFamily: "var(--font-geist-mono), monospace",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: "var(--foreground)",
+                  minWidth: 48,
+                  textAlign: "right",
+                }}>{m.score}</div>
+              </div>
+            ))}
           </div>
 
           <div
             style={{
-              marginTop: 32,
+              marginTop: 24,
               padding: 20,
               background: "rgba(255,255,255,0.07)",
               border: "1px solid rgba(255,255,255,0.2)",
@@ -639,14 +511,9 @@ export default function Home() {
               color: "var(--muted)",
             }}
           >
-            <strong style={{ color: "var(--foreground)" }}>Open submissions.</strong>{" "}
-            Once launched, any model can be submitted for evaluation. If you
-            have a text-to-CAD model and want it on the leaderboard,{" "}
-            <a
-              href="mailto:contact@cadarena.dev"
-              style={{ color: "var(--accent)", textDecoration: "none" }}
-            >
-              get in touch
+            Have a text-to-CAD model and want it on the leaderboard?{" "}
+            <a href="mailto:contact@cadarena.dev" style={{ color: "var(--accent)", textDecoration: "none" }}>
+              Get in touch
             </a>
             .
           </div>
@@ -673,9 +540,9 @@ export default function Home() {
             Benchmark prompts
           </h2>
           <p style={{ color: "var(--muted)", marginBottom: 48, fontSize: 16 }}>
-            ~200 prompts across 4 difficulty tiers. Fixed set for reproducible
-            evaluation. Models are scored on validity rate, Chamfer distance,
-            and VLM-judged prompt adherence.
+            20 prompts across 4 difficulty tiers. Fixed set for reproducible
+            evaluation. Models are scored on validity rate — whether the output
+            produces a valid, executable 3D part.
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20 }}>
@@ -836,9 +703,8 @@ export default function Home() {
           </div>
 
           <p style={{ marginTop: 20, fontSize: 13, color: "var(--muted)" }}>
-            These are <strong style={{ color: "var(--foreground)" }}>API-only baseline results</strong> on 20 prompts.
-            Full benchmark (200 prompts, 13+ models including academic open-source models)
-            is in progress. Gemini result reflects free-tier rate limiting, not model quality.
+            These are <strong style={{ color: "var(--foreground)" }}>API-only results</strong> on 20 hand-selected prompts, run and reviewed manually.
+            More models and prompts being added. Gemini result reflects free-tier rate limiting, not model quality.
           </p>
         </div>
       </section>
@@ -923,9 +789,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Paper / CTA */}
+      {/* Contact CTA */}
       <section
-        id="paper"
         style={{
           padding: "80px 24px",
           borderTop: "1px solid var(--border)",
@@ -933,18 +798,6 @@ export default function Home() {
         }}
       >
         <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <div
-            style={{
-              fontFamily: "var(--font-geist-mono), monospace",
-              fontSize: 12,
-              color: "var(--accent)",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              marginBottom: 16,
-            }}
-          >
-            PAPER IN PREPARATION
-          </div>
           <h2
             style={{
               fontSize: 32,
@@ -953,7 +806,7 @@ export default function Home() {
               letterSpacing: "-0.02em",
             }}
           >
-            Accompanying publication
+            Get involved
           </h2>
           <p
             style={{
@@ -963,53 +816,24 @@ export default function Home() {
               lineHeight: 1.7,
             }}
           >
-            We are preparing a benchmark paper targeting{" "}
-            <strong style={{ color: "var(--foreground)" }}>
-              NeurIPS 2026 Datasets &amp; Benchmarks
-            </strong>
-            . The paper will evaluate all listed models on the fixed benchmark,
-            propose standardized metrics, and describe the arena platform.
+            Working on a text-to-CAD model and want it on the leaderboard?
+            Have feedback on the benchmark design?
           </p>
-
-          <div
+          <a
+            href="mailto:contact@cadarena.dev"
             style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 12,
-              padding: 32,
-              marginBottom: 32,
+              display: "inline-block",
+              background: "rgba(255,255,255,0.9)",
+              color: "#3568a0",
+              padding: "12px 32px",
+              borderRadius: 8,
+              textDecoration: "none",
+              fontWeight: 700,
+              fontSize: 15,
             }}
           >
-            <p
-              style={{
-                fontSize: 14,
-                color: "var(--muted)",
-                marginBottom: 20,
-              }}
-            >
-              Get notified when the leaderboard launches and the preprint drops.
-            </p>
-            <a
-              href="mailto:contact@cadarena.dev"
-              style={{
-                display: "inline-block",
-                background: "rgba(255,255,255,0.9)",
-                color: "#3568a0",
-                padding: "12px 32px",
-                borderRadius: 8,
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: 15,
-              }}
-            >
-              contact@cadarena.dev →
-            </a>
-          </div>
-
-          <p style={{ fontSize: 13, color: "var(--muted)" }}>
-            Are you working on a text-to-CAD model and want it on the
-            leaderboard? We want to hear from you.
-          </p>
+            contact@cadarena.dev →
+          </a>
         </div>
       </section>
 
