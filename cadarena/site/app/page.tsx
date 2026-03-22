@@ -332,96 +332,46 @@ export default function Home() {
       </div>
 
       {/* How it works */}
-      <section style={{ padding: "80px 24px" }}>
+      <section className="blueprint-grid" style={{ padding: "80px 24px", borderTop: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <h2
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              marginBottom: 8,
-              letterSpacing: "-0.02em",
-            }}
-          >
+          <h2 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8, letterSpacing: "-0.02em" }}>
             How it works
           </h2>
-          <p style={{ color: "var(--muted)", marginBottom: 48, fontSize: 16 }}>
+          <p style={{ color: "var(--muted)", marginBottom: 40, fontSize: 16 }}>
             Inspired by{" "}
-            <a
-              href="https://chat.lmsys.org"
-              style={{ color: "var(--accent)", textDecoration: "none" }}
-            >
-              Chatbot Arena
-            </a>{" "}
+            <a href="https://chat.lmsys.org" style={{ color: "var(--accent)", textDecoration: "none" }}>Chatbot Arena</a>{" "}
             and{" "}
-            <a
-              href="https://huggingface.co/spaces/dylanebert/3d-arena"
-              style={{ color: "var(--accent)", textDecoration: "none" }}
-            >
-              3D Arena
-            </a>{" "}
+            <a href="https://huggingface.co/spaces/dylanebert/3d-arena" style={{ color: "var(--accent)", textDecoration: "none" }}>3D Arena</a>{" "}
             — but for engineering-grade parametric CAD.
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 24,
-            }}
-          >
+          <div style={{ border: "1px solid rgba(255,255,255,0.3)", display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
             {[
-              {
-                step: "01",
-                title: "Enter a text prompt",
-                desc: "Describe a mechanical part in plain English. From simple primitives to complex functional assemblies.",
-                icon: "✏️",
-              },
-              {
-                step: "02",
-                title: "Compare model outputs",
-                desc: "See outputs from multiple models rendered side-by-side in 3D. Inspect geometry, view the generated code, see where each model fails.",
-                icon: "⚙️",
-              },
-              {
-                step: "03",
-                title: "Browse the results",
-                desc: "Explore the full benchmark grid — 20 prompts × 5 models. Click any cell to see the 3D output, source code, and failure analysis.",
-                icon: "📊",
-              },
-            ].map((step) => (
+              { step: "01", title: "Enter a text prompt", desc: "Describe a mechanical part in plain English. From simple primitives to complex functional assemblies." },
+              { step: "02", title: "Compare model outputs", desc: "See outputs from multiple models rendered side-by-side in 3D. Inspect geometry, view the generated code, see where each model fails." },
+              { step: "03", title: "Browse the results", desc: "Explore the full benchmark grid — 20 prompts × 5 models. Click any cell to see the 3D output, source code, and failure analysis." },
+            ].map((step, i) => (
               <div
                 key={step.step}
                 style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  padding: 32,
+                  padding: "32px 28px",
+                  borderRight: i < 2 ? "1px solid rgba(255,255,255,0.3)" : "none",
                 }}
               >
-                <div
-                  style={{
-                    fontFamily: "var(--font-geist-mono), monospace",
-                    fontSize: 12,
-                    color: "var(--accent)",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    marginBottom: 16,
-                  }}
-                >
+                <div style={{
+                  fontFamily: "var(--font-geist-mono), monospace",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  color: "rgba(255,255,255,0.4)",
+                  marginBottom: 20,
+                }}>
                   STEP {step.step}
                 </div>
-                <div style={{ fontSize: 28, marginBottom: 14 }}>{step.icon}</div>
-                <h3
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    marginBottom: 10,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
+                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 12, lineHeight: 1.3 }}>
                   {step.title}
                 </h3>
-                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7 }}>
+                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
                   {step.desc}
                 </p>
               </div>
