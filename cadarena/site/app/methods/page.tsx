@@ -124,10 +124,10 @@ export default function MethodsPage() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {[
-                { tier: "T1", label: "Simple Primitives", n: 5, color: "#16a34a", desc: "Basic shapes with no features — boxes, cylinders, spheres." },
-                { tier: "T2", label: "Single Part with Features", n: 5, color: "#2563eb", desc: "One part with holes, fillets, or chamfers." },
-                { tier: "T3", label: "Multi-Feature Parts", n: 5, color: "#ea580c", desc: "Multiple boolean operations on a single body." },
-                { tier: "T4", label: "Complex Functional", n: 5, color: "#dc2626", desc: "Gears, springs, snap-fit assemblies — hardest tier." },
+                { tier: "T1", label: "Simple Primitives", n: 5, color: "#4ade80", desc: "Basic shapes with no features — boxes, cylinders, spheres." },
+                { tier: "T2", label: "Single Part with Features", n: 5, color: "#facc15", desc: "One part with holes, fillets, or chamfers." },
+                { tier: "T3", label: "Multi-Feature Parts", n: 5, color: "#fb923c", desc: "Multiple boolean operations on a single body." },
+                { tier: "T4", label: "Complex Functional", n: 5, color: "#f87171", desc: "Gears, springs, snap-fit assemblies — hardest tier." },
               ].map((t, i) => (
                 <div key={t.tier} style={{ marginLeft: i * 32, background: "white", border: "1px solid #e2e8f0", borderLeft: `3px solid ${t.color}`, borderRadius: 6, padding: "12px 16px" }}>
                   <div style={{ ...MONO, fontSize: 11, color: t.color, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 3 }}>

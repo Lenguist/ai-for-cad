@@ -48,7 +48,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 1",
     label: "Simple Primitives",
-    color: "#16a34a",
+    color: "#4ade80",   // bright lime — pops on blue
     examples: [
       "A cube 20 × 20 × 20 mm",
       "A cylinder 10 mm diameter, 30 mm tall",
@@ -58,7 +58,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 2",
     label: "Single Part with Features",
-    color: "#2563eb",
+    color: "#facc15",   // yellow — high contrast on blue
     examples: [
       "A rectangular plate 50 × 30 × 5 mm with a centered hole 8 mm diameter",
       "An L-shaped bracket, 40 mm arms, 5 mm thick, 30 mm tall",
@@ -68,7 +68,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 3",
     label: "Multi-Feature Parts",
-    color: "#ea580c",
+    color: "#fb923c",   // bright orange
     examples: [
       "A flanged shaft with 3 equally-spaced M4 bolt holes on the flange",
       "A box with a snap-fit lid, 50 × 40 × 30 mm",
@@ -78,7 +78,7 @@ const PROMPT_TIERS = [
   {
     tier: "Tier 4",
     label: "Complex Functional Parts",
-    color: "#dc2626",
+    color: "#f87171",   // light red/coral
     examples: [
       "A parametric living hinge, 100 mm span, 0.3 mm flex zone",
       "An S-curve pipe fitting, 15 mm inner diameter, 45° bend",
