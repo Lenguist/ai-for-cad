@@ -1,93 +1,62 @@
 Order of Attack — CAD Arena
-Date: 2026-03-22
+Date: 2026-03-22 (updated)
 
 Goal: Get cadarena.dev publishable as a research arena.
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 1 — Clean Up the Static Site
+PHASE 1 — Clean Up the Static Site                          ✓ DONE
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 1a. Content audit on landing page
-        - Remove/fix misleading stats ("~200 prompts" → 20, "13+ models" → 5 tested)
-        - Remove voting claims from hero and "How It Works"
-        - Remove 13-model grid (replace with just the 5 tested models)
-        - Remove "Paper in Preparation" section
-        - Remove dead nav links (Eval, Vision, Paper)
-        - New nav: Results · Try · Explore · Methods · GitHub
-
-[ ] 1b. Reframe static results clearly
-        - Label as "Curated Benchmark — 20 hand-selected prompts, run once, reviewed manually"
-        - Keep the leaderboard grid as-is
-        - Add link to /methods for how each model was run
+[x] 1a. Content audit on landing page
+[x] 1b. Reframe static results clearly
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 2 — Methodology Page
+PHASE 2 — Methodology Page                                  ✓ DONE
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 2a. Create /methods page
-        - How static results were generated (prompts, models, execution, scoring)
-        - How dynamic results are generated (same pipeline, live)
-        - Metrics explained: valid STL, syntax ok, latency
-        - Per-model notes (Zoo → KCL, Text-to-CadQuery → normalized units, etc.)
+[x] 2a. Create /methods page
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 3 — Dynamic Generation ("Try It")
+PHASE 3 — Dynamic Generation ("Try It")                     IN PROGRESS
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 3a. Supabase setup
-        - Create project (or reuse existing account)
-        - Schema: prompts, results, users, quota table
-        - Storage bucket for generated STLs
-
-[ ] 3b. /api/generate API route
-        - Accepts: prompt text, selected models
-        - Calls: Claude, GPT, Gemini, Zoo APIs
-        - Returns: code + execution status + STL URL
+[x] 3a. /api/generate API route (Claude, GPT, Gemini, Zoo — SSE streaming)
+[x] 3b. /try page frontend (prompt input, model selector, loading states, code display)
+        NOTE: Zoo shows 3D viewer (STL via base64). LLMs show code only — no viewer yet.
 
 [ ] 3c. CadQuery execution via Modal
-        - Webhook/poll pattern: submit job → poll for result
-        - Reuse existing modal_text2cadquery.py infrastructure
+        - POST prompt to Modal → run CadQuery → return STL as base64
+        - Wire into /api/generate for Claude/GPT/Gemini routes
+        - Reuse eval/modal_text2cadquery.py as reference for the execution env
+        - Return stlBase64 same as Zoo does today
 
-[ ] 3d. STL upload to Supabase Storage
-        - After execution, upload STL → get public URL
-        - Store URL in results table
-
-[ ] 3e. /try page (frontend)
-        - Prompt input + model selector
-        - Loading states per model
-        - Results side-by-side (3D viewer + code)
-        - Consent banner: "Save this prompt + result to the public dataset? [Yes / No]"
+[ ] 3d. Upstash Redis rate limiting (replaces Supabase for this)
+        - Vercel Edge middleware
+        - IP-based: 5 prompts/day anonymous
+        - No accounts needed
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 4 — Explore Page (User Prompts Browser)
+PHASE 4 — Ship                                              NEXT
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 4a. /explore page
-        - Grid of community-submitted prompts (consent=true only)
-        - Filter by tier / model / success
-        - Clicking a prompt → shows results same as static detail view
-        - Auto-populates from Supabase as dynamic gets used
+[ ] 4a. Set env vars on Vercel (ANTHROPIC_API_KEY, OPENAI_API_KEY,
+        GOOGLE_API_KEY, ZOO_API_TOKEN, UPSTASH_REDIS_REST_URL,
+        UPSTASH_REDIS_REST_TOKEN, MODAL_API_KEY or webhook URL)
+
+[ ] 4b. Deploy to cadarena.dev, smoke test /try end-to-end
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 5 — Auth + Rate Limiting
+DEFERRED (see cadarena/FUTURE_FEATURES.md)
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 5a. Supabase Auth
-        - Email + Google sign-in
-        - Magic link option
-
-[ ] 5b. Quota system
-        - Anonymous (IP): 3 prompts/day
-        - Free account (email): 20 prompts/day
-        - Track usage in Supabase quota table
-
-[ ] 5c. Upstash Redis rate limiting
-        - Vercel Edge middleware checks IP + user quota before hitting /api/generate
+- /explore page (needs Supabase DB + storage + consent UI — deferred until traffic)
+- Auth + per-user quotas (deferred until /explore matters)
+- Geometric accuracy metrics (Chamfer distance, VLM scoring)
 
 ─────────────────────────────────────────────────────────────────────
 NOTES
 ─────────────────────────────────────────────────────────────────────
-- Auth stack: Supabase (auth + postgres + storage) — already have account
-- No paid tier for users — this is a research tool
-- Dynamic results feed directly into Explore once consent=true
-- Paper email list = everyone who signs up for free account
+- Zoo returns STL as base64 in the API response — no storage needed
+- CadQuery execution: Modal endpoint returns STL as base64 — same pattern
+- No Supabase needed for v1 ship
+- Rate limiting via Upstash Redis (free tier, no user accounts)
