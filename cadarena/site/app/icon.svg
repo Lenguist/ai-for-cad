@@ -1,9 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#080c14"/>
+  <!-- blueprint blue background -->
+  <rect width="32" height="32" rx="5" fill="#1a3a5c"/>
+  <!-- subtle grid dots -->
+  <circle cx="8" cy="8" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="16" cy="8" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="24" cy="8" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="8" cy="16" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="24" cy="16" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="8" cy="24" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="16" cy="24" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="24" cy="24" r="0.6" fill="rgba(255,255,255,0.2)"/>
+  <!-- isometric cube — white drafting lines -->
   <!-- top face -->
-  <polygon points="16,4 28,11 16,18 4,11" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="16,5 27,11.5 16,18 5,11.5" fill="rgba(255,255,255,0.12)" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
   <!-- left face -->
-  <polygon points="4,11 16,18 16,28 4,21" fill="rgba(59,130,246,0.08)" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="5,11.5 16,18 16,27 5,20.5" fill="rgba(255,255,255,0.06)" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
   <!-- right face -->
-  <polygon points="28,11 16,18 16,28 28,21" fill="rgba(59,130,246,0.05)" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="27,11.5 16,18 16,27 27,20.5" fill="rgba(255,255,255,0.04)" stroke="white" stroke-width="1.2" stroke-linejoin="round"/>
 </svg>
