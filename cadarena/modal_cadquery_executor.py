@@ -28,7 +28,7 @@ image = (
 
 
 @app.function(image=image, timeout=60, memory=2048)
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 def execute(item: dict) -> dict:
     import ast
     import base64

@@ -119,6 +119,26 @@ async function generateZoo(prompt: string): Promise<{ code: string; outputType: 
   throw new Error("Zoo: timeout after 51s");
 }
 
+// ── CadQuery execution via Modal ──────────────────────────────────────────────
+
+async function executeCadQuery(code: string): Promise<string | undefined> {
+  const url = process.env.MODAL_EXECUTOR_URL;
+  if (!url) return undefined; // graceful degradation — show code only
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+      signal: AbortSignal.timeout(55_000), // stay under Vercel's 60s limit
+    });
+    if (!resp.ok) return undefined;
+    const data = await resp.json() as { stlBase64?: string; error?: string };
+    return data.stlBase64 ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 type ModelResult = {
   modelId: string;
   code?: string;
@@ -153,6 +173,10 @@ export async function POST(req: Request) {
               case "gemini-2.5-flash":  result = await generateGemini(prompt); break;
               case "zoo-ml-ephant":     result = await generateZoo(prompt); break;
               default: throw new Error(`Unknown model: ${modelId}`);
+            }
+            // For LLM models (CadQuery output): execute via Modal to get STL
+            if (result.outputType === "cadquery" && result.code && !result.stlBase64) {
+              result.stlBase64 = await executeCadQuery(result.code);
             }
             send({ modelId, ...result, latency: (Date.now() - t0) / 1000 });
           } catch (e) {
