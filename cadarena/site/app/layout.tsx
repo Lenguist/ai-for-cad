@@ -16,18 +16,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CAD Arena — Open Benchmark for AI-Generated Parametric CAD",
   description:
-    "The first open leaderboard comparing text-to-CAD models. Enter a prompt, compare outputs from 13+ models side by side, vote for the best result. Living leaderboard. Reproducible metrics.",
+    "The first open benchmark comparing text-to-CAD models. 20 curated prompts across 4 difficulty tiers. LLM baselines, academic models, and commercial tools — side by side.",
   openGraph: {
     title: "CAD Arena — Open Benchmark for AI-Generated Parametric CAD",
     description:
-      "The first open leaderboard comparing text-to-CAD models side by side. Arena-style voting. 13+ models. Reproducible metrics.",
+      "The first open benchmark comparing text-to-CAD models. 20 curated prompts across 4 difficulty tiers. LLM baselines, academic models, and commercial tools — side by side.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "CAD Arena — Open Benchmark for AI-Generated Parametric CAD",
     description:
-      "The first open leaderboard comparing text-to-CAD models side by side. 13+ models, arena-style voting, reproducible metrics.",
+      "The first open benchmark comparing text-to-CAD models. 20 curated prompts across 4 difficulty tiers. LLM baselines, academic models, and commercial tools — side by side.",
   },
 };
 
