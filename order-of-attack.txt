@@ -24,11 +24,10 @@ PHASE 3 — Dynamic Generation ("Try It")                     IN PROGRESS
 [x] 3b. /try page frontend (prompt input, model selector, loading states, code display)
         NOTE: Zoo shows 3D viewer (STL via base64). LLMs show code only — no viewer yet.
 
-[ ] 3c. CadQuery execution via Modal
-        - POST prompt to Modal → run CadQuery → return STL as base64
-        - Wire into /api/generate for Claude/GPT/Gemini routes
-        - Reuse eval/modal_text2cadquery.py as reference for the execution env
-        - Return stlBase64 same as Zoo does today
+[x] 3c. CadQuery execution via Modal
+        - Deployed: https://maksym-d-bondarenko--cad-arena-executor-execute.modal.run
+        - Wired into /api/generate for Claude/GPT/Gemini routes via MODAL_EXECUTOR_URL env var
+        - Returns stlBase64 same as Zoo does today
 
 [ ] 3d. Upstash Redis rate limiting (replaces Supabase for this)
         - Vercel Edge middleware
