@@ -392,8 +392,8 @@ export default function Home() {
               <div
                 key={step.step}
                 style={{
-                  background: "white",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderRadius: 12,
                   padding: 32,
                 }}
@@ -402,7 +402,7 @@ export default function Home() {
                   style={{
                     fontFamily: "var(--font-geist-mono), monospace",
                     fontSize: 12,
-                    color: "#4a80b4",
+                    color: "var(--accent)",
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                     marginBottom: 16,
@@ -417,12 +417,11 @@ export default function Home() {
                     fontWeight: 700,
                     marginBottom: 10,
                     letterSpacing: "-0.01em",
-                    color: "#1e3a5f",
                   }}
                 >
                   {step.title}
                 </h3>
-                <p style={{ color: "#64748b", fontSize: 14, lineHeight: 1.7 }}>
+                <p style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.7 }}>
                   {step.desc}
                 </p>
               </div>
