@@ -1,5 +1,5 @@
 Order of Attack — CAD Arena
-Date: 2026-03-22 (updated)
+Date: 2026-03-23 (updated)
 
 Goal: Get cadarena.dev publishable as a research arena.
 
@@ -17,45 +17,57 @@ PHASE 2 — Methodology Page                                  ✓ DONE
 [x] 2a. Create /methods page
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 3 — Dynamic Generation ("Try It")                     IN PROGRESS
+PHASE 3 — Dynamic Generation ("Try It")                     ✓ DONE
 ─────────────────────────────────────────────────────────────────────
 
-[x] 3a. /api/generate API route (Claude, GPT, Gemini, Zoo — SSE streaming)
-[x] 3b. /try page frontend (prompt input, model selector, loading states, code display)
-        NOTE: Zoo shows 3D viewer (STL via base64). LLMs show code only — no viewer yet.
-
+[x] 3a. /api/generate (Claude Sonnet, GPT-5, Gemini 2.5 Flash, Zoo — SSE)
+[x] 3b. /try page (prompt input, model selector, 3D viewer, code collapse toggle)
 [x] 3c. CadQuery execution via Modal
-        - Deployed: https://maksym-d-bondarenko--cad-arena-executor-execute.modal.run
-        - Wired into /api/generate for Claude/GPT/Gemini routes via MODAL_EXECUTOR_URL env var
-        - Returns stlBase64 same as Zoo does today
-
-[ ] 3d. Upstash Redis rate limiting (replaces Supabase for this)
-        - Vercel Edge middleware
-        - IP-based: 5 prompts/day anonymous
-        - No accounts needed
+        - Live: https://maksym-d-bondarenko--cad-arena-executor-execute.modal.run
+        - All 3 LLM models return STL base64 same as Zoo
+[x] 3d. Rate limiting: 3/week anon, 10/week with email (Upstash Redis proxy.ts)
+[x] 3e. Email collection: /api/subscribe → Redis SET + cookie upgrade
+[x] 3f. Prompt logging: every generation logged to Redis cad-arena:prompts
+[x] 3g. Winner voting: /api/vote → Redis cad-arena:votes + win-counts hash
+        Users pick best result after all models finish
 
 ─────────────────────────────────────────────────────────────────────
-PHASE 4 — Ship                                              NEXT
+PHASE 4 — Ship                                              NEXT UP
 ─────────────────────────────────────────────────────────────────────
 
-[ ] 4a. Set env vars on Vercel (ANTHROPIC_API_KEY, OPENAI_API_KEY,
-        GOOGLE_API_KEY, ZOO_API_TOKEN, UPSTASH_REDIS_REST_URL,
-        UPSTASH_REDIS_REST_TOKEN, MODAL_API_KEY or webhook URL)
+[ ] 4a. Set env vars on Vercel (Project Settings → Environment Variables):
+        ANTHROPIC_API_KEY      = sk-ant-...
+        OPENAI_API_KEY         = sk-proj-...
+        GOOGLE_API_KEY         = AIza...
+        ZOO_API_TOKEN          = api-82b8dfcd-...
+        MODAL_EXECUTOR_URL     = https://maksym-d-bondarenko--cad-arena-executor-execute.modal.run
+        UPSTASH_REDIS_REST_URL = https://select-fox-82440.upstash.io
+        UPSTASH_REDIS_REST_TOKEN = (from Upstash dashboard)
 
-[ ] 4b. Deploy to cadarena.dev, smoke test /try end-to-end
+[ ] 4b. Deploy to cadarena.dev (push triggers auto-deploy, or manual redeploy on Vercel)
+
+[ ] 4c. Smoke test /try end-to-end:
+        - Submit "a box" — all 4 models respond
+        - 3D viewer renders for all models (not just Zoo)
+        - Usage counter appears after first run
+        - Rate limit kicks in after 3 anon runs
+        - Email modal flow works
+        - Winner picker appears and vote lands in Redis
 
 ─────────────────────────────────────────────────────────────────────
 DEFERRED (see cadarena/FUTURE_FEATURES.md)
 ─────────────────────────────────────────────────────────────────────
 
-- /explore page (needs Supabase DB + storage + consent UI — deferred until traffic)
-- Auth + per-user quotas (deferred until /explore matters)
+- Chain-of-thought display (Claude + Gemini support it — cool research feature)
+- /explore community page (needs Supabase — wait for traffic)
+- Auth + per-user quotas
 - Geometric accuracy metrics (Chamfer distance, VLM scoring)
 
 ─────────────────────────────────────────────────────────────────────
 NOTES
 ─────────────────────────────────────────────────────────────────────
-- Zoo returns STL as base64 in the API response — no storage needed
-- CadQuery execution: Modal endpoint returns STL as base64 — same pattern
-- No Supabase needed for v1 ship
-- Rate limiting via Upstash Redis (free tier, no user accounts)
+- Redis check: cd cadarena && bash redis-check.sh
+- Upstash DB: select-fox-82440.upstash.io (free tier, us-east-1)
+- Cost per full 4-model run: ~$0.14 (Zoo is biggest cost at ~$0.12)
+- GPT-5 is slow (~90s) — acceptable, it's a reasoning model
+- .env.local is NOT committed (gitignored)
