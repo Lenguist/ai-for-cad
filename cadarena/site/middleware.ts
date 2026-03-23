@@ -2,48 +2,56 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
 
-// Only apply rate limiting if Upstash env vars are set.
-// Graceful degradation: if not configured, all requests pass through.
-function getRatelimiter() {
+function createLimiters() {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
 
   const redis = new Redis({ url, token });
-  return new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(5, "24 h"),
-    prefix: "cad-arena:rl",
-  });
+  return {
+    anon: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, "7 d"),
+      prefix: "cad-arena:anon",
+    }),
+    email: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "7 d"),
+      prefix: "cad-arena:email",
+    }),
+  };
 }
 
-const ratelimiter = getRatelimiter();
+const limiters = createLimiters();
 
 export async function middleware(req: NextRequest) {
-  // Only rate-limit the generate API
   if (!req.nextUrl.pathname.startsWith("/api/generate")) {
     return NextResponse.next();
   }
 
-  if (!ratelimiter) {
-    return NextResponse.next();
-  }
+  if (!limiters) return NextResponse.next();
 
-  // Use IP from Vercel header, fall back to x-forwarded-for
   const ip =
     req.headers.get("x-real-ip") ??
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
     "anonymous";
 
-  const { success, limit, remaining, reset } = await ratelimiter.limit(ip);
+  const hasEmail = req.cookies.get("cad_arena_email")?.value === "1";
+  const limiter = hasEmail ? limiters.email : limiters.anon;
+  const key = hasEmail ? `email:${ip}` : `anon:${ip}`;
+
+  const { success, limit, remaining, reset } = await limiter.limit(key);
 
   if (!success) {
     return NextResponse.json(
       {
-        error: "Rate limit exceeded. You can submit 5 prompts per day.",
+        error: hasEmail
+          ? "You've used your 10 tries for this week. Check back next week!"
+          : "You've used your 3 free tries. Enter your email to unlock 10 tries/week.",
         limit,
         remaining: 0,
         reset,
+        needsEmail: !hasEmail,
       },
       {
         status: 429,

@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Redis } from "@upstash/redis";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -38,7 +39,7 @@ function extractCode(text: string): string {
 async function generateClaude(prompt: string): Promise<{ code: string; outputType: string }> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const resp = await client.messages.create({
-    model: "claude-opus-4-6",
+    model: "claude-sonnet-4-6",
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
@@ -148,12 +149,26 @@ type ModelResult = {
   error?: string;
 };
 
+function logPrompt(prompt: string, models: string[]) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  const redis = new Redis({ url, token });
+  redis.rpush("cad-arena:prompts", JSON.stringify({
+    prompt,
+    models,
+    ts: new Date().toISOString(),
+  })).catch(() => {});
+}
+
 export async function POST(req: Request) {
   const { prompt, models } = await req.json() as { prompt: string; models: string[] };
 
   if (!prompt?.trim()) {
     return Response.json({ error: "prompt required" }, { status: 400 });
   }
+
+  logPrompt(prompt, models);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -168,7 +183,8 @@ export async function POST(req: Request) {
           try {
             let result: { code: string; outputType: string; stlBase64?: string };
             switch (modelId) {
-              case "claude-opus-4-6":   result = await generateClaude(prompt); break;
+              case "claude-opus-4-6":
+      case "claude-sonnet-4-6":  result = await generateClaude(prompt); break;
               case "gpt-5":             result = await generateGPT(prompt); break;
               case "gemini-2.5-flash":  result = await generateGemini(prompt); break;
               case "zoo-ml-ephant":     result = await generateZoo(prompt); break;
