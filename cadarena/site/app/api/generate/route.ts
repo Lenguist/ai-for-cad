@@ -56,7 +56,7 @@ async function generateGPT(prompt: string): Promise<{ code: string; outputType: 
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: prompt },
     ],
-    max_completion_tokens: 4096,
+    max_completion_tokens: 16000, // GPT-5 is a reasoning model — needs budget for internal reasoning + output
   });
   const raw = resp.choices[0].message.content ?? "";
   return { code: extractCode(raw), outputType: "cadquery" };
@@ -67,7 +67,7 @@ async function generateGemini(prompt: string): Promise<{ code: string; outputTyp
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: SYSTEM_PROMPT,
-  });
+  }, { timeout: 50_000 });
   const resp = await model.generateContent(prompt);
   const raw = resp.response.text();
   return { code: extractCode(raw), outputType: "cadquery" };
