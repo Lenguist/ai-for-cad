@@ -18,6 +18,18 @@ for i,entry in enumerate(d.get('result',[])):
 "
 
 echo ""
+echo "=== WIN COUNTS ==="
+curl -s "${UPSTASH_REDIS_REST_URL}/hgetall/cad-arena:win-counts" \
+  -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+r=d.get('result',[])
+pairs=list(zip(r[::2],r[1::2]))
+pairs.sort(key=lambda x:-int(x[1]))
+for k,v in pairs: print(f'  {k}: {v} wins')
+" 2>/dev/null || echo "  (no votes yet)"
+
+echo ""
 echo "=== EMAILS ==="
 curl -s "${UPSTASH_REDIS_REST_URL}/scard/cad-arena:emails" \
   -H "Authorization: Bearer ${UPSTASH_REDIS_REST_TOKEN}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  Total emails collected: {d[\"result\"]}')"

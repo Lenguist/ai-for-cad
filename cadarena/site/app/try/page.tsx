@@ -10,10 +10,10 @@ const NAV_LINK = { color: "var(--muted)" as const, textDecoration: "none" as con
 const MONO = { fontFamily: "var(--font-geist-mono), monospace" as const };
 
 const AVAILABLE_MODELS = [
-  { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6",     tag: "LLM Baseline" },
-  { id: "zoo-ml-ephant",     label: "Zoo / ML-ephant",        tag: "Commercial"   },
-  { id: "gemini-2.5-flash",  label: "Gemini 2.5 Flash",       tag: "LLM Baseline" },
-  { id: "gpt-5",             label: "GPT-5",                   tag: "LLM Baseline" },
+  { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6",  tag: "LLM Baseline" },
+  { id: "zoo-ml-ephant",     label: "Zoo / ML-ephant",     tag: "Commercial"   },
+  { id: "gemini-2.5-flash",  label: "Gemini 2.5 Flash",    tag: "LLM Baseline" },
+  { id: "gpt-5",             label: "GPT-5",                tag: "LLM Baseline" },
 ];
 
 const UNAVAILABLE_MODELS = [
@@ -57,13 +57,18 @@ export default function TryPage() {
   const [emailDone, setEmailDone] = useState(false);
   const [rateLimitMsg, setRateLimitMsg] = useState("");
 
-  // Read cookie on mount to know if user already has email
+  // Per-card code expand state (default collapsed when 3D viewer present)
+  const [expandedCode, setExpandedCode] = useState<Set<string>>(new Set());
+
+  // Winner picking
+  const [winner, setWinner] = useState<string | null>(null);
+  const [voteSubmitted, setVoteSubmitted] = useState(false);
+
   useEffect(() => {
     const has = document.cookie.split(";").some((c) => c.trim().startsWith("cad_arena_email="));
     setHasEmail(has);
   }, []);
 
-  // Clean up blob URLs on unmount
   useEffect(() => {
     return () => {
       Object.values(results).forEach((r) => {
@@ -85,10 +90,33 @@ export default function TryPage() {
     });
   }
 
+  function toggleCode(id: string) {
+    setExpandedCode((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function handleVote(modelId: string) {
+    if (voteSubmitted) return;
+    setWinner(modelId);
+    setVoteSubmitted(true);
+    fetch("/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, winner: modelId, models: [...selectedModels] }),
+    }).catch(() => {});
+  }
+
   async function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
 
     setRateLimitMsg("");
+    setExpandedCode(new Set());
+    setWinner(null);
+    setVoteSubmitted(false);
+
     const initial: Record<string, ModelResult> = {};
     for (const id of selectedModels) initial[id] = { status: "loading" };
     setResults(initial);
@@ -105,7 +133,6 @@ export default function TryPage() {
         signal: controller.signal,
       });
 
-      // Handle rate limit
       if (resp.status === 429) {
         const data = await resp.json() as { error: string; needsEmail?: boolean };
         setRateLimitMsg(data.error);
@@ -114,7 +141,6 @@ export default function TryPage() {
         return;
       }
 
-      // Read rate limit headers from successful response
       const rlRemaining = resp.headers.get("X-RateLimit-Remaining");
       const rlLimit = resp.headers.get("X-RateLimit-Limit");
       if (rlRemaining !== null && rlLimit !== null) {
@@ -171,9 +197,7 @@ export default function TryPage() {
         }
       }
     } catch (e) {
-      if ((e as Error).name !== "AbortError") {
-        console.error("Generate error:", e);
-      }
+      if ((e as Error).name !== "AbortError") console.error("Generate error:", e);
     } finally {
       setIsGenerating(false);
       abortRef.current = null;
@@ -184,7 +208,6 @@ export default function TryPage() {
     if (!emailInput.trim() || emailSubmitting) return;
     setEmailSubmitting(true);
     setEmailError("");
-
     try {
       const resp = await fetch("/api/subscribe", {
         method: "POST",
@@ -210,6 +233,8 @@ export default function TryPage() {
 
   const anyResults = Object.keys(results).length > 0;
   const everGenerated = triesInfo !== null || rateLimitMsg !== "";
+  const allDone = anyResults && !isGenerating && Object.values(results).every((r) => r.status !== "loading");
+  const successfulModels = AVAILABLE_MODELS.filter((m) => results[m.id]?.status === "done");
 
   return (
     <div style={{ background: "var(--background)", minHeight: "100vh" }}>
@@ -229,7 +254,6 @@ export default function TryPage() {
       </nav>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 80px" }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em", margin: 0 }}>Try It</h1>
           <span style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", padding: "4px 10px", borderRadius: 4, background: "rgba(96,165,250,0.15)", color: "#60a5fa" }}>
@@ -241,195 +265,70 @@ export default function TryPage() {
           <Link href="/results" style={{ color: "var(--accent)", textDecoration: "none" }}>static benchmark</Link>.
         </p>
 
-        {/* Input area */}
+        {/* Input */}
         <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, padding: 28, marginBottom: 24 }}>
-          <label style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: 10 }}>
-            PROMPT
-          </label>
+          <label style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: 10 }}>PROMPT</label>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder="Describe a mechanical part in plain English, e.g. &quot;A cylinder 20mm diameter, 50mm tall&quot;"
             rows={3}
-            style={{
-              width: "100%",
-              background: "var(--background)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: "14px 16px",
-              color: "var(--foreground)",
-              fontSize: 15,
-              lineHeight: 1.6,
-              resize: "vertical",
-              outline: "none",
-              boxSizing: "border-box",
-              ...MONO,
-            }}
+            style={{ width: "100%", background: "var(--background)", border: "1px solid var(--border)", borderRadius: 8, padding: "14px 16px", color: "var(--foreground)", fontSize: 15, lineHeight: 1.6, resize: "vertical", outline: "none", boxSizing: "border-box", ...MONO }}
           />
-
-          {/* Example prompts */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
             <span style={{ fontSize: 12, color: "var(--muted)", alignSelf: "center" }}>Examples:</span>
             {EXAMPLE_PROMPTS.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => setPrompt(ex)}
-                style={{
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 5,
-                  padding: "4px 10px",
-                  color: "var(--muted)",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  ...MONO,
-                }}
-              >
+              <button key={ex} onClick={() => setPrompt(ex)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid var(--border)", borderRadius: 5, padding: "4px 10px", color: "var(--muted)", fontSize: 12, cursor: "pointer", ...MONO }}>
                 {ex.length > 40 ? ex.slice(0, 40) + "…" : ex}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Model selection */}
+        {/* Models */}
         <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, padding: 28, marginBottom: 24 }}>
-          <label style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: 14 }}>
-            MODELS
-          </label>
+          <label style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: 14 }}>MODELS</label>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {AVAILABLE_MODELS.map((m) => {
               const selected = selectedModels.has(m.id);
               return (
-                <button
-                  key={m.id}
-                  onClick={() => toggleModel(m.id)}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 8,
-                    border: selected ? "1px solid rgba(255,255,255,0.5)" : "1px solid var(--border)",
-                    background: selected ? "rgba(255,255,255,0.12)" : "transparent",
-                    color: selected ? "var(--foreground)" : "var(--muted)",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: selected ? 600 : 400,
-                    transition: "all 0.15s",
-                  }}
-                >
+                <button key={m.id} onClick={() => toggleModel(m.id)} style={{ padding: "8px 16px", borderRadius: 8, border: selected ? "1px solid rgba(255,255,255,0.5)" : "1px solid var(--border)", background: selected ? "rgba(255,255,255,0.12)" : "transparent", color: selected ? "var(--foreground)" : "var(--muted)", cursor: "pointer", fontSize: 13, fontWeight: selected ? 600 : 400, transition: "all 0.15s" }}>
                   {selected ? "✓ " : ""}{m.label}
                   <span style={{ ...MONO, fontSize: 10, marginLeft: 6, opacity: 0.6 }}>{m.tag}</span>
                 </button>
               );
             })}
             {UNAVAILABLE_MODELS.map((m) => (
-              <button
-                key={m.id}
-                disabled
-                title={m.reason}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "rgba(255,255,255,0.25)",
-                  cursor: "not-allowed",
-                  fontSize: 13,
-                  opacity: 0.5,
-                }}
-              >
-                {m.label}
-                <span style={{ ...MONO, fontSize: 10, marginLeft: 6 }}>{m.reason}</span>
+              <button key={m.id} disabled title={m.reason} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "rgba(255,255,255,0.25)", cursor: "not-allowed", fontSize: 13, opacity: 0.5 }}>
+                {m.label} <span style={{ ...MONO, fontSize: 10, marginLeft: 6 }}>{m.reason}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Generate button row */}
+        {/* Generate row */}
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
-          <button
-            onClick={handleGenerate}
-            disabled={!prompt.trim() || isGenerating || selectedModels.size === 0}
-            style={{
-              background: prompt.trim() && !isGenerating ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)",
-              color: prompt.trim() && !isGenerating ? "#3568a0" : "rgba(255,255,255,0.4)",
-              border: "none",
-              borderRadius: 8,
-              padding: "12px 32px",
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: prompt.trim() && !isGenerating ? "pointer" : "not-allowed",
-              transition: "all 0.15s",
-            }}
-          >
+          <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating || selectedModels.size === 0} style={{ background: prompt.trim() && !isGenerating ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)", color: prompt.trim() && !isGenerating ? "#3568a0" : "rgba(255,255,255,0.4)", border: "none", borderRadius: 8, padding: "12px 32px", fontSize: 15, fontWeight: 700, cursor: prompt.trim() && !isGenerating ? "pointer" : "not-allowed", transition: "all 0.15s" }}>
             {isGenerating ? "Generating…" : "Generate →"}
           </button>
 
-          {isGenerating && (
-            <span style={{ color: "var(--muted)", fontSize: 13 }}>
-              Running {selectedModels.size} model{selectedModels.size > 1 ? "s" : ""} in parallel…
-            </span>
-          )}
-
-          {/* Usage info */}
-          {triesInfo && !isGenerating && (
-            <span style={{ ...MONO, fontSize: 12, color: "var(--muted)" }}>
-              {triesInfo.remaining} / {triesInfo.limit} tries left this week
-            </span>
-          )}
-
-          {/* Get more tries CTA — show after first gen if no email */}
+          {isGenerating && <span style={{ color: "var(--muted)", fontSize: 13 }}>Running {selectedModels.size} model{selectedModels.size > 1 ? "s" : ""} in parallel…</span>}
+          {triesInfo && !isGenerating && <span style={{ ...MONO, fontSize: 12, color: "var(--muted)" }}>{triesInfo.remaining} / {triesInfo.limit} tries left this week</span>}
           {everGenerated && !hasEmail && !isGenerating && (
-            <button
-              onClick={() => setShowEmailModal(true)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#60a5fa",
-                fontSize: 13,
-                cursor: "pointer",
-                padding: 0,
-                textDecoration: "underline",
-              }}
-            >
+            <button onClick={() => setShowEmailModal(true)} style={{ background: "transparent", border: "none", color: "#60a5fa", fontSize: 13, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
               get 10 tries/week →
             </button>
           )}
-
-          <span style={{ color: "var(--muted)", fontSize: 12, marginLeft: "auto" }}>
-            ⌘ + Enter to generate
-          </span>
+          <span style={{ color: "var(--muted)", fontSize: 12, marginLeft: "auto" }}>⌘ + Enter to generate</span>
         </div>
 
-        {/* Rate limit message */}
+        {/* Rate limit banner */}
         {rateLimitMsg && (
-          <div style={{
-            background: "rgba(248,113,113,0.08)",
-            border: "1px solid rgba(248,113,113,0.3)",
-            borderRadius: 8,
-            padding: "14px 18px",
-            marginBottom: 24,
-            fontSize: 14,
-            color: "#f87171",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}>
+          <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "14px 18px", marginBottom: 24, fontSize: 14, color: "#f87171", display: "flex", alignItems: "center", gap: 12 }}>
             <span>{rateLimitMsg}</span>
             {!hasEmail && (
-              <button
-                onClick={() => setShowEmailModal(true)}
-                style={{
-                  background: "rgba(248,113,113,0.15)",
-                  border: "1px solid rgba(248,113,113,0.4)",
-                  borderRadius: 6,
-                  padding: "6px 14px",
-                  color: "#f87171",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <button onClick={() => setShowEmailModal(true)} style={{ background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.4)", borderRadius: 6, padding: "6px 14px", color: "#f87171", fontSize: 13, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
                 Enter email →
               </button>
             )}
@@ -439,113 +338,121 @@ export default function TryPage() {
         {/* Results */}
         {anyResults && (
           <div>
-            <div style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", marginBottom: 16 }}>
-              RESULTS
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            <div style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "var(--muted)", marginBottom: 16 }}>RESULTS</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
               {AVAILABLE_MODELS.filter((m) => results[m.id]).map((m) => {
                 const r = results[m.id];
+                const isWinner = winner === m.id;
+                const codeOpen = expandedCode.has(m.id);
+                // Default: show code if no STL viewer
+                const showCode = r.stlUrl ? codeOpen : true;
+
                 return (
-                  <div
-                    key={m.id}
-                    style={{
-                      background: "var(--card)",
-                      border: r.status === "error" ? "1px solid rgba(248,113,113,0.3)" : "1px solid var(--border)",
-                      borderRadius: 12,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {/* Card header */}
+                  <div key={m.id} style={{ background: "var(--card)", border: isWinner ? "1px solid rgba(250,204,21,0.6)" : r.status === "error" ? "1px solid rgba(248,113,113,0.3)" : "1px solid var(--border)", borderRadius: 12, overflow: "hidden", transition: "border-color 0.2s" }}>
+                    {/* Header */}
                     <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{m.label}</div>
+                        <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                          {isWinner && <span style={{ color: "#facc15" }}>★</span>}
+                          {m.label}
+                        </div>
                         <div style={{ ...MONO, fontSize: 11, color: "var(--muted)" }}>{m.tag}</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {r.status === "loading" && (
-                          <span style={{ ...MONO, fontSize: 12, color: "var(--muted)", animation: "pulse 1.5s infinite" }}>⟳ running…</span>
-                        )}
+                        {r.status === "loading" && <span style={{ ...MONO, fontSize: 12, color: "var(--muted)", animation: "pulse 1.5s infinite" }}>⟳ running…</span>}
                         {r.status === "done" && (
                           <>
                             <span style={{ fontSize: 16 }}>✓</span>
                             {r.latency && <span style={{ ...MONO, fontSize: 11, color: "var(--muted)" }}>{r.latency.toFixed(1)}s</span>}
-                            {r.outputType && (
-                              <span style={{ ...MONO, fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.12)", borderRadius: 4 }}>
-                                {r.outputType === "kcl" ? "KCL" : "PY"}
-                              </span>
-                            )}
+                            {r.outputType && <span style={{ ...MONO, fontSize: 10, padding: "2px 6px", background: "rgba(255,255,255,0.12)", borderRadius: 4 }}>{r.outputType === "kcl" ? "KCL" : "PY"}</span>}
                           </>
                         )}
-                        {r.status === "error" && (
-                          <span style={{ fontSize: 16, color: "#f87171" }}>✗</span>
-                        )}
+                        {r.status === "error" && <span style={{ fontSize: 16, color: "#f87171" }}>✗</span>}
                       </div>
                     </div>
 
                     {/* 3D viewer */}
                     {r.status === "done" && r.stlUrl && (
-                      <div style={{ borderBottom: "1px solid var(--border)" }}>
-                        <STLViewer url={r.stlUrl} width={320} height={220} />
+                      <div style={{ borderBottom: showCode ? "1px solid var(--border)" : "none" }}>
+                        <STLViewer url={r.stlUrl} width={320} height={240} />
                       </div>
                     )}
 
-                    {/* Code or error */}
-                    <div style={{ maxHeight: 280, overflow: "auto" }}>
-                      {r.status === "loading" && (
-                        <div style={{ padding: 24, color: "var(--muted)", fontSize: 13, textAlign: "center" }}>
-                          Waiting for response…
-                        </div>
-                      )}
-                      {r.status === "error" && (
-                        <div style={{ padding: 16, color: "#f87171", fontSize: 12, lineHeight: 1.6, ...MONO }}>
-                          {r.error}
-                        </div>
-                      )}
-                      {r.status === "done" && r.code && (
-                        <pre style={{
-                          margin: 0,
-                          padding: "14px 16px",
-                          fontSize: 11,
-                          lineHeight: 1.6,
-                          color: "rgba(255,255,255,0.8)",
-                          overflowX: "auto",
-                          background: "transparent",
-                          ...MONO,
-                        }}>
+                    {/* Code toggle (only when viewer present) */}
+                    {r.status === "done" && r.stlUrl && r.code && (
+                      <button onClick={() => toggleCode(m.id)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "none", borderBottom: codeOpen ? "1px solid var(--border)" : "none", padding: "8px 16px", color: "var(--muted)", fontSize: 11, cursor: "pointer", textAlign: "left", ...MONO }}>
+                        {`{ } `}{codeOpen ? "hide code ▲" : "show code ▼"}
+                      </button>
+                    )}
+
+                    {/* Code / error */}
+                    {r.status === "loading" && (
+                      <div style={{ padding: 24, color: "var(--muted)", fontSize: 13, textAlign: "center" }}>Waiting for response…</div>
+                    )}
+                    {r.status === "error" && (
+                      <div style={{ padding: 16, color: "#f87171", fontSize: 12, lineHeight: 1.6, ...MONO }}>{r.error}</div>
+                    )}
+                    {r.status === "done" && r.code && showCode && (
+                      <div style={{ maxHeight: 260, overflow: "auto" }}>
+                        <pre style={{ margin: 0, padding: "14px 16px", fontSize: 11, lineHeight: 1.6, color: "rgba(255,255,255,0.8)", background: "transparent", whiteSpace: "pre-wrap", wordBreak: "break-word", ...MONO }}>
                           {r.code}
                         </pre>
-                      )}
-                      {r.status === "done" && !r.code && !r.error && (
-                        <div style={{ padding: 16, color: "var(--muted)", fontSize: 13 }}>No code returned.</div>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                    {r.status === "done" && !r.code && !r.error && (
+                      <div style={{ padding: 16, color: "var(--muted)", fontSize: 13 }}>No code returned.</div>
+                    )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Winner picker */}
+            {allDone && successfulModels.length >= 2 && (
+              <div style={{ marginTop: 24, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 24px" }}>
+                <div style={{ ...MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "var(--muted)", marginBottom: 14 }}>
+                  {voteSubmitted ? "✓ VOTED" : "WHICH RESULT IS BEST?"}
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {successfulModels.map((m) => {
+                    const isWinner = winner === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => handleVote(m.id)}
+                        disabled={voteSubmitted}
+                        style={{
+                          padding: "10px 20px",
+                          borderRadius: 8,
+                          border: isWinner ? "1px solid rgba(250,204,21,0.7)" : "1px solid var(--border)",
+                          background: isWinner ? "rgba(250,204,21,0.12)" : "rgba(255,255,255,0.05)",
+                          color: isWinner ? "#facc15" : voteSubmitted ? "var(--muted)" : "var(--foreground)",
+                          fontSize: 14,
+                          fontWeight: isWinner ? 700 : 400,
+                          cursor: voteSubmitted ? "default" : "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {isWinner ? "★ " : ""}{m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!voteSubmitted && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+                    Your votes help us improve the benchmark.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Email modal */}
       {showEmailModal && (
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowEmailModal(false); }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 100,
-            background: "rgba(0,0,0,0.6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <div style={{
-            background: "#1e3a5f",
-            border: "1px solid var(--border)",
-            borderRadius: 16,
-            padding: 36,
-            maxWidth: 420,
-            width: "100%",
-          }}>
+        <div onClick={(e) => { if (e.target === e.currentTarget) setShowEmailModal(false); }} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#1e3a5f", border: "1px solid var(--border)", borderRadius: 16, padding: 36, maxWidth: 420, width: "100%" }}>
             {emailDone ? (
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
@@ -554,12 +461,9 @@ export default function TryPage() {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>
-                  Get 10 tries/week
-                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>Get 10 tries/week</div>
                 <div style={{ color: "var(--muted)", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-                  Enter your email to unlock 10 tries per week (instead of 3).
-                  We&apos;ll also let you know when we add new models or publish findings.
+                  Enter your email to unlock 10 tries per week instead of 3. We&apos;ll also let you know when we add new models or publish findings.
                 </div>
                 <input
                   type="email"
@@ -568,53 +472,14 @@ export default function TryPage() {
                   onKeyDown={(e) => { if (e.key === "Enter") handleEmailSubmit(); }}
                   placeholder="you@example.com"
                   autoFocus
-                  style={{
-                    width: "100%",
-                    background: "var(--background)",
-                    border: emailError ? "1px solid rgba(248,113,113,0.6)" : "1px solid var(--border)",
-                    borderRadius: 8,
-                    padding: "12px 14px",
-                    color: "var(--foreground)",
-                    fontSize: 15,
-                    outline: "none",
-                    boxSizing: "border-box",
-                    marginBottom: emailError ? 8 : 16,
-                    ...MONO,
-                  }}
+                  style={{ width: "100%", background: "var(--background)", border: emailError ? "1px solid rgba(248,113,113,0.6)" : "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", color: "var(--foreground)", fontSize: 15, outline: "none", boxSizing: "border-box", marginBottom: emailError ? 8 : 16, ...MONO }}
                 />
-                {emailError && (
-                  <div style={{ color: "#f87171", fontSize: 12, marginBottom: 16, ...MONO }}>{emailError}</div>
-                )}
+                {emailError && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 16, ...MONO }}>{emailError}</div>}
                 <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    onClick={handleEmailSubmit}
-                    disabled={emailSubmitting || !emailInput.trim()}
-                    style={{
-                      flex: 1,
-                      background: emailInput.trim() && !emailSubmitting ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)",
-                      color: emailInput.trim() && !emailSubmitting ? "#3568a0" : "rgba(255,255,255,0.4)",
-                      border: "none",
-                      borderRadius: 8,
-                      padding: "12px",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: emailInput.trim() && !emailSubmitting ? "pointer" : "not-allowed",
-                    }}
-                  >
+                  <button onClick={handleEmailSubmit} disabled={emailSubmitting || !emailInput.trim()} style={{ flex: 1, background: emailInput.trim() && !emailSubmitting ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.2)", color: emailInput.trim() && !emailSubmitting ? "#3568a0" : "rgba(255,255,255,0.4)", border: "none", borderRadius: 8, padding: "12px", fontSize: 14, fontWeight: 700, cursor: emailInput.trim() && !emailSubmitting ? "pointer" : "not-allowed" }}>
                     {emailSubmitting ? "Saving…" : "Unlock 10 tries →"}
                   </button>
-                  <button
-                    onClick={() => setShowEmailModal(false)}
-                    style={{
-                      background: "transparent",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      padding: "12px 16px",
-                      color: "var(--muted)",
-                      fontSize: 14,
-                      cursor: "pointer",
-                    }}
-                  >
+                  <button onClick={() => setShowEmailModal(false)} style={{ background: "transparent", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 16px", color: "var(--muted)", fontSize: 14, cursor: "pointer" }}>
                     Not now
                   </button>
                 </div>
@@ -628,10 +493,7 @@ export default function TryPage() {
       )}
 
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
     </div>
   );
