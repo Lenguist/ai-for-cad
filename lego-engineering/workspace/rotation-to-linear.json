@@ -1,0 +1,22 @@
+{
+  "reasoning": "Rack-and-pinion: motor drives axle, axle drives 8T pinion (radius=1 stud). Rack-4 slides along x-axis. Pinion center is 1 stud above rack in z (perpendicular distance = gear radius = 1) so teeth mesh. Pinion rotates on y-axis. Each full rotation of the motor = rack moves 2*pi*1 ≈ 6.28 studs laterally. Back-and-forth happens as motor reverses or rack hits travel limits. Frequency of output oscillation = frequency of motor rotation (1:1, no gear reduction).",
+  "parts": [
+    {"id": "rack",     "type": "rack-4",   "pos": [0, 0, 0],  "axis": "x"},
+    {"id": "pinion",   "type": "gear-8t",  "pos": [2, 0, 1],  "axis": "y"},
+    {"id": "axle",     "type": "axle-5",   "pos": [2, -2, 1], "axis": "y"},
+    {"id": "frame_f",  "type": "beam-5",   "pos": [0, -2, 0], "axis": "x"},
+    {"id": "frame_b",  "type": "beam-5",   "pos": [0, -2, 2], "axis": "x"},
+    {"id": "post_l",   "type": "beam-3",   "pos": [0, -2, 0], "axis": "z"},
+    {"id": "post_r",   "type": "beam-3",   "pos": [4, -2, 0], "axis": "z"},
+    {"id": "bush_bot", "type": "bush",     "pos": [2, -2, 1], "axis": "y"},
+    {"id": "bush_top", "type": "bush",     "pos": [2,  1, 1], "axis": "y"}
+  ],
+  "connections": [
+    {"type": "rack_pinion",  "gear": "pinion",   "rack": "rack"},
+    {"type": "axle_through", "axle": "axle",     "part": "pinion"},
+    {"type": "bush_on_axle", "axle": "axle",     "bush": "bush_bot"},
+    {"type": "bush_on_axle", "axle": "axle",     "bush": "bush_top"},
+    {"type": "pin_in_beam",  "beam": "frame_f",  "hole": 2, "part": "post_l"},
+    {"type": "pin_in_beam",  "beam": "frame_b",  "hole": 2, "part": "post_r"}
+  ]
+}
