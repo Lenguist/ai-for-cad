@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lego Technic Assembly Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+
+  header {
+    background: #16213e;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #0f3460;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 18px; color: #e94560; letter-spacing: 1px; }
+  header span { color: #888; font-size: 13px; }
+
+  /* Gallery strip */
+  .gallery-strip {
+    background: #0f1f3d;
+    border-bottom: 1px solid #0f3460;
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .gallery-strip::-webkit-scrollbar { height: 4px; }
+  .gallery-strip::-webkit-scrollbar-thumb { background: #1a4a80; border-radius: 2px; }
+
+  .gallery-card {
+    background: #16213e;
+    border: 1px solid #1a4a80;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 150px;
+  }
+  .gallery-card:hover { background: #1a4a80; border-color: #7eb8e8; }
+  .gallery-card.active { background: #1a3a60; border-color: #e94560; }
+  .gallery-card-title { font-size: 13px; font-weight: bold; color: #e0e0e0; }
+  .gallery-card-sub { font-size: 11px; color: #888; }
+  .gallery-card-tag {
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    display: inline-block; margin-top: 2px;
+  }
+  .tag-gear    { background: #3a2a00; color: #d4a843; }
+  .tag-linear  { background: #2a1a3a; color: #e87722; }
+  .tag-compound{ background: #1a2a3a; color: #7eb8e8; }
+  .tag-worm    { background: #1a3a1a; color: #4caf50; }
+  .tag-speed   { background: #3a1a1a; color: #e94560; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Left panel - parts browser */
+  .parts-panel {
+    width: 260px;
+    background: #16213e;
+    border-right: 1px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .parts-panel h2 { padding: 12px 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 1px solid #0f3460; }
+  .parts-search { padding: 10px; border-bottom: 1px solid #0f3460; }
+  .parts-search input {
+    width: 100%; padding: 7px 10px; background: #0f3460;
+    border: 1px solid #1a4a80; border-radius: 4px; color: #e0e0e0; font-size: 13px;
+  }
+  .parts-search input:focus { outline: none; border-color: #e94560; }
+  .cat-filters { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; border-bottom: 1px solid #0f3460; }
+  .cat-btn {
+    padding: 3px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; border: none;
+    background: #0f3460; color: #aaa;
+    transition: all 0.15s;
+  }
+  .cat-btn.active { background: #e94560; color: white; }
+  .parts-list { flex: 1; overflow-y: auto; }
+  .part-item {
+    padding: 8px 14px; cursor: pointer; border-bottom: 1px solid #0a2040;
+    transition: background 0.1s;
+  }
+  .part-item:hover { background: #0f3460; }
+  .part-item.selected { background: #1a4a80; }
+  .part-id { font-size: 13px; font-weight: bold; color: #7eb8e8; }
+  .part-name { font-size: 11px; color: #888; margin-top: 2px; }
+  .part-spec { font-size: 11px; color: #e94560; margin-top: 1px; }
+
+  /* Part detail popup */
+  .part-detail {
+    background: #0f3460; border-top: 1px solid #1a4a80;
+    padding: 12px 14px; font-size: 12px; display: none;
+  }
+  .part-detail.visible { display: block; }
+  .part-detail h3 { color: #7eb8e8; margin-bottom: 8px; font-size: 13px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .detail-key { color: #888; }
+  .detail-val { color: #e0e0e0; }
+
+  /* Center - 3D viewer */
+  .viewer { flex: 1; position: relative; }
+  #canvas { width: 100%; height: 100%; display: block; }
+  .viewer-controls {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; gap: 6px;
+  }
+  .viewer-controls button {
+    padding: 6px 12px; background: #16213e; border: 1px solid #0f3460;
+    color: #aaa; border-radius: 4px; cursor: pointer; font-size: 12px;
+    transition: all 0.15s;
+  }
+  .viewer-controls button:hover { background: #0f3460; color: white; }
+
+  /* Right panel - editor */
+  .editor-panel {
+    width: 380px;
+    background: #16213e;
+    border-left: 1px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-tabs {
+    display: flex; border-bottom: 1px solid #0f3460;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px; font-size: 12px; text-align: center;
+    cursor: pointer; color: #888; background: none; border: none;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab-btn.active { color: #7eb8e8; border-bottom-color: #7eb8e8; }
+
+  .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .tab-content.active { display: flex; }
+
+  #assembly-editor {
+    flex: 1; padding: 10px; background: #0a1628; color: #c8e6c9;
+    font-family: 'Fira Code', 'Courier New', monospace; font-size: 12px;
+    border: none; resize: none; outline: none; line-height: 1.5;
+  }
+  .editor-actions {
+    padding: 10px; display: flex; gap: 8px; border-top: 1px solid #0f3460;
+  }
+  .btn-compile {
+    flex: 1; padding: 9px; background: #e94560; border: none; color: white;
+    border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;
+    transition: background 0.15s;
+  }
+  .btn-compile:hover { background: #c73652; }
+  .btn-clear {
+    padding: 9px 14px; background: #0f3460; border: 1px solid #1a4a80;
+    color: #aaa; border-radius: 4px; cursor: pointer; font-size: 13px;
+  }
+
+  /* Results */
+  #results { flex: 1; overflow-y: auto; padding: 12px; }
+  .result-section { margin-bottom: 14px; }
+  .result-section h3 { font-size: 12px; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 8px; }
+  .check-item {
+    padding: 6px 10px; border-radius: 4px; font-size: 12px;
+    margin-bottom: 4px; display: flex; align-items: flex-start; gap: 8px;
+  }
+  .check-ok { background: #1a3a1a; border-left: 3px solid #4caf50; }
+  .check-err { background: #3a1a1a; border-left: 3px solid #e94560; }
+  .check-warn { background: #3a2a1a; border-left: 3px solid #ff9800; }
+  .check-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .check-msg { flex: 1; color: #ccc; line-height: 1.4; }
+  .check-fix { font-size: 11px; color: #ff9800; margin-top: 3px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-box {
+    background: #0f3460; border-radius: 4px; padding: 8px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: bold; color: #7eb8e8; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  .stat-box.highlight .stat-val { color: #e94560; }
+
+  /* Tasks panel */
+  .tasks-list { overflow-y: auto; }
+  .task-item {
+    padding: 10px 14px; border-bottom: 1px solid #0a2040; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .task-item:hover { background: #0f3460; }
+  .task-header { display: flex; align-items: center; gap: 8px; }
+  .task-id { font-size: 11px; background: #e94560; color: white; padding: 2px 6px; border-radius: 3px; }
+  .task-name { font-size: 13px; }
+  .task-prompt { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
+
+  .tier-label {
+    padding: 6px 14px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 1px; color: #e94560; background: #0a1628;
+    border-bottom: 1px solid #0f3460;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧱 Lego Technic Studio</h1>
+  <span>Place parts · Verify connections · Visualize in 3D</span>
+</header>
+
+<div class="gallery-strip" id="gallery-strip"></div>
+
+<div class="main">
+
+  <!-- ── Left: parts browser ── -->
+  <div class="parts-panel">
+    <h2>Parts Library</h2>
+    <div class="parts-search">
+      <input type="text" id="part-search" placeholder="Search parts..." oninput="searchParts()">
+    </div>
+    <div class="cat-filters" id="cat-filters"></div>
+    <div class="parts-list" id="parts-list"></div>
+    <div class="part-detail" id="part-detail"></div>
+  </div>
+
+  <!-- ── Center: 3D viewer ── -->
+  <div class="viewer">
+    <canvas id="canvas"></canvas>
+    <div class="viewer-controls">
+      <button onclick="resetCamera()">Reset View</button>
+      <button onclick="toggleAxes()">Axes</button>
+    </div>
+  </div>
+
+  <!-- ── Right: editor + results ── -->
+  <div class="editor-panel">
+    <div class="editor-tabs">
+      <button class="tab-btn active" onclick="switchTab('editor')">Assembly JSON</button>
+      <button class="tab-btn" onclick="switchTab('results')">Results</button>
+      <button class="tab-btn" onclick="switchTab('tasks')">Tasks</button>
+    </div>
+
+    <div class="tab-content active" id="tab-editor">
+      <textarea id="assembly-editor" spellcheck="false"></textarea>
+      <div class="editor-actions">
+        <button class="btn-compile" onclick="compileAssembly()">▶ Compile & Visualize</button>
+        <button class="btn-clear" onclick="clearEditor()">Clear</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-results">
+      <div id="results"><p style="color:#888;padding:20px;text-align:center">Compile an assembly to see results.</p></div>
+    </div>
+
+    <div class="tab-content" id="tab-tasks">
+      <div class="tasks-list" id="tasks-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Three.js setup ──────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.setClearColor(0x0a1628);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+camera.position.set(12, 10, 18);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+
+// Grid
+const grid = new THREE.GridHelper(40, 40, 0x1a4a80, 0x0f3460);
+scene.add(grid);
+
+// Axes helper (toggleable)
+let axesHelper = new THREE.AxesHelper(5);
+axesHelper.visible = false;
+scene.add(axesHelper);
+
+// Assembly group
+let assemblyGroup = new THREE.Group();
+scene.add(assemblyGroup);
+
+function toggleAxes() { axesHelper.visible = !axesHelper.visible; }
+
+function resetCamera() {
+  camera.position.set(12, 10, 18);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// ── Part colors ────────────────────────────────────────────────────────────
+
+const CAT_COLORS = {
+  gear:      0xd4a843,
+  axle:      0x888888,
+  beam:      0x7eb8e8,
+  rack:      0xe87722,
+  pin:       0x444444,
+  connector: 0xaaaaaa,
+};
+
+function hexColor(cat) {
+  return CAT_COLORS[cat] || 0xffffff;
+}
+
+// ── Build 3D mesh for a part ────────────────────────────────────────────────
+
+function buildPartMesh(part, spec) {
+  const cat = spec.category;
+  const color = hexColor(cat);
+  const mat = new THREE.MeshPhongMaterial({ color, shininess: 60 });
+  let mesh;
+
+  // Axis rotation helpers
+  function applyAxis(obj, axis) {
+    if (axis === 'x') {
+      obj.rotation.z = Math.PI / 2;
+    } else if (axis === 'z') {
+      obj.rotation.x = Math.PI / 2;
+    }
+    // y is default for cylinders
+  }
+
+  if (cat === 'gear') {
+    const r = spec.radius_studs || 1;
+    const isWorm = spec.teeth === 1;
+    if (isWorm) {
+      // Worm: elongated cylinder with helix rings
+      const group = new THREE.Group();
+      const bodyGeo = new THREE.CylinderGeometry(0.28, 0.28, 2.4, 16);
+      group.add(new THREE.Mesh(bodyGeo, mat));
+      const threadMat = new THREE.MeshPhongMaterial({ color: 0xb8902a, shininess: 80 });
+      for (let i = 0; i < 5; i++) {
+        const t = new THREE.TorusGeometry(0.32, 0.07, 8, 16);
+        const tm = new THREE.Mesh(t, threadMat);
+        tm.position.y = -0.96 + i * 0.48;
+        group.add(tm);
+      }
+      // Axle hole
+      const holeMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+      group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.6, 8), holeMat));
+      mesh = group;
+    } else {
+      // Spur gear: main disk + individual teeth + hub + axle hole
+      const group = new THREE.Group();
+      const darkMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+      const hubMat  = new THREE.MeshPhongMaterial({ color: 0xb8902a, shininess: 80 });
+
+      // Main disk (slightly inset from teeth)
+      const diskGeo = new THREE.CylinderGeometry(r - 0.14, r - 0.14, 0.52, 48);
+      group.add(new THREE.Mesh(diskGeo, mat));
+
+      // Individual tooth blocks around circumference
+      const toothCount = spec.teeth;
+      const toothW = (2 * Math.PI * r) / toothCount * 0.55; // ~55% duty cycle
+      const toothH = 0.28;
+      const toothD = 0.42;
+      for (let i = 0; i < toothCount; i++) {
+        const angle = (i / toothCount) * Math.PI * 2;
+        const toothGeo = new THREE.BoxGeometry(toothW, toothD, toothH);
+        const tooth = new THREE.Mesh(toothGeo, hubMat);
+        tooth.position.set(
+          Math.cos(angle) * (r - 0.04),
+          0,
+          Math.sin(angle) * (r - 0.04)
+        );
+        tooth.rotation.y = -angle;
+        group.add(tooth);
+      }
+
+      // Hub circle (raised center)
+      const hubGeo = new THREE.CylinderGeometry(r * 0.35, r * 0.35, 0.65, 16);
+      group.add(new THREE.Mesh(hubGeo, hubMat));
+
+      // Axle hole
+      const holeGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.75, 8);
+      group.add(new THREE.Mesh(holeGeo, darkMat));
+
+      mesh = group;
+    }
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'axle') {
+    const L = spec.length || 3;
+    const geo = new THREE.CylinderGeometry(0.18, 0.18, L, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    // Offset so pos is one end
+    mesh.position.y = L / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'beam') {
+    const L = spec.length || 5;
+    const geo = new THREE.BoxGeometry(L, 0.45, 0.45);
+    mesh = new THREE.Mesh(geo, mat);
+    // Holes along beam
+    const holeMat = new THREE.MeshPhongMaterial({ color: 0x0a1628 });
+    for (let i = 0; i < L; i++) {
+      const h = new THREE.CylinderGeometry(0.16, 0.16, 0.6, 8);
+      const hm = new THREE.Mesh(h, holeMat);
+      hm.position.set(i - (L - 1) / 2, 0, 0);
+      hm.rotation.z = Math.PI / 2;
+      mesh.add(hm);
+    }
+    // Offset so pos is at hole 0 end
+    mesh.position.x = (L - 1) / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+
+    // Apply axis rotation
+    const axis = part.axis || 'x';
+    if (axis === 'y') { mesh.rotation.z = Math.PI / 2; }
+    else if (axis === 'z') { mesh.rotation.y = Math.PI / 2; }
+
+  } else if (cat === 'rack') {
+    const L = spec.length || 4;
+    const geo = new THREE.BoxGeometry(L, 0.3, 0.55);
+    mesh = new THREE.Mesh(geo, mat);
+    // Tooth bumps on top
+    const toothMat = new THREE.MeshPhongMaterial({ color: 0xc86010 });
+    for (let i = 0; i < L * 2; i++) {
+      const tg = new THREE.BoxGeometry(0.22, 0.18, 0.55);
+      const tm = new THREE.Mesh(tg, toothMat);
+      tm.position.set(i * 0.5 - L / 2 + 0.25, 0.24, 0);
+      mesh.add(tm);
+    }
+    mesh.position.x = L / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+
+    const axis = part.axis || 'x';
+    if (axis === 'y') { mesh.rotation.z = Math.PI / 2; }
+    else if (axis === 'z') { mesh.rotation.y = Math.PI / 2; }
+
+  } else if (cat === 'pin') {
+    const geo = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'connector') {
+    const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.8, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    applyAxis(mesh, part.axis || 'y');
+
+  } else {
+    const geo = new THREE.SphereGeometry(0.3, 8, 8);
+    mesh = new THREE.Mesh(geo, mat);
+  }
+
+  return mesh;
+}
+
+// ── Render assembly ─────────────────────────────────────────────────────────
+
+let partsLib = {};
+
+function renderAssembly(assembly) {
+  // Clear existing
+  while (assemblyGroup.children.length) {
+    assemblyGroup.remove(assemblyGroup.children[0]);
+  }
+
+  const parts = assembly.parts || [];
+  const bounds = { min: [Infinity,Infinity,Infinity], max: [-Infinity,-Infinity,-Infinity] };
+
+  parts.forEach(part => {
+    const spec = partsLib[part.type];
+    if (!spec) return;
+
+    const mesh = buildPartMesh(part, spec);
+    const pos = part.pos || [0, 0, 0];
+    mesh.position.set(pos[0], pos[1], pos[2]);
+    mesh.userData = { partId: part.id, partType: part.type };
+    assemblyGroup.add(mesh);
+
+    bounds.min = bounds.min.map((v, i) => Math.min(v, pos[i]));
+    bounds.max = bounds.max.map((v, i) => Math.max(v, pos[i]));
+  });
+
+  // Center camera on assembly
+  if (parts.length > 0 && bounds.min[0] < Infinity) {
+    const cx = (bounds.min[0] + bounds.max[0]) / 2;
+    const cy = (bounds.min[1] + bounds.max[1]) / 2;
+    const cz = (bounds.min[2] + bounds.max[2]) / 2;
+    controls.target.set(cx, cy, cz);
+
+    const span = Math.max(...bounds.max.map((v, i) => v - bounds.min[i]));
+    const dist = Math.max(span * 1.8, 8);
+    camera.position.set(cx + dist * 0.6, cy + dist * 0.5, cz + dist * 0.8);
+    controls.update();
+  }
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['editor','results','tasks'][i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach((c, i) => {
+    c.classList.toggle('active', ['tab-editor','tab-results','tab-tasks'][i] === `tab-${name}`);
+  });
+}
+
+// ── Compile ─────────────────────────────────────────────────────────────────
+
+async function compileAssembly() {
+  let assembly;
+  try {
+    assembly = JSON.parse(document.getElementById('assembly-editor').value);
+  } catch(e) {
+    showResults({ ok: false, errors: ['Invalid JSON: ' + e.message], warnings: [], connections: [], kinematics: {} });
+    switchTab('results');
+    return;
+  }
+
+  renderAssembly(assembly);
+
+  const data = compileLocal(assembly);
+  showResults(data);
+  switchTab('results');
+}
+
+function showResults(data) {
+  const el = document.getElementById('results');
+  let html = '';
+
+  // Stats
+  html += `<div class="result-section">
+    <div class="stat-grid">
+      <div class="stat-box ${data.ok ? '' : 'highlight'}">
+        <div class="stat-val">${data.ok ? '✓' : '✗'}</div>
+        <div class="stat-label">${data.ok ? 'VALID' : 'ERRORS'}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">${data.part_count || 0}</div>
+        <div class="stat-label">Parts</div>
+      </div>`;
+
+  if (data.kinematics && data.kinematics.gear_pairs && data.kinematics.gear_pairs.length) {
+    const ratio = data.kinematics.gear_pairs[0].ratio;
+    html += `
+      <div class="stat-box">
+        <div class="stat-val">${ratio.toFixed(2)}×</div>
+        <div class="stat-label">Gear Ratio</div>
+      </div>`;
+  }
+  if (data.kinematics && data.kinematics.rack_pinion && data.kinematics.rack_pinion.length) {
+    html += `
+      <div class="stat-box">
+        <div class="stat-val">↔</div>
+        <div class="stat-label">Rack+Pinion</div>
+      </div>`;
+  }
+  html += `</div></div>`;
+
+  // Errors
+  if (data.errors && data.errors.length) {
+    html += `<div class="result-section"><h3>Errors</h3>`;
+    data.errors.forEach(e => {
+      html += `<div class="check-item check-err"><span class="check-icon">✗</span><div class="check-msg">${e}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Connections
+  if (data.connections && data.connections.length) {
+    html += `<div class="result-section"><h3>Connections</h3>`;
+    data.connections.forEach(c => {
+      const cls = c.ok ? 'check-ok' : 'check-err';
+      const icon = c.ok ? '✓' : '✗';
+      html += `<div class="check-item ${cls}">
+        <span class="check-icon">${icon}</span>
+        <div class="check-msg">
+          <strong>${c.type}</strong><br>${c.msg}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Kinematics
+  if (data.kinematics) {
+    const k = data.kinematics;
+    if (k.gear_pairs && k.gear_pairs.length) {
+      html += `<div class="result-section"><h3>Kinematics</h3>`;
+      k.gear_pairs.forEach(gp => {
+        html += `<div class="check-item check-ok">
+          <span class="check-icon">⚙</span>
+          <div class="check-msg">${gp.gear1} (${gp.teeth1}T) ↔ ${gp.gear2} (${gp.teeth2}T)<br>
+          ratio = ${gp.teeth2}/${gp.teeth1} = <strong>${gp.ratio.toFixed(3)}:1</strong></div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    if (k.rack_pinion && k.rack_pinion.length) {
+      html += `<div class="result-section">`;
+      k.rack_pinion.forEach(rp => {
+        html += `<div class="check-item check-ok">
+          <span class="check-icon">↔</span>
+          <div class="check-msg">${rp.note}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  // BBox
+  if (data.bbox) {
+    const s = data.bbox.size;
+    html += `<div class="result-section"><h3>Bounding Box</h3>
+      <div class="check-item check-ok" style="background:#0a2040">
+        <span class="check-icon">□</span>
+        <div class="check-msg">${s[0].toFixed(1)} × ${s[1].toFixed(1)} × ${s[2].toFixed(1)} studs</div>
+      </div></div>`;
+  }
+
+  if (!html) html = '<p style="color:#888;padding:20px">No results.</p>';
+  el.innerHTML = html;
+}
+
+function clearEditor() {
+  document.getElementById('assembly-editor').value = '';
+  while (assemblyGroup.children.length) assemblyGroup.remove(assemblyGroup.children[0]);
+}
+
+// ── Parts browser ────────────────────────────────────────────────────────────
+
+let activeCat = '';
+let selectedPart = null;
+
+async function loadParts() {
+  partsLib = PARTS_DATA;
+  const cats = [...new Set(Object.values(PARTS_DATA).map(v => v.category))].sort();
+  {
+  const filtersEl = document.getElementById('cat-filters');
+  filtersEl.innerHTML = '<button class="cat-btn active" onclick="filterCat(\'\')">All</button>';
+  cats.forEach(c => {
+    filtersEl.innerHTML += `<button class="cat-btn" onclick="filterCat('${c}')">${c}</button>`;
+  });
+
+  renderPartsList(partsLib);
+}
+
+function filterCat(cat) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === (cat || 'All'));
+  });
+  searchParts();
+}
+
+async function searchParts() {
+  const q = document.getElementById('part-search').value.toLowerCase();
+  const filtered = {};
+  for (const [id, spec] of Object.entries(PARTS_DATA)) {
+    if (activeCat && spec.category !== activeCat) continue;
+    if (q && !id.includes(q) && !spec.name.toLowerCase().includes(q) && !spec.description.toLowerCase().includes(q)) continue;
+    filtered[id] = spec;
+  }
+  renderPartsList(filtered);
+}
+
+function renderPartsList(parts) {
+  const el = document.getElementById('parts-list');
+  el.innerHTML = '';
+  Object.entries(parts).forEach(([id, spec]) => {
+    const div = document.createElement('div');
+    div.className = 'part-item' + (id === selectedPart ? ' selected' : '');
+    let specText = '';
+    if (spec.teeth != null) specText = `${spec.teeth}T  r=${spec.radius_studs}`;
+    else if (spec.length != null) specText = `L=${spec.length} studs`;
+    div.innerHTML = `
+      <div class="part-id">${id}</div>
+      <div class="part-name">${spec.name}</div>
+      ${specText ? `<div class="part-spec">${specText}</div>` : ''}`;
+    div.onclick = () => selectPart(id, spec);
+    el.appendChild(div);
+  });
+}
+
+function selectPart(id, spec) {
+  selectedPart = id;
+  document.querySelectorAll('.part-item').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('.part-id').textContent === id);
+  });
+  const detail = document.getElementById('part-detail');
+  detail.className = 'part-detail visible';
+
+  let rows = `
+    <h3>${spec.name}</h3>
+    <div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">${spec.category}</span></div>
+    <div class="detail-row"><span class="detail-key">BL ID</span><span class="detail-val">${spec.bl_id || '—'}</span></div>`;
+  if (spec.teeth != null) rows += `<div class="detail-row"><span class="detail-key">Teeth</span><span class="detail-val">${spec.teeth}</span></div>`;
+  if (spec.radius_studs != null) rows += `<div class="detail-row"><span class="detail-key">Radius</span><span class="detail-val">${spec.radius_studs} studs</span></div>`;
+  if (spec.length != null) rows += `<div class="detail-row"><span class="detail-key">Length</span><span class="detail-val">${spec.length} studs</span></div>`;
+  rows += `<div style="margin-top:6px;color:#888;font-size:11px">${spec.description}</div>`;
+  detail.innerHTML = rows;
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+async function loadTasks() {
+  const tasks = TASKS_DATA;
+  const el = document.getElementById('tasks-list');
+
+  let currentTier = null;
+  tasks.forEach(t => {
+    if (t.tier !== currentTier) {
+      currentTier = t.tier;
+      const tierLabels = ['', 'Structural', 'Single Mechanism', 'Mechanism Reasoning', 'Constrained Design', 'Open Design'];
+      el.innerHTML += `<div class="tier-label">Tier ${t.tier} — ${tierLabels[t.tier]}</div>`;
+    }
+    const div = document.createElement('div');
+    div.className = 'task-item';
+    div.innerHTML = `
+      <div class="task-header">
+        <span class="task-id">${t.id}</span>
+        <span class="task-name">${t.name}</span>
+      </div>
+      <div class="task-prompt">${t.prompt.slice(0, 120)}…</div>`;
+    div.onclick = () => loadTask(t);
+    el.appendChild(div);
+  });
+}
+
+function loadTask(task) {
+  const template = {
+    reasoning: `Task ${task.id}: ${task.name}. TODO: fill in your design.`,
+    parts: [],
+    connections: []
+  };
+  document.getElementById('assembly-editor').value = JSON.stringify(template, null, 2);
+  switchTab('editor');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+
+// ── Inline data (no server needed) ─────────────────────────────────────────
+const PARTS_DATA = {"beam-3": {"name": "Technic Beam 3", "category": "beam", "length": 3, "holes": [0, 1, 2], "radius_studs": null, "teeth": null, "bl_id": "32523", "color": "#c0c0c0", "description": "Straight beam with 3 holes"}, "beam-5": {"name": "Technic Beam 5", "category": "beam", "length": 5, "holes": [0, 1, 2, 3, 4], "radius_studs": null, "teeth": null, "bl_id": "32316", "color": "#c0c0c0", "description": "Straight beam with 5 holes"}, "beam-7": {"name": "Technic Beam 7", "category": "beam", "length": 7, "holes": [0, 1, 2, 3, 4, 5, 6], "radius_studs": null, "teeth": null, "bl_id": "32524", "color": "#c0c0c0", "description": "Straight beam with 7 holes"}, "beam-9": {"name": "Technic Beam 9", "category": "beam", "length": 9, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8], "radius_studs": null, "teeth": null, "bl_id": "40490", "color": "#c0c0c0", "description": "Straight beam with 9 holes"}, "beam-11": {"name": "Technic Beam 11", "category": "beam", "length": 11, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "radius_studs": null, "teeth": null, "bl_id": "32525", "color": "#c0c0c0", "description": "Straight beam with 11 holes"}, "beam-15": {"name": "Technic Beam 15", "category": "beam", "length": 15, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "radius_studs": null, "teeth": null, "bl_id": "32278", "color": "#c0c0c0", "description": "Straight beam with 15 holes"}, "gear-8t": {"name": "Gear 8 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 8, "bl_id": "3647", "color": "#d4a843", "description": "Small spur gear, 8 teeth. Radius ~1 stud."}, "gear-16t": {"name": "Gear 16 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 2, "teeth": 16, "bl_id": "4019", "color": "#d4a843", "description": "Medium spur gear, 16 teeth. Radius ~2 studs."}, "gear-24t": {"name": "Gear 24 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 3, "teeth": 24, "bl_id": "3648", "color": "#d4a843", "description": "Large spur gear, 24 teeth. Radius ~3 studs."}, "gear-40t": {"name": "Gear 40 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 5, "teeth": 40, "bl_id": "3649", "color": "#d4a843", "description": "Extra-large spur gear, 40 teeth. Radius ~5 studs."}, "gear-worm": {"name": "Worm Gear", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 1, "bl_id": "4716", "color": "#d4a843", "description": "Worm gear. 1 tooth effective. Meshes with spur gears for high reduction."}, "rack-4": {"name": "Rack Gear 1x4", "category": "rack", "length": 4, "holes": [], "radius_studs": null, "teeth": 4, "bl_id": "3743", "color": "#e87722", "description": "Rack gear, 4 studs long. Converts rotation to linear motion with 8T gear."}, "axle-3": {"name": "Axle 3", "category": "axle", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "4519", "color": "#555555", "description": "Cross-section axle, 3 studs long. Grey (no stop)."}, "axle-4": {"name": "Axle 4", "category": "axle", "length": 4, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3705", "color": "#555555", "description": "Cross-section axle, 4 studs long."}, "axle-5": {"name": "Axle 5", "category": "axle", "length": 5, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "32073", "color": "#555555", "description": "Cross-section axle, 5 studs long. Light grey (with stop)."}, "axle-6": {"name": "Axle 6", "category": "axle", "length": 6, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3706", "color": "#555555", "description": "Cross-section axle, 6 studs long."}, "axle-8": {"name": "Axle 8", "category": "axle", "length": 8, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3707", "color": "#555555", "description": "Cross-section axle, 8 studs long."}, "axle-10": {"name": "Axle 10", "category": "axle", "length": 10, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3737", "color": "#555555", "description": "Cross-section axle, 10 studs long."}, "pin": {"name": "Technic Pin (no friction)", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3673", "color": "#333333", "description": "Standard pin, 1 stud long each side. Connects beam holes without friction."}, "pin-friction": {"name": "Technic Pin with Friction", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "2780", "color": "#222222", "description": "Friction pin. Holds axle position. Dark bluish grey."}, "pin-long": {"name": "Technic Pin 3L (Long)", "category": "pin", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6558", "color": "#555555", "description": "Long pin, 3 studs. Connects beams across a gap."}, "bush": {"name": "Technic Bush", "category": "connector", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6590", "color": "#888888", "description": "Axle bush / spacer. Sits on axle to fix gear position."}, "connector-2x2": {"name": "Technic Connector 2\u00d72", "category": "connector", "length": 2, "holes": [0, 1], "radius_studs": null, "teeth": null, "bl_id": "6536", "color": "#888888", "description": "Perpendicular connector. Joins two beams at 90 degrees."}};
+const TASKS_DATA = [{"id": "T1-01", "tier": 1, "name": "Parallel axle frame", "prompt": "Build a Lego Technic frame that holds two parallel axles exactly 4 studs apart, horizontally. The frame should be rigid and use beams as the structure.", "success_criteria": {"valid_assembly": true, "min_parts": 3, "part_categories_required": ["beam", "axle"], "notes": "Check: two axles present, both horizontal (axis=x or z), positions differ by exactly 4 in the perpendicular direction"}, "relevant_parts": ["beam-5", "beam-7", "beam-9", "axle-3", "axle-5", "pin", "bush"], "difficulty_notes": "Tests basic beam + axle assembly. No kinematics required."}, {"id": "T1-02", "name": "Rectangular beam frame", "tier": 1, "prompt": "Build a rectangular Lego Technic frame using beams. The frame should be 9 studs wide and 7 studs tall (outer dimensions), with beams connected at the corners using pins.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "pin"], "bounding_box_max": [9, 7, 2], "notes": "Check: beams present, connected at corners, overall footprint ~9x7"}, "relevant_parts": ["beam-9", "beam-7", "pin", "pin-friction", "connector-2x2"], "difficulty_notes": "Tests corner connection and framing. No kinematics."}, {"id": "T1-03", "name": "Axle through beam", "tier": 1, "prompt": "Mount a single axle horizontally through the center holes of two parallel beams, with the beams spaced 3 studs apart along the axle. Use bushes to prevent the axle from sliding.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "axle", "connector"], "notes": "Check: 1 axle, 2 beams, 2 bushes; axle axis perpendicular to beam axis"}, "relevant_parts": ["beam-5", "beam-7", "axle-5", "axle-8", "bush"], "difficulty_notes": "Tests understanding of axle-through-beam + bush usage."}, {"id": "T2-01", "name": "3:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 3:1 speed reduction. The input gear should spin 3 times for every 1 rotation of the output gear. Mount both gears on separate parallel axles supported by a beam frame.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "part_categories_required": ["gear", "axle", "beam"]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Standard gear ratio task. 8T + 24T = exactly 3:1. Tests basic gear meshing knowledge."}, {"id": "T2-02", "name": "2:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 2:1 speed reduction. Use available gears from the parts library.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 2.0, "gear_ratio_tolerance": 0.05}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model knows 8T:16T or 16T:32T etc. Only 8T+16T works with available parts."}, {"id": "T2-03", "name": "5:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair or simple gear train with a 5:1 speed reduction ratio. The input should rotate 5 times for each output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 5.0, "gear_ratio_tolerance": 0.05, "notes": "No single pair gives 5:1. Requires 8T+40T. Tests whether model knows tooth counts."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Requires 8T+40T. Tests whether model knows exact tooth counts."}, {"id": "T2-04", "name": "Rack and pinion", "tier": 2, "prompt": "Build a rack and pinion mechanism using Lego Technic parts. An input axle with a gear should drive a rack that slides horizontally. The mechanism should convert rotational motion to linear motion.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "part_types_required": ["rack-4"]}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "axle-5", "beam-5", "beam-7", "pin"], "difficulty_notes": "Tests knowledge of rack-and-pinion. The 8T gear meshes correctly with the rack."}, {"id": "T2-05", "name": "Worm gear reduction", "tier": 2, "prompt": "Build a worm gear drive using a worm gear driving a 24-tooth spur gear. Mount both on axles supported by a frame. The worm gear should give a high speed reduction.", "success_criteria": {"valid_assembly": true, "part_types_required": ["gear-worm"], "gear_ratio_min": 20.0, "notes": "worm(1T) + 24T = 24:1 reduction. Axes must be perpendicular."}, "relevant_parts": ["gear-worm", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Tests worm gear knowledge. Requires perpendicular axis understanding."}, {"id": "T3-01", "name": "9:1 compound gear train", "tier": 3, "prompt": "Build a compound gear train that achieves a 9:1 total speed reduction using two gear stages. Each stage should use a separate intermediate axle. The input spins 9 times for every 1 output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.1, "min_gear_count": 4, "notes": "Two 3:1 stages (8T+24T twice) = 9:1. Intermediate axle carries both a 24T and an 8T."}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"], "difficulty_notes": "Requires compound gear understanding \u2014 intermediate axle carries driven + driving gear."}, {"id": "T3-02", "name": "Maximum ratio with 4 gears", "tier": 3, "prompt": "Using exactly 4 gears from the parts library, build the gear train with the highest possible total speed reduction ratio. Explain your gear choices and why this gives the maximum ratio.", "success_criteria": {"valid_assembly": true, "exact_gear_count": 4, "gear_ratio_min": 9.0, "notes": "Optimal: worm + 40T (40:1) or two 8T+24T stages (9:1). Worm counts as 1 gear."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "beam-7"], "difficulty_notes": "Optimization task. Tests whether model reasons about maximizing ratio, not just building a valid one."}, {"id": "T3-03", "name": "Rotation direction reversal", "tier": 3, "prompt": "Build a gear train where the output axle rotates in the OPPOSITE direction to the input axle. Use the minimum number of gears needed to achieve this.", "success_criteria": {"valid_assembly": true, "output_direction": "reversed", "notes": "One spur gear pair reverses direction. Even number of stages = same direction, odd = reversed."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests understanding of gear rotation direction, not just ratio."}, {"id": "T3-04", "name": "Speed increase (overdrive)", "tier": 3, "prompt": "Build a gear pair where the output axle spins FASTER than the input. The output should spin at least 3 times faster than the input.", "success_criteria": {"valid_assembly": true, "gear_ratio_max": 0.34, "notes": "Ratio < 1 means speed increase. 24T driving 8T = 1/3 ratio = output spins 3x faster."}, "relevant_parts": ["gear-8t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model understands that gear ratios work both ways (driving vs. driven)."}, {"id": "T3-05", "name": "Three-axle gear chain", "tier": 3, "prompt": "Build a gear chain connecting three axles in series: axle A drives axle B which drives axle C. Each stage should reduce speed by 3:1, for a total of 9:1 from A to C. Use a beam structure to hold all three axles in alignment.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.15, "min_axle_count": 3}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-11", "beam-15", "bush", "pin"], "difficulty_notes": "Tests spatial arrangement of compound gear train across multiple axles."}, {"id": "T4-01", "name": "Compact 3:1 reduction", "tier": 4, "prompt": "Build a 3:1 gear reduction that fits within a 10\u00d75\u00d75 stud bounding box. All parts must be within this volume. The assembly should include the frame/support structure.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "bounding_box_max": [10, 5, 5]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "pin"], "difficulty_notes": "Adds spatial constraint on top of gear ratio. Tests 3D packing reasoning."}, {"id": "T4-02", "name": "Minimal part count rack-and-pinion", "tier": 4, "prompt": "Build a working rack and pinion mechanism using the fewest possible parts. The mechanism must convert rotation to linear motion. Use no more than 6 parts total.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "max_parts": 6}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "beam-5", "bush"], "difficulty_notes": "Part count constraint forces minimal design. Tests understanding of what's strictly necessary."}, {"id": "T4-03", "name": "9:1 reduction under part budget", "tier": 4, "prompt": "Build a gear train with at least 9:1 speed reduction using no more than 10 parts total (including axles, beams, bushes, and gears).", "success_criteria": {"valid_assembly": true, "gear_ratio_min": 9.0, "max_parts": 10}, "relevant_parts": ["gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Worm + 40T (40:1) uses fewer parts than 2-stage spur train. Tests optimization under budget."}, {"id": "T4-04", "name": "Symmetric dual-output drivetrain", "tier": 4, "prompt": "Build a drivetrain where one input axle drives two output axles simultaneously, both spinning at the same speed. The two output axles should be parallel and symmetric around the input.", "success_criteria": {"valid_assembly": true, "min_axle_count": 3, "notes": "Two identical gear pairs from the same input gear. Tests symmetry and multi-output reasoning."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush", "pin"], "difficulty_notes": "Multi-output topology. Tests whether model can reason about branching power transmission."}, {"id": "T5-01", "name": "Highest ratio from any 6 parts", "tier": 5, "prompt": "Using any 6 parts from the parts library, design a mechanism that achieves the highest possible speed reduction ratio. You may use any combination of gears, axles, beams, pins, or connectors. State the ratio your design achieves and explain why it is optimal.", "success_criteria": {"valid_assembly": true, "exact_part_count": 6, "gear_ratio_min": 24.0, "notes": "Optimal: worm(1) + gear-24t(1) + 2 axles + 2 beams = 24:1. Or worm + 40T = 40:1 with right support."}, "relevant_parts": ["all"], "difficulty_notes": "Open optimization. Requires knowing worm gear gives highest ratio. Also tests whether model can reason about what support is minimally needed."}, {"id": "T5-02", "name": "Motion conversion chain", "tier": 5, "prompt": "Build a mechanism with three stages: (1) a 3:1 gear reduction, then (2) conversion from rotational to linear motion via rack and pinion, then (3) the rack drives a second axle via a pin connection. The full chain: rotation in \u2192 reduced rotation \u2192 linear motion \u2192 rotation out.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "motion_type": "rotational_to_linear", "notes": "Complex chain requiring multiple mechanism types. Full pass requires all three stages present."}, "relevant_parts": ["gear-8t", "gear-24t", "rack-4", "axle-3", "axle-5", "beam-7", "beam-9", "pin", "bush"], "difficulty_notes": "Multi-stage mechanism. Tests whether model can chain different mechanism types correctly."}, {"id": "T5-03", "name": "Differential concept", "tier": 5, "prompt": "Describe and build a differential mechanism using Lego Technic parts: one input axle drives two output axles, but the two outputs can rotate at different speeds (e.g., for a vehicle turning). Approximate a differential using available gears and axles.", "success_criteria": {"valid_assembly": true, "min_gear_count": 4, "notes": "No true differential part available \u2014 model must approximate with bevel-style arrangement or explain limitation. Partial credit for correct description even if geometry is incomplete."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "bush", "connector-2x2"], "difficulty_notes": "Hard. No differential part in library. Tests whether model recognizes constraint, explains it, and attempts best approximation. Failure mode reveals mechanical reasoning depth."}, {"id": "T5-04", "name": "Free design: mechanical clock escapement", "tier": 5, "prompt": "Design a Lego Technic mechanism that simulates the escapement of a mechanical clock: an oscillating or stepping motion that releases one tooth at a time from a gear, creating a controlled tick-tick rotation. Use any available parts.", "success_criteria": {"valid_assembly": true, "notes": "No ground truth \u2014 scored by: (1) gear present, (2) some stop/release mechanism described, (3) reasoning quality. Primarily a qualitative eval task."}, "relevant_parts": ["all"], "difficulty_notes": "Intentionally under-constrained. Tests creative mechanism design and whether model understands escapement concept at all. Expected to fail for most models \u2014 that's the point."}];
+
+// ── Client-side validation (ported from Python) ─────────────────────────────
+
+function dist3(a, b) {
+  return Math.sqrt(a.reduce((s, v, i) => s + Math.pow(v - b[i], 2), 0));
+}
+
+function distPerp(point, origin, axis) {
+  const [px, py, pz] = point, [ox, oy, oz] = origin;
+  if (axis === 'x') return Math.sqrt(Math.pow(py-oy,2) + Math.pow(pz-oz,2));
+  if (axis === 'y') return Math.sqrt(Math.pow(px-ox,2) + Math.pow(pz-oz,2));
+  return Math.sqrt(Math.pow(px-ox,2) + Math.pow(py-oy,2));
+}
+
+function validateAssembly(assembly, lib) {
+  const errors = [], warnings = [];
+  const parts = assembly.parts || [];
+  if (!parts.length) { errors.push('Assembly has no parts.'); return {errors, warnings}; }
+  const seen = new Set();
+  for (const p of parts) {
+    if (!p.id) { errors.push('A part is missing an id field.'); continue; }
+    if (seen.has(p.id)) { errors.push(`Duplicate part ID: '${p.id}'`); continue; }
+    seen.add(p.id);
+    if (!p.type) { errors.push(`Part '${p.id}': missing type.`); continue; }
+    if (!lib[p.type]) { errors.push(`Part '${p.id}': unknown type '${p.type}'.`); continue; }
+    if (!Array.isArray(p.pos) || p.pos.length !== 3) { errors.push(`Part '${p.id}': pos must be [x,y,z].`); continue; }
+    if (!['x','y','z'].includes(p.axis || 'y')) { errors.push(`Part '${p.id}': axis must be x, y, or z.`); continue; }
+  }
+  return {errors, warnings};
+}
+
+function computeKinematics(assembly, lib) {
+  const parts = assembly.parts || [], result = {};
+  const gears = [], racks = [];
+  for (const p of parts) {
+    if (!lib[p.type]) continue;
+    const spec = lib[p.type];
+    if (spec.category === 'gear')
+      gears.push({id:p.id, teeth:spec.teeth, radius:spec.radius_studs, pos:p.pos, axis:p.axis||'y'});
+    else if (spec.category === 'rack')
+      racks.push({id:p.id, pos:p.pos, axis:p.axis||'x'});
+  }
+  const gearPairs = [];
+  for (let i = 0; i < gears.length; i++) {
+    for (let j = i+1; j < gears.length; j++) {
+      const g1=gears[i], g2=gears[j];
+      if (g1.axis !== g2.axis) continue;
+      const d = dist3(g1.pos, g2.pos), exp = g1.radius + g2.radius;
+      if (Math.abs(d - exp) < 0.75) {
+        const ratio = Math.round(g2.teeth/g1.teeth * 1000)/1000;
+        gearPairs.push({gear1:g1.id, gear2:g2.id, teeth1:g1.teeth, teeth2:g2.teeth, ratio});
+      }
+    }
+  }
+  if (gearPairs.length) result.gear_pairs = gearPairs;
+  const rackPinion = [];
+  for (const rack of racks) for (const gear of gears) {
+    const d = distPerp(gear.pos, rack.pos, rack.axis);
+    if (Math.abs(d - gear.radius) < 0.75)
+      rackPinion.push({gear:gear.id, rack:rack.id, note:`Gear '${gear.id}' (${gear.teeth}T) drives rack '${rack.id}' → rotation→linear`});
+  }
+  if (rackPinion.length) { result.rack_pinion = rackPinion; result.motion_type = 'Rotational → Linear'; }
+  return result;
+}
+
+function checkConnectionsLocal(assembly, lib) {
+  const partsMap = {};
+  for (const p of (assembly.parts||[])) partsMap[p.id] = p;
+  function getSpec(id) { const p=partsMap[id]; return p&&lib[p.type] ? [lib[p.type],p] : [null,null]; }
+  const results = [];
+  for (const conn of (assembly.connections||[])) {
+    const ctype = conn.type||'?';
+    let ok=false, msg='';
+    if (ctype === 'gear_mesh') {
+      const [a_id,b_id] = conn.parts||[];
+      const [sa,pa]=getSpec(a_id), [sb,pb]=getSpec(b_id);
+      if (!sa||!sb) { msg='Part not found'; }
+      else if (sa.category!=='gear'||sb.category!=='gear') { msg='Both must be gears'; }
+      else {
+        const exp=sa.radius_studs+sb.radius_studs, actual=dist3(pa.pos,pb.pos);
+        const isWorm=sa.teeth===1||sb.teeth===1;
+        if (isWorm && pa.axis===pb.axis) msg=`Worm: axes must be perpendicular (both '${pa.axis}')`;
+        else if (!isWorm && pa.axis!==pb.axis) msg=`Spur: axes must match ('${pa.axis}' vs '${pb.axis}')`;
+        else if (Math.abs(actual-exp)>0.75) msg=`Distance ${actual.toFixed(2)} studs, need ${exp} (r1+r2). Move ${b_id} ${(exp-actual).toFixed(1)} studs.`;
+        else { ok=true; const ratio=sb.teeth/sa.teeth; msg=`${a_id}(${sa.teeth}T) ↔ ${b_id}(${sb.teeth}T)  dist=${actual.toFixed(2)}/${exp}  ratio=${ratio.toFixed(2)}:1`; }
+      }
+    } else if (ctype==='rack_pinion') {
+      const [sg,pg]=getSpec(conn.gear), [sr,pr]=getSpec(conn.rack);
+      if (!sg||!sr) msg='Part not found';
+      else { const gr=sg.radius_studs, d=distPerp(pg.pos,pr.pos,pr.axis||'x');
+        if (Math.abs(d-gr)>0.6) msg=`Gear is ${d.toFixed(2)} studs from rack, need ${gr}.`;
+        else { ok=true; msg=`Gear ${conn.gear} (${sg.teeth}T) drives rack ${conn.rack}  → rotation→linear`; } }
+    } else if (ctype==='axle_through') {
+      const [sax,pax]=getSpec(conn.axle), [,ppt]=getSpec(conn.part);
+      if (!sax||!ppt) msg='Part not found';
+      else { const d=distPerp(ppt.pos,pax.pos,pax.axis||'y');
+        if (d>0.6) msg=`Axle misses part by ${d.toFixed(2)} studs.`;
+        else { ok=true; msg=`Axle '${conn.axle}' → '${conn.part}'  ✓`; } }
+    } else if (ctype==='bush_on_axle') {
+      const [sax,pax]=getSpec(conn.axle), [,pb]=getSpec(conn.bush);
+      if (!sax||!pb) msg='Part not found';
+      else { const d=distPerp(pb.pos,pax.pos,pax.axis||'y');
+        if (d>0.6) msg=`Bush not on axle (d=${d.toFixed(2)})`;
+        else { ok=true; msg=`Bush '${conn.bush}' on axle '${conn.axle}' ✓`; } }
+    } else if (ctype==='pin_in_beam') {
+      const [sb]=getSpec(conn.beam);
+      if (!sb) msg=`Beam ${conn.beam} not found`;
+      else if (!(sb.holes||[]).includes(conn.hole)) msg=`Beam has no hole at ${conn.hole}`;
+      else { ok=true; msg=`Pin in beam '${conn.beam}' hole ${conn.hole} ✓`; }
+    } else msg=`Unknown connection type '${ctype}'`;
+    results.push({type:ctype, ok, msg, raw:conn});
+  }
+  return results;
+}
+
+function compileLocal(assembly) {
+  const {errors, warnings} = validateAssembly(assembly, PARTS_DATA);
+  const kinematics = errors.length ? {} : computeKinematics(assembly, PARTS_DATA);
+  const connections = checkConnectionsLocal(assembly, PARTS_DATA);
+  const parts = assembly.parts || [];
+  let bbox = null;
+  if (parts.length) {
+    const xs=parts.filter(p=>p.pos).map(p=>p.pos[0]);
+    const ys=parts.filter(p=>p.pos).map(p=>p.pos[1]);
+    const zs=parts.filter(p=>p.pos).map(p=>p.pos[2]);
+    bbox={min:[Math.min(...xs),Math.min(...ys),Math.min(...zs)],
+           max:[Math.max(...xs),Math.max(...ys),Math.max(...zs)],
+           size:[Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys),Math.max(...zs)-Math.min(...zs)]};
+  }
+  return {ok:!errors.length, errors, warnings, kinematics, connections, bbox, part_count:parts.length};
+}
+
+// ── Gallery designs ──────────────────────────────────────────────────────────
+
+const GALLERY = [
+  {
+    id: "rack-pinion",
+    title: "Rack & Pinion",
+    sub: "Rotation → Linear",
+    tag: "linear", tagLabel: "Linear",
+    assembly: {
+      reasoning: "8T pinion (r=1) meshes with rack. Pinion center 1 stud above rack (z=1). Motor turns pinion, rack slides in x. 1:1 frequency — each motor rotation = one rack stroke.",
+      parts: [
+        {id:"rack",    type:"rack-4",  pos:[0,0,0],  axis:"x"},
+        {id:"pinion",  type:"gear-8t", pos:[2,0,1],  axis:"y"},
+        {id:"axle",    type:"axle-5",  pos:[2,-2,1], axis:"y"},
+        {id:"frame_f", type:"beam-5",  pos:[0,-2,0], axis:"x"},
+        {id:"frame_b", type:"beam-5",  pos:[0,-2,2], axis:"x"},
+        {id:"post_l",  type:"beam-3",  pos:[0,-2,0], axis:"z"},
+        {id:"post_r",  type:"beam-3",  pos:[4,-2,0], axis:"z"},
+        {id:"bush_b",  type:"bush",    pos:[2,-2,1], axis:"y"},
+        {id:"bush_t",  type:"bush",    pos:[2,1,1],  axis:"y"}
+      ],
+      connections: [
+        {type:"rack_pinion",  gear:"pinion",  rack:"rack"},
+        {type:"axle_through", axle:"axle",    part:"pinion"},
+        {type:"bush_on_axle", axle:"axle",    bush:"bush_b"},
+        {type:"bush_on_axle", axle:"axle",    bush:"bush_t"},
+        {type:"pin_in_beam",  beam:"frame_f", hole:2, part:"post_l"},
+        {type:"pin_in_beam",  beam:"frame_b", hole:2, part:"post_r"}
+      ]
+    }
+  },
+  {
+    id: "gear-3to1",
+    title: "3:1 Reduction",
+    sub: "8T → 24T",
+    tag: "gear", tagLabel: "Gear",
+    assembly: {
+      reasoning: "8T drives 24T. Centers 4 studs apart (r=1+3=4). Both on y-axis. Input spins 3× for every 1 output rotation.",
+      parts: [
+        {id:"g_in",   type:"gear-8t",  pos:[0,0,0],  axis:"y"},
+        {id:"g_out",  type:"gear-24t", pos:[4,0,0],  axis:"y"},
+        {id:"ax_in",  type:"axle-5",   pos:[0,-2,0], axis:"y"},
+        {id:"ax_out", type:"axle-5",   pos:[4,-2,0], axis:"y"},
+        {id:"beam",   type:"beam-5",   pos:[0,-2,0], axis:"x"},
+        {id:"b1",     type:"bush",     pos:[0,1,0],  axis:"y"},
+        {id:"b2",     type:"bush",     pos:[4,1,0],  axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "compound-9to1",
+    title: "9:1 Compound Train",
+    sub: "Two 3:1 stages",
+    tag: "compound", tagLabel: "Compound",
+    assembly: {
+      reasoning: "Stage 1: 8T→24T (3:1). Stage 2: 8T→24T (3:1). Both on intermediate shaft (same x=4, z=0, different y). Total: 9:1. Intermediate axle carries driven 24T at y=0 AND driving 8T at y=1.2.",
+      parts: [
+        {id:"g_in",    type:"gear-8t",  pos:[0,0,0],    axis:"y"},
+        {id:"g_mid24", type:"gear-24t", pos:[4,0,0],    axis:"y"},
+        {id:"g_mid8",  type:"gear-8t",  pos:[4,1.2,0],  axis:"y"},
+        {id:"g_out",   type:"gear-24t", pos:[8,1.2,0],  axis:"y"},
+        {id:"ax_in",   type:"axle-5",   pos:[0,-2,0],   axis:"y"},
+        {id:"ax_mid",  type:"axle-8",   pos:[4,-2,0],   axis:"y"},
+        {id:"ax_out",  type:"axle-5",   pos:[8,-2,0],   axis:"y"},
+        {id:"beam",    type:"beam-9",   pos:[0,-2,0],   axis:"x"},
+        {id:"b1",      type:"bush",     pos:[0,2,0],    axis:"y"},
+        {id:"b2",      type:"bush",     pos:[4,3,0],    axis:"y"},
+        {id:"b3",      type:"bush",     pos:[8,3,0],    axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_mid24"]},
+        {type:"gear_mesh",    parts:["g_mid8","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_mid", part:"g_mid24"},
+        {type:"axle_through", axle:"ax_mid", part:"g_mid8"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_mid", bush:"b2"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b3"}
+      ]
+    }
+  },
+  {
+    id: "worm-24to1",
+    title: "Worm Drive 24:1",
+    sub: "Perpendicular axes",
+    tag: "worm", tagLabel: "Worm",
+    assembly: {
+      reasoning: "Worm gear (1T, r=1) drives 24T spur (r=3). Centers 4 studs apart (1+3=4). Axes PERPENDICULAR: spur on y-axis, worm on z-axis. Ratio = 24:1. Self-locking — output cannot back-drive input.",
+      parts: [
+        {id:"spur",     type:"gear-24t", pos:[0,0,0],  axis:"y"},
+        {id:"worm",     type:"gear-worm",pos:[4,0,0],  axis:"z"},
+        {id:"ax_spur",  type:"axle-5",   pos:[0,-2,0], axis:"y"},
+        {id:"ax_worm",  type:"axle-5",   pos:[4,0,-2], axis:"z"},
+        {id:"beam_h",   type:"beam-5",   pos:[0,-2,0], axis:"x"},
+        {id:"beam_v",   type:"beam-3",   pos:[4,-2,0], axis:"z"},
+        {id:"b1",       type:"bush",     pos:[0,2,0],  axis:"y"},
+        {id:"b2",       type:"bush",     pos:[4,0,2],  axis:"z"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["worm","spur"]},
+        {type:"axle_through", axle:"ax_spur", part:"spur"},
+        {type:"axle_through", axle:"ax_worm", part:"worm"},
+        {type:"bush_on_axle", axle:"ax_spur", bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_worm", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "overdrive-3x",
+    title: "Overdrive 3×",
+    sub: "24T → 8T speed-up",
+    tag: "speed", tagLabel: "Speed Up",
+    assembly: {
+      reasoning: "Large 24T drives small 8T. Ratio = 8/24 = 0.33 → output spins 3× FASTER than input. Opposite of reduction. Centers 4 studs apart (3+1=4).",
+      parts: [
+        {id:"g_in",   type:"gear-24t", pos:[0,0,0],  axis:"y"},
+        {id:"g_out",  type:"gear-8t",  pos:[4,0,0],  axis:"y"},
+        {id:"ax_in",  type:"axle-8",   pos:[0,-3,0], axis:"y"},
+        {id:"ax_out", type:"axle-5",   pos:[4,-2,0], axis:"y"},
+        {id:"beam",   type:"beam-5",   pos:[0,-3,0], axis:"x"},
+        {id:"b1",     type:"bush",     pos:[0,3,0],  axis:"y"},
+        {id:"b2",     type:"bush",     pos:[4,1,0],  axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "dual-output",
+    title: "Dual Output",
+    sub: "1 input → 2 outputs",
+    tag: "compound", tagLabel: "Branching",
+    assembly: {
+      reasoning: "One 8T input gear (r=1) simultaneously drives two 24T output gears (r=3), one on each side. Each output is 4 studs from center (1+3=4). Both outputs turn at 1/3 input speed, in OPPOSITE directions to each other.",
+      parts: [
+        {id:"g_in",    type:"gear-8t",  pos:[0,0,0],   axis:"y"},
+        {id:"g_left",  type:"gear-24t", pos:[-4,0,0],  axis:"y"},
+        {id:"g_right", type:"gear-24t", pos:[4,0,0],   axis:"y"},
+        {id:"ax_in",   type:"axle-5",   pos:[0,-2,0],  axis:"y"},
+        {id:"ax_l",    type:"axle-8",   pos:[-4,-2,0], axis:"y"},
+        {id:"ax_r",    type:"axle-8",   pos:[4,-2,0],  axis:"y"},
+        {id:"beam",    type:"beam-9",   pos:[-4,-2,0], axis:"x"},
+        {id:"b1",      type:"bush",     pos:[0,1,0],   axis:"y"},
+        {id:"b2",      type:"bush",     pos:[-4,3,0],  axis:"y"},
+        {id:"b3",      type:"bush",     pos:[4,3,0],   axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_left"]},
+        {type:"gear_mesh",    parts:["g_in","g_right"]},
+        {type:"axle_through", axle:"ax_in", part:"g_in"},
+        {type:"axle_through", axle:"ax_l",  part:"g_left"},
+        {type:"axle_through", axle:"ax_r",  part:"g_right"},
+        {type:"bush_on_axle", axle:"ax_in", bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_l",  bush:"b2"},
+        {type:"bush_on_axle", axle:"ax_r",  bush:"b3"}
+      ]
+    }
+  }
+];
+
+let activeGalleryId = 'rack-pinion';
+
+function buildGallery() {
+  const strip = document.getElementById('gallery-strip');
+  GALLERY.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'gallery-card' + (g.id === activeGalleryId ? ' active' : '');
+    card.id = 'card-' + g.id;
+    card.innerHTML = `
+      <div class="gallery-card-title">${g.title}</div>
+      <div class="gallery-card-sub">${g.sub}</div>
+      <span class="gallery-card-tag tag-${g.tag}">${g.tagLabel}</span>`;
+    card.onclick = () => loadGallery(g.id);
+    strip.appendChild(card);
+  });
+}
+
+function loadGallery(id) {
+  const g = GALLERY.find(x => x.id === id);
+  if (!g) return;
+  activeGalleryId = id;
+  document.querySelectorAll('.gallery-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('active');
+  document.getElementById('assembly-editor').value = JSON.stringify(g.assembly, null, 2);
+  compileAssembly();
+  switchTab('results');
+}
+
+const DEFAULT_ASSEMBLY = {
+  "reasoning": "Rack-and-pinion: motor drives 8T pinion (radius=1). Rack slides along x-axis. Pinion center is 1 stud above rack (z=1) — perpendicular distance = gear radius = 1, teeth mesh. Each full rotation of motor = rack moves ~6.3 studs. Back-and-forth at same frequency as motor.",
+  "parts": [
+    {"id": "rack",     "type": "rack-4",  "pos": [0,0,0],  "axis": "x"},
+    {"id": "pinion",   "type": "gear-8t", "pos": [2,0,1],  "axis": "y"},
+    {"id": "axle",     "type": "axle-5",  "pos": [2,-2,1], "axis": "y"},
+    {"id": "frame_f",  "type": "beam-5",  "pos": [0,-2,0], "axis": "x"},
+    {"id": "frame_b",  "type": "beam-5",  "pos": [0,-2,2], "axis": "x"},
+    {"id": "post_l",   "type": "beam-3",  "pos": [0,-2,0], "axis": "z"},
+    {"id": "post_r",   "type": "beam-3",  "pos": [4,-2,0], "axis": "z"},
+    {"id": "bush_bot", "type": "bush",    "pos": [2,-2,1], "axis": "y"},
+    {"id": "bush_top", "type": "bush",    "pos": [2,1,1],  "axis": "y"}
+  ],
+  "connections": [
+    {"type": "rack_pinion",  "gear": "pinion",  "rack": "rack"},
+    {"type": "axle_through", "axle": "axle",    "part": "pinion"},
+    {"type": "bush_on_axle", "axle": "axle",    "bush": "bush_bot"},
+    {"type": "bush_on_axle", "axle": "axle",    "bush": "bush_top"},
+    {"type": "pin_in_beam",  "beam": "frame_f", "hole": 2, "part": "post_l"},
+    {"type": "pin_in_beam",  "beam": "frame_b", "hole": 2, "part": "post_r"}
+  ]
+};
+
+buildGallery();
+loadParts();
+loadTasks();
+
+// Load first gallery item on start
+window.addEventListener('load', () => setTimeout(() => loadGallery('rack-pinion'), 300));
+</script>
+</body>
+</html>
