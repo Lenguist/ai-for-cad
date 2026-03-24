@@ -16,9 +16,50 @@
     align-items: center;
     gap: 16px;
     border-bottom: 1px solid #0f3460;
+    flex-shrink: 0;
   }
   header h1 { font-size: 18px; color: #e94560; letter-spacing: 1px; }
   header span { color: #888; font-size: 13px; }
+
+  /* Gallery strip */
+  .gallery-strip {
+    background: #0f1f3d;
+    border-bottom: 1px solid #0f3460;
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .gallery-strip::-webkit-scrollbar { height: 4px; }
+  .gallery-strip::-webkit-scrollbar-thumb { background: #1a4a80; border-radius: 2px; }
+
+  .gallery-card {
+    background: #16213e;
+    border: 1px solid #1a4a80;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 150px;
+  }
+  .gallery-card:hover { background: #1a4a80; border-color: #7eb8e8; }
+  .gallery-card.active { background: #1a3a60; border-color: #e94560; }
+  .gallery-card-title { font-size: 13px; font-weight: bold; color: #e0e0e0; }
+  .gallery-card-sub { font-size: 11px; color: #888; }
+  .gallery-card-tag {
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    display: inline-block; margin-top: 2px;
+  }
+  .tag-gear    { background: #3a2a00; color: #d4a843; }
+  .tag-linear  { background: #2a1a3a; color: #e87722; }
+  .tag-compound{ background: #1a2a3a; color: #7eb8e8; }
+  .tag-worm    { background: #1a3a1a; color: #4caf50; }
+  .tag-speed   { background: #3a1a1a; color: #e94560; }
 
   .main { display: flex; flex: 1; overflow: hidden; }
 
@@ -171,6 +212,8 @@
   <h1>🧱 Lego Technic Studio</h1>
   <span>Place parts · Verify connections · Visualize in 3D</span>
 </header>
+
+<div class="gallery-strip" id="gallery-strip"></div>
 
 <div class="main">
 
@@ -713,6 +756,208 @@ function loadTask(task) {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
+// ── Gallery designs ──────────────────────────────────────────────────────────
+
+const GALLERY = [
+  {
+    id: "rack-pinion",
+    title: "Rack & Pinion",
+    sub: "Rotation → Linear",
+    tag: "linear", tagLabel: "Linear",
+    assembly: {
+      reasoning: "8T pinion (r=1) meshes with rack. Pinion center 1 stud above rack (z=1). Motor turns pinion, rack slides in x. 1:1 frequency — each motor rotation = one rack stroke.",
+      parts: [
+        {id:"rack",    type:"rack-4",  pos:[0,0,0],  axis:"x"},
+        {id:"pinion",  type:"gear-8t", pos:[2,0,1],  axis:"y"},
+        {id:"axle",    type:"axle-5",  pos:[2,-2,1], axis:"y"},
+        {id:"frame_f", type:"beam-5",  pos:[0,-2,0], axis:"x"},
+        {id:"frame_b", type:"beam-5",  pos:[0,-2,2], axis:"x"},
+        {id:"post_l",  type:"beam-3",  pos:[0,-2,0], axis:"z"},
+        {id:"post_r",  type:"beam-3",  pos:[4,-2,0], axis:"z"},
+        {id:"bush_b",  type:"bush",    pos:[2,-2,1], axis:"y"},
+        {id:"bush_t",  type:"bush",    pos:[2,1,1],  axis:"y"}
+      ],
+      connections: [
+        {type:"rack_pinion",  gear:"pinion",  rack:"rack"},
+        {type:"axle_through", axle:"axle",    part:"pinion"},
+        {type:"bush_on_axle", axle:"axle",    bush:"bush_b"},
+        {type:"bush_on_axle", axle:"axle",    bush:"bush_t"},
+        {type:"pin_in_beam",  beam:"frame_f", hole:2, part:"post_l"},
+        {type:"pin_in_beam",  beam:"frame_b", hole:2, part:"post_r"}
+      ]
+    }
+  },
+  {
+    id: "gear-3to1",
+    title: "3:1 Reduction",
+    sub: "8T → 24T",
+    tag: "gear", tagLabel: "Gear",
+    assembly: {
+      reasoning: "8T drives 24T. Centers 4 studs apart (r=1+3=4). Both on y-axis. Input spins 3× for every 1 output rotation.",
+      parts: [
+        {id:"g_in",   type:"gear-8t",  pos:[0,0,0],  axis:"y"},
+        {id:"g_out",  type:"gear-24t", pos:[4,0,0],  axis:"y"},
+        {id:"ax_in",  type:"axle-5",   pos:[0,-2,0], axis:"y"},
+        {id:"ax_out", type:"axle-5",   pos:[4,-2,0], axis:"y"},
+        {id:"beam",   type:"beam-5",   pos:[0,-2,0], axis:"x"},
+        {id:"b1",     type:"bush",     pos:[0,1,0],  axis:"y"},
+        {id:"b2",     type:"bush",     pos:[4,1,0],  axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "compound-9to1",
+    title: "9:1 Compound Train",
+    sub: "Two 3:1 stages",
+    tag: "compound", tagLabel: "Compound",
+    assembly: {
+      reasoning: "Stage 1: 8T→24T (3:1). Stage 2: 8T→24T (3:1). Both on intermediate shaft (same x=4, z=0, different y). Total: 9:1. Intermediate axle carries driven 24T at y=0 AND driving 8T at y=1.2.",
+      parts: [
+        {id:"g_in",    type:"gear-8t",  pos:[0,0,0],    axis:"y"},
+        {id:"g_mid24", type:"gear-24t", pos:[4,0,0],    axis:"y"},
+        {id:"g_mid8",  type:"gear-8t",  pos:[4,1.2,0],  axis:"y"},
+        {id:"g_out",   type:"gear-24t", pos:[8,1.2,0],  axis:"y"},
+        {id:"ax_in",   type:"axle-5",   pos:[0,-2,0],   axis:"y"},
+        {id:"ax_mid",  type:"axle-8",   pos:[4,-2,0],   axis:"y"},
+        {id:"ax_out",  type:"axle-5",   pos:[8,-2,0],   axis:"y"},
+        {id:"beam",    type:"beam-9",   pos:[0,-2,0],   axis:"x"},
+        {id:"b1",      type:"bush",     pos:[0,2,0],    axis:"y"},
+        {id:"b2",      type:"bush",     pos:[4,3,0],    axis:"y"},
+        {id:"b3",      type:"bush",     pos:[8,3,0],    axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_mid24"]},
+        {type:"gear_mesh",    parts:["g_mid8","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_mid", part:"g_mid24"},
+        {type:"axle_through", axle:"ax_mid", part:"g_mid8"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_mid", bush:"b2"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b3"}
+      ]
+    }
+  },
+  {
+    id: "worm-24to1",
+    title: "Worm Drive 24:1",
+    sub: "Perpendicular axes",
+    tag: "worm", tagLabel: "Worm",
+    assembly: {
+      reasoning: "Worm gear (1T, r=1) drives 24T spur (r=3). Centers 4 studs apart (1+3=4). Axes PERPENDICULAR: spur on y-axis, worm on z-axis. Ratio = 24:1. Self-locking — output cannot back-drive input.",
+      parts: [
+        {id:"spur",     type:"gear-24t", pos:[0,0,0],  axis:"y"},
+        {id:"worm",     type:"gear-worm",pos:[4,0,0],  axis:"z"},
+        {id:"ax_spur",  type:"axle-5",   pos:[0,-2,0], axis:"y"},
+        {id:"ax_worm",  type:"axle-5",   pos:[4,0,-2], axis:"z"},
+        {id:"beam_h",   type:"beam-5",   pos:[0,-2,0], axis:"x"},
+        {id:"beam_v",   type:"beam-3",   pos:[4,-2,0], axis:"z"},
+        {id:"b1",       type:"bush",     pos:[0,2,0],  axis:"y"},
+        {id:"b2",       type:"bush",     pos:[4,0,2],  axis:"z"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["worm","spur"]},
+        {type:"axle_through", axle:"ax_spur", part:"spur"},
+        {type:"axle_through", axle:"ax_worm", part:"worm"},
+        {type:"bush_on_axle", axle:"ax_spur", bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_worm", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "overdrive-3x",
+    title: "Overdrive 3×",
+    sub: "24T → 8T speed-up",
+    tag: "speed", tagLabel: "Speed Up",
+    assembly: {
+      reasoning: "Large 24T drives small 8T. Ratio = 8/24 = 0.33 → output spins 3× FASTER than input. Opposite of reduction. Centers 4 studs apart (3+1=4).",
+      parts: [
+        {id:"g_in",   type:"gear-24t", pos:[0,0,0],  axis:"y"},
+        {id:"g_out",  type:"gear-8t",  pos:[4,0,0],  axis:"y"},
+        {id:"ax_in",  type:"axle-8",   pos:[0,-3,0], axis:"y"},
+        {id:"ax_out", type:"axle-5",   pos:[4,-2,0], axis:"y"},
+        {id:"beam",   type:"beam-5",   pos:[0,-3,0], axis:"x"},
+        {id:"b1",     type:"bush",     pos:[0,3,0],  axis:"y"},
+        {id:"b2",     type:"bush",     pos:[4,1,0],  axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_out"]},
+        {type:"axle_through", axle:"ax_in",  part:"g_in"},
+        {type:"axle_through", axle:"ax_out", part:"g_out"},
+        {type:"bush_on_axle", axle:"ax_in",  bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_out", bush:"b2"}
+      ]
+    }
+  },
+  {
+    id: "dual-output",
+    title: "Dual Output",
+    sub: "1 input → 2 outputs",
+    tag: "compound", tagLabel: "Branching",
+    assembly: {
+      reasoning: "One 8T input gear (r=1) simultaneously drives two 24T output gears (r=3), one on each side. Each output is 4 studs from center (1+3=4). Both outputs turn at 1/3 input speed, in OPPOSITE directions to each other.",
+      parts: [
+        {id:"g_in",    type:"gear-8t",  pos:[0,0,0],   axis:"y"},
+        {id:"g_left",  type:"gear-24t", pos:[-4,0,0],  axis:"y"},
+        {id:"g_right", type:"gear-24t", pos:[4,0,0],   axis:"y"},
+        {id:"ax_in",   type:"axle-5",   pos:[0,-2,0],  axis:"y"},
+        {id:"ax_l",    type:"axle-8",   pos:[-4,-2,0], axis:"y"},
+        {id:"ax_r",    type:"axle-8",   pos:[4,-2,0],  axis:"y"},
+        {id:"beam",    type:"beam-9",   pos:[-4,-2,0], axis:"x"},
+        {id:"b1",      type:"bush",     pos:[0,1,0],   axis:"y"},
+        {id:"b2",      type:"bush",     pos:[-4,3,0],  axis:"y"},
+        {id:"b3",      type:"bush",     pos:[4,3,0],   axis:"y"}
+      ],
+      connections: [
+        {type:"gear_mesh",    parts:["g_in","g_left"]},
+        {type:"gear_mesh",    parts:["g_in","g_right"]},
+        {type:"axle_through", axle:"ax_in", part:"g_in"},
+        {type:"axle_through", axle:"ax_l",  part:"g_left"},
+        {type:"axle_through", axle:"ax_r",  part:"g_right"},
+        {type:"bush_on_axle", axle:"ax_in", bush:"b1"},
+        {type:"bush_on_axle", axle:"ax_l",  bush:"b2"},
+        {type:"bush_on_axle", axle:"ax_r",  bush:"b3"}
+      ]
+    }
+  }
+];
+
+let activeGalleryId = 'rack-pinion';
+
+function buildGallery() {
+  const strip = document.getElementById('gallery-strip');
+  GALLERY.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'gallery-card' + (g.id === activeGalleryId ? ' active' : '');
+    card.id = 'card-' + g.id;
+    card.innerHTML = `
+      <div class="gallery-card-title">${g.title}</div>
+      <div class="gallery-card-sub">${g.sub}</div>
+      <span class="gallery-card-tag tag-${g.tag}">${g.tagLabel}</span>`;
+    card.onclick = () => loadGallery(g.id);
+    strip.appendChild(card);
+  });
+}
+
+function loadGallery(id) {
+  const g = GALLERY.find(x => x.id === id);
+  if (!g) return;
+  activeGalleryId = id;
+  document.querySelectorAll('.gallery-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('card-' + id);
+  if (card) card.classList.add('active');
+  document.getElementById('assembly-editor').value = JSON.stringify(g.assembly, null, 2);
+  compileAssembly();
+  switchTab('results');
+}
+
 const DEFAULT_ASSEMBLY = {
   "reasoning": "Rack-and-pinion: motor drives 8T pinion (radius=1). Rack slides along x-axis. Pinion center is 1 stud above rack (z=1) — perpendicular distance = gear radius = 1, teeth mesh. Each full rotation of motor = rack moves ~6.3 studs. Back-and-forth at same frequency as motor.",
   "parts": [
@@ -736,12 +981,12 @@ const DEFAULT_ASSEMBLY = {
   ]
 };
 
-document.getElementById('assembly-editor').value = JSON.stringify(DEFAULT_ASSEMBLY, null, 2);
+buildGallery();
 loadParts();
 loadTasks();
 
-// Auto-compile on load
-window.addEventListener('load', () => setTimeout(compileAssembly, 300));
+// Load first gallery item on start
+window.addEventListener('load', () => setTimeout(() => loadGallery('rack-pinion'), 300));
 </script>
 </body>
 </html>
