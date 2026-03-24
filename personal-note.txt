@@ -1,0 +1,102 @@
+❯ okay so large picture things first. i am really 
+ interested in thsi place of ai for mechanical    
+enginering. ithink it's underexplored and it's a  
+very intresting avenue for research. iw oudl      
+dlove to raise money to run a vc funded research  
+lab working on this. however, i currently lack    
+credibility in the sapce. so one of my goals is   
+to build credibility, entwork and connections.    
+those are all kidn of related. i want to try to   
+publsih, at least submit nad keep trying those    
+two separate ig resarch ideas/thesis. one is a    
+live survey/benchmakr based on collected user     
+prompts/idk that is cadarena. idk if it's enough  
+for pfull paper bc it's mostly a survey/behcnakrk 
+ type thing as of rn,but maybe a short            
+paper/workshop apper. and second one is lego      
+enginereing. in egenral thesis is lego is a good  
+substrate for mechanical enginering. the          
+compelxity ceiling is really high, ie being able  
+to ask a prompt to buidl a very complex           
+mechanism, etc. it's a very good benchamrk for    
+general "engineering intelligence" in some snes.e 
+ we proposae this new benchamrk, and we evlauate  
+every existing approach on it, and provide a      
+conveinnentmaybe api or enviroenemtn so pepole    
+int he end of the day can keep trying it and      
+building on it. so those are two dieas, and the   
+meta goals generally. does thi amake sense?       
+                                                  
+⏺ Yeah this makes a lot of sense, and honestly    
+  both ideas are solid. Let me reflect back what  
+  I'm hearing to make sure I've got it right.     
+                                               
+  ---
+  Meta goal: Build credibility in                 
+  AI-for-mechanical-engineering to eventually     
+  raise money for a VC-funded research lab in this
+   space. Credibility comes from: publications,   
+  network, demonstrated work.                   
+
+  ---
+  Paper 1: CAD Arena
+                                                  
+  A live survey/benchmark of text-to-CAD models,
+  with real user prompts collected from the       
+  platform. The novel angle isn't just "we      
+  benchmarked some models" — it's the living      
+  nature of it: user-submitted prompts, community
+  votes on best outputs, continuously updated
+  leaderboard.
+
+  You're right that it's probably a short paper / 
+  workshop paper, not a full venue submission on
+  its own. But that's actually fine — workshop    
+  papers at top venues (NeurIPS, ICLR, ICML) get
+  you in the room, get you cited, and are faster
+  to ship.
+
+  ---
+  Paper 2: Lego as a Benchmark for Engineering 
+  Intelligence                                    
+              
+  This is the stronger thesis IMO. The argument:  
+  - Lego is a uniquely good substrate for         
+  evaluating "engineering intelligence" — it's    
+  discrete, constrained, verifiable, and the      
+  complexity ceiling is enormous (you can describe
+   a simple brick or a full Technic gearbox)      
+  - Existing benchmarks (text-to-CAD,       
+  code-to-shape) don't capture mechanism design —
+  things that move, interlock, have functional    
+  constraints                                 
+  - You propose this as a new benchmark, evaluate 
+  all existing approaches, and release an        
+  environment/API so others can build on it       
+                                           
+  This is a full paper idea. It has a clear novel 
+  contribution (new benchmark + environment), a   
+  thesis (Lego as proxy for engineering
+  intelligence), and a natural evaluation section 
+  (run everything on it).                       
+
+  ---
+  How they relate:
+                                                  
+  CAD Arena is the quick credibility move — get
+  something published and cited this year. Lego   
+  Engineering is the bigger bet — takes longer but
+   has higher ceiling. They also reinforce each   
+  other: CAD Arena shows you can run evaluations
+  at scale, Lego is the "here's the hard version
+  of the problem."
+
+  ---
+  Does this framing match what you're thinking? 
+  And one honest question: on the Lego paper — do 
+  you have a hypothesis about what current models
+  fail at specifically? Like, is the claim        
+  "nothing can do this at all," or "here's the  
+  specific failure modes"? That shapes whether
+  it's a benchmark paper or a benchmark + analysis
+   paper.
