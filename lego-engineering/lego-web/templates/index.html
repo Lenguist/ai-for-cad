@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lego Technic Assembly Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+
+  header {
+    background: #16213e;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #0f3460;
+  }
+  header h1 { font-size: 18px; color: #e94560; letter-spacing: 1px; }
+  header span { color: #888; font-size: 13px; }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Left panel - parts browser */
+  .parts-panel {
+    width: 260px;
+    background: #16213e;
+    border-right: 1px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .parts-panel h2 { padding: 12px 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 1px solid #0f3460; }
+  .parts-search { padding: 10px; border-bottom: 1px solid #0f3460; }
+  .parts-search input {
+    width: 100%; padding: 7px 10px; background: #0f3460;
+    border: 1px solid #1a4a80; border-radius: 4px; color: #e0e0e0; font-size: 13px;
+  }
+  .parts-search input:focus { outline: none; border-color: #e94560; }
+  .cat-filters { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; border-bottom: 1px solid #0f3460; }
+  .cat-btn {
+    padding: 3px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; border: none;
+    background: #0f3460; color: #aaa;
+    transition: all 0.15s;
+  }
+  .cat-btn.active { background: #e94560; color: white; }
+  .parts-list { flex: 1; overflow-y: auto; }
+  .part-item {
+    padding: 8px 14px; cursor: pointer; border-bottom: 1px solid #0a2040;
+    transition: background 0.1s;
+  }
+  .part-item:hover { background: #0f3460; }
+  .part-item.selected { background: #1a4a80; }
+  .part-id { font-size: 13px; font-weight: bold; color: #7eb8e8; }
+  .part-name { font-size: 11px; color: #888; margin-top: 2px; }
+  .part-spec { font-size: 11px; color: #e94560; margin-top: 1px; }
+
+  /* Part detail popup */
+  .part-detail {
+    background: #0f3460; border-top: 1px solid #1a4a80;
+    padding: 12px 14px; font-size: 12px; display: none;
+  }
+  .part-detail.visible { display: block; }
+  .part-detail h3 { color: #7eb8e8; margin-bottom: 8px; font-size: 13px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .detail-key { color: #888; }
+  .detail-val { color: #e0e0e0; }
+
+  /* Center - 3D viewer */
+  .viewer { flex: 1; position: relative; }
+  #canvas { width: 100%; height: 100%; display: block; }
+  .viewer-controls {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; gap: 6px;
+  }
+  .viewer-controls button {
+    padding: 6px 12px; background: #16213e; border: 1px solid #0f3460;
+    color: #aaa; border-radius: 4px; cursor: pointer; font-size: 12px;
+    transition: all 0.15s;
+  }
+  .viewer-controls button:hover { background: #0f3460; color: white; }
+
+  /* Right panel - editor */
+  .editor-panel {
+    width: 380px;
+    background: #16213e;
+    border-left: 1px solid #0f3460;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .editor-tabs {
+    display: flex; border-bottom: 1px solid #0f3460;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px; font-size: 12px; text-align: center;
+    cursor: pointer; color: #888; background: none; border: none;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab-btn.active { color: #7eb8e8; border-bottom-color: #7eb8e8; }
+
+  .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .tab-content.active { display: flex; }
+
+  #assembly-editor {
+    flex: 1; padding: 10px; background: #0a1628; color: #c8e6c9;
+    font-family: 'Fira Code', 'Courier New', monospace; font-size: 12px;
+    border: none; resize: none; outline: none; line-height: 1.5;
+  }
+  .editor-actions {
+    padding: 10px; display: flex; gap: 8px; border-top: 1px solid #0f3460;
+  }
+  .btn-compile {
+    flex: 1; padding: 9px; background: #e94560; border: none; color: white;
+    border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;
+    transition: background 0.15s;
+  }
+  .btn-compile:hover { background: #c73652; }
+  .btn-clear {
+    padding: 9px 14px; background: #0f3460; border: 1px solid #1a4a80;
+    color: #aaa; border-radius: 4px; cursor: pointer; font-size: 13px;
+  }
+
+  /* Results */
+  #results { flex: 1; overflow-y: auto; padding: 12px; }
+  .result-section { margin-bottom: 14px; }
+  .result-section h3 { font-size: 12px; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 8px; }
+  .check-item {
+    padding: 6px 10px; border-radius: 4px; font-size: 12px;
+    margin-bottom: 4px; display: flex; align-items: flex-start; gap: 8px;
+  }
+  .check-ok { background: #1a3a1a; border-left: 3px solid #4caf50; }
+  .check-err { background: #3a1a1a; border-left: 3px solid #e94560; }
+  .check-warn { background: #3a2a1a; border-left: 3px solid #ff9800; }
+  .check-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .check-msg { flex: 1; color: #ccc; line-height: 1.4; }
+  .check-fix { font-size: 11px; color: #ff9800; margin-top: 3px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-box {
+    background: #0f3460; border-radius: 4px; padding: 8px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: bold; color: #7eb8e8; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  .stat-box.highlight .stat-val { color: #e94560; }
+
+  /* Tasks panel */
+  .tasks-list { overflow-y: auto; }
+  .task-item {
+    padding: 10px 14px; border-bottom: 1px solid #0a2040; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .task-item:hover { background: #0f3460; }
+  .task-header { display: flex; align-items: center; gap: 8px; }
+  .task-id { font-size: 11px; background: #e94560; color: white; padding: 2px 6px; border-radius: 3px; }
+  .task-name { font-size: 13px; }
+  .task-prompt { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
+
+  .tier-label {
+    padding: 6px 14px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 1px; color: #e94560; background: #0a1628;
+    border-bottom: 1px solid #0f3460;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧱 Lego Technic Studio</h1>
+  <span>Place parts · Verify connections · Visualize in 3D</span>
+</header>
+
+<div class="main">
+
+  <!-- ── Left: parts browser ── -->
+  <div class="parts-panel">
+    <h2>Parts Library</h2>
+    <div class="parts-search">
+      <input type="text" id="part-search" placeholder="Search parts..." oninput="searchParts()">
+    </div>
+    <div class="cat-filters" id="cat-filters"></div>
+    <div class="parts-list" id="parts-list"></div>
+    <div class="part-detail" id="part-detail"></div>
+  </div>
+
+  <!-- ── Center: 3D viewer ── -->
+  <div class="viewer">
+    <canvas id="canvas"></canvas>
+    <div class="viewer-controls">
+      <button onclick="resetCamera()">Reset View</button>
+      <button onclick="toggleAxes()">Axes</button>
+    </div>
+  </div>
+
+  <!-- ── Right: editor + results ── -->
+  <div class="editor-panel">
+    <div class="editor-tabs">
+      <button class="tab-btn active" onclick="switchTab('editor')">Assembly JSON</button>
+      <button class="tab-btn" onclick="switchTab('results')">Results</button>
+      <button class="tab-btn" onclick="switchTab('tasks')">Tasks</button>
+    </div>
+
+    <div class="tab-content active" id="tab-editor">
+      <textarea id="assembly-editor" spellcheck="false"></textarea>
+      <div class="editor-actions">
+        <button class="btn-compile" onclick="compileAssembly()">▶ Compile & Visualize</button>
+        <button class="btn-clear" onclick="clearEditor()">Clear</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-results">
+      <div id="results"><p style="color:#888;padding:20px;text-align:center">Compile an assembly to see results.</p></div>
+    </div>
+
+    <div class="tab-content" id="tab-tasks">
+      <div class="tasks-list" id="tasks-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Three.js setup ──────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.setClearColor(0x0a1628);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+camera.position.set(12, 10, 18);
+
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+
+// Grid
+const grid = new THREE.GridHelper(40, 40, 0x1a4a80, 0x0f3460);
+scene.add(grid);
+
+// Axes helper (toggleable)
+let axesHelper = new THREE.AxesHelper(5);
+axesHelper.visible = false;
+scene.add(axesHelper);
+
+// Assembly group
+let assemblyGroup = new THREE.Group();
+scene.add(assemblyGroup);
+
+function toggleAxes() { axesHelper.visible = !axesHelper.visible; }
+
+function resetCamera() {
+  camera.position.set(12, 10, 18);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// ── Part colors ────────────────────────────────────────────────────────────
+
+const CAT_COLORS = {
+  gear:      0xd4a843,
+  axle:      0x888888,
+  beam:      0x7eb8e8,
+  rack:      0xe87722,
+  pin:       0x444444,
+  connector: 0xaaaaaa,
+};
+
+function hexColor(cat) {
+  return CAT_COLORS[cat] || 0xffffff;
+}
+
+// ── Build 3D mesh for a part ────────────────────────────────────────────────
+
+function buildPartMesh(part, spec) {
+  const cat = spec.category;
+  const color = hexColor(cat);
+  const mat = new THREE.MeshPhongMaterial({ color, shininess: 60 });
+  let mesh;
+
+  // Axis rotation helpers
+  function applyAxis(obj, axis) {
+    if (axis === 'x') {
+      obj.rotation.z = Math.PI / 2;
+    } else if (axis === 'z') {
+      obj.rotation.x = Math.PI / 2;
+    }
+    // y is default for cylinders
+  }
+
+  if (cat === 'gear') {
+    const r = spec.radius_studs || 1;
+    const isWorm = spec.teeth === 1;
+    if (isWorm) {
+      // Worm: elongated cylinder
+      const geo = new THREE.CylinderGeometry(0.35, 0.35, 2.5, 16);
+      mesh = new THREE.Mesh(geo, mat);
+      // Add helical look with a torus
+      const torusMat = new THREE.MeshPhongMaterial({ color: 0xb8902a });
+      for (let i = 0; i < 4; i++) {
+        const t = new THREE.TorusGeometry(0.35, 0.12, 8, 12);
+        const tm = new THREE.Mesh(t, torusMat);
+        tm.position.y = -0.9 + i * 0.6;
+        mesh.add(tm);
+      }
+    } else {
+      // Spur gear: disk with tooth ring
+      const geo = new THREE.CylinderGeometry(r, r, 0.4, Math.max(8, spec.teeth));
+      mesh = new THREE.Mesh(geo, mat);
+      // Tooth ring
+      const toothMat = new THREE.MeshPhongMaterial({ color: color });
+      const toothGeo = new THREE.TorusGeometry(r, 0.15, 6, spec.teeth);
+      const toothMesh = new THREE.Mesh(toothGeo, toothMat);
+      mesh.add(toothMesh);
+      // Axle hole (dark center)
+      const holeMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+      const holeGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 8);
+      mesh.add(new THREE.Mesh(holeGeo, holeMat));
+    }
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'axle') {
+    const L = spec.length || 3;
+    const geo = new THREE.CylinderGeometry(0.18, 0.18, L, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    // Offset so pos is one end
+    mesh.position.y = L / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'beam') {
+    const L = spec.length || 5;
+    const geo = new THREE.BoxGeometry(L, 0.45, 0.45);
+    mesh = new THREE.Mesh(geo, mat);
+    // Holes along beam
+    const holeMat = new THREE.MeshPhongMaterial({ color: 0x0a1628 });
+    for (let i = 0; i < L; i++) {
+      const h = new THREE.CylinderGeometry(0.16, 0.16, 0.6, 8);
+      const hm = new THREE.Mesh(h, holeMat);
+      hm.position.set(i - (L - 1) / 2, 0, 0);
+      hm.rotation.z = Math.PI / 2;
+      mesh.add(hm);
+    }
+    // Offset so pos is at hole 0 end
+    mesh.position.x = (L - 1) / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+
+    // Apply axis rotation
+    const axis = part.axis || 'x';
+    if (axis === 'y') { mesh.rotation.z = Math.PI / 2; }
+    else if (axis === 'z') { mesh.rotation.y = Math.PI / 2; }
+
+  } else if (cat === 'rack') {
+    const L = spec.length || 4;
+    const geo = new THREE.BoxGeometry(L, 0.3, 0.55);
+    mesh = new THREE.Mesh(geo, mat);
+    // Tooth bumps on top
+    const toothMat = new THREE.MeshPhongMaterial({ color: 0xc86010 });
+    for (let i = 0; i < L * 2; i++) {
+      const tg = new THREE.BoxGeometry(0.22, 0.18, 0.55);
+      const tm = new THREE.Mesh(tg, toothMat);
+      tm.position.set(i * 0.5 - L / 2 + 0.25, 0.24, 0);
+      mesh.add(tm);
+    }
+    mesh.position.x = L / 2;
+    const wrapper = new THREE.Group();
+    wrapper.add(mesh);
+    mesh = wrapper;
+
+    const axis = part.axis || 'x';
+    if (axis === 'y') { mesh.rotation.z = Math.PI / 2; }
+    else if (axis === 'z') { mesh.rotation.y = Math.PI / 2; }
+
+  } else if (cat === 'pin') {
+    const geo = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    applyAxis(mesh, part.axis || 'y');
+
+  } else if (cat === 'connector') {
+    const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.8, 8);
+    mesh = new THREE.Mesh(geo, mat);
+    applyAxis(mesh, part.axis || 'y');
+
+  } else {
+    const geo = new THREE.SphereGeometry(0.3, 8, 8);
+    mesh = new THREE.Mesh(geo, mat);
+  }
+
+  return mesh;
+}
+
+// ── Render assembly ─────────────────────────────────────────────────────────
+
+let partsLib = {};
+
+function renderAssembly(assembly) {
+  // Clear existing
+  while (assemblyGroup.children.length) {
+    assemblyGroup.remove(assemblyGroup.children[0]);
+  }
+
+  const parts = assembly.parts || [];
+  const bounds = { min: [Infinity,Infinity,Infinity], max: [-Infinity,-Infinity,-Infinity] };
+
+  parts.forEach(part => {
+    const spec = partsLib[part.type];
+    if (!spec) return;
+
+    const mesh = buildPartMesh(part, spec);
+    const pos = part.pos || [0, 0, 0];
+    mesh.position.set(pos[0], pos[1], pos[2]);
+    mesh.userData = { partId: part.id, partType: part.type };
+    assemblyGroup.add(mesh);
+
+    bounds.min = bounds.min.map((v, i) => Math.min(v, pos[i]));
+    bounds.max = bounds.max.map((v, i) => Math.max(v, pos[i]));
+  });
+
+  // Center camera on assembly
+  if (parts.length > 0 && bounds.min[0] < Infinity) {
+    const cx = (bounds.min[0] + bounds.max[0]) / 2;
+    const cy = (bounds.min[1] + bounds.max[1]) / 2;
+    const cz = (bounds.min[2] + bounds.max[2]) / 2;
+    controls.target.set(cx, cy, cz);
+
+    const span = Math.max(...bounds.max.map((v, i) => v - bounds.min[i]));
+    const dist = Math.max(span * 1.8, 8);
+    camera.position.set(cx + dist * 0.6, cy + dist * 0.5, cz + dist * 0.8);
+    controls.update();
+  }
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['editor','results','tasks'][i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach((c, i) => {
+    c.classList.toggle('active', ['tab-editor','tab-results','tab-tasks'][i] === `tab-${name}`);
+  });
+}
+
+// ── Compile ─────────────────────────────────────────────────────────────────
+
+async function compileAssembly() {
+  let assembly;
+  try {
+    assembly = JSON.parse(document.getElementById('assembly-editor').value);
+  } catch(e) {
+    showResults({ ok: false, errors: ['Invalid JSON: ' + e.message], warnings: [], connections: [], kinematics: {} });
+    switchTab('results');
+    return;
+  }
+
+  renderAssembly(assembly);
+
+  const resp = await fetch('/api/compile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(assembly)
+  });
+  const data = await resp.json();
+  showResults(data);
+  switchTab('results');
+}
+
+function showResults(data) {
+  const el = document.getElementById('results');
+  let html = '';
+
+  // Stats
+  html += `<div class="result-section">
+    <div class="stat-grid">
+      <div class="stat-box ${data.ok ? '' : 'highlight'}">
+        <div class="stat-val">${data.ok ? '✓' : '✗'}</div>
+        <div class="stat-label">${data.ok ? 'VALID' : 'ERRORS'}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val">${data.part_count || 0}</div>
+        <div class="stat-label">Parts</div>
+      </div>`;
+
+  if (data.kinematics && data.kinematics.gear_pairs && data.kinematics.gear_pairs.length) {
+    const ratio = data.kinematics.gear_pairs[0].ratio;
+    html += `
+      <div class="stat-box">
+        <div class="stat-val">${ratio.toFixed(2)}×</div>
+        <div class="stat-label">Gear Ratio</div>
+      </div>`;
+  }
+  if (data.kinematics && data.kinematics.rack_pinion && data.kinematics.rack_pinion.length) {
+    html += `
+      <div class="stat-box">
+        <div class="stat-val">↔</div>
+        <div class="stat-label">Rack+Pinion</div>
+      </div>`;
+  }
+  html += `</div></div>`;
+
+  // Errors
+  if (data.errors && data.errors.length) {
+    html += `<div class="result-section"><h3>Errors</h3>`;
+    data.errors.forEach(e => {
+      html += `<div class="check-item check-err"><span class="check-icon">✗</span><div class="check-msg">${e}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Connections
+  if (data.connections && data.connections.length) {
+    html += `<div class="result-section"><h3>Connections</h3>`;
+    data.connections.forEach(c => {
+      const cls = c.ok ? 'check-ok' : 'check-err';
+      const icon = c.ok ? '✓' : '✗';
+      html += `<div class="check-item ${cls}">
+        <span class="check-icon">${icon}</span>
+        <div class="check-msg">
+          <strong>${c.type}</strong><br>${c.msg}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Kinematics
+  if (data.kinematics) {
+    const k = data.kinematics;
+    if (k.gear_pairs && k.gear_pairs.length) {
+      html += `<div class="result-section"><h3>Kinematics</h3>`;
+      k.gear_pairs.forEach(gp => {
+        html += `<div class="check-item check-ok">
+          <span class="check-icon">⚙</span>
+          <div class="check-msg">${gp.gear1} (${gp.teeth1}T) ↔ ${gp.gear2} (${gp.teeth2}T)<br>
+          ratio = ${gp.teeth2}/${gp.teeth1} = <strong>${gp.ratio.toFixed(3)}:1</strong></div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    if (k.rack_pinion && k.rack_pinion.length) {
+      html += `<div class="result-section">`;
+      k.rack_pinion.forEach(rp => {
+        html += `<div class="check-item check-ok">
+          <span class="check-icon">↔</span>
+          <div class="check-msg">${rp.note}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
+  // BBox
+  if (data.bbox) {
+    const s = data.bbox.size;
+    html += `<div class="result-section"><h3>Bounding Box</h3>
+      <div class="check-item check-ok" style="background:#0a2040">
+        <span class="check-icon">□</span>
+        <div class="check-msg">${s[0].toFixed(1)} × ${s[1].toFixed(1)} × ${s[2].toFixed(1)} studs</div>
+      </div></div>`;
+  }
+
+  if (!html) html = '<p style="color:#888;padding:20px">No results.</p>';
+  el.innerHTML = html;
+}
+
+function clearEditor() {
+  document.getElementById('assembly-editor').value = '';
+  while (assemblyGroup.children.length) assemblyGroup.remove(assemblyGroup.children[0]);
+}
+
+// ── Parts browser ────────────────────────────────────────────────────────────
+
+let activeCat = '';
+let selectedPart = null;
+
+async function loadParts() {
+  const resp = await fetch('/api/parts');
+  partsLib = await resp.json();
+
+  // Load categories
+  const catResp = await fetch('/api/parts/categories');
+  const cats = await catResp.json();
+  const filtersEl = document.getElementById('cat-filters');
+  filtersEl.innerHTML = '<button class="cat-btn active" onclick="filterCat(\'\')">All</button>';
+  cats.forEach(c => {
+    filtersEl.innerHTML += `<button class="cat-btn" onclick="filterCat('${c}')">${c}</button>`;
+  });
+
+  renderPartsList(partsLib);
+}
+
+function filterCat(cat) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === (cat || 'All'));
+  });
+  searchParts();
+}
+
+async function searchParts() {
+  const q = document.getElementById('part-search').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (activeCat) params.set('category', activeCat);
+  const resp = await fetch('/api/parts?' + params);
+  const parts = await resp.json();
+  renderPartsList(parts);
+}
+
+function renderPartsList(parts) {
+  const el = document.getElementById('parts-list');
+  el.innerHTML = '';
+  Object.entries(parts).forEach(([id, spec]) => {
+    const div = document.createElement('div');
+    div.className = 'part-item' + (id === selectedPart ? ' selected' : '');
+    let specText = '';
+    if (spec.teeth != null) specText = `${spec.teeth}T  r=${spec.radius_studs}`;
+    else if (spec.length != null) specText = `L=${spec.length} studs`;
+    div.innerHTML = `
+      <div class="part-id">${id}</div>
+      <div class="part-name">${spec.name}</div>
+      ${specText ? `<div class="part-spec">${specText}</div>` : ''}`;
+    div.onclick = () => selectPart(id, spec);
+    el.appendChild(div);
+  });
+}
+
+function selectPart(id, spec) {
+  selectedPart = id;
+  document.querySelectorAll('.part-item').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('.part-id').textContent === id);
+  });
+  const detail = document.getElementById('part-detail');
+  detail.className = 'part-detail visible';
+
+  let rows = `
+    <h3>${spec.name}</h3>
+    <div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">${spec.category}</span></div>
+    <div class="detail-row"><span class="detail-key">BL ID</span><span class="detail-val">${spec.bl_id || '—'}</span></div>`;
+  if (spec.teeth != null) rows += `<div class="detail-row"><span class="detail-key">Teeth</span><span class="detail-val">${spec.teeth}</span></div>`;
+  if (spec.radius_studs != null) rows += `<div class="detail-row"><span class="detail-key">Radius</span><span class="detail-val">${spec.radius_studs} studs</span></div>`;
+  if (spec.length != null) rows += `<div class="detail-row"><span class="detail-key">Length</span><span class="detail-val">${spec.length} studs</span></div>`;
+  rows += `<div style="margin-top:6px;color:#888;font-size:11px">${spec.description}</div>`;
+  detail.innerHTML = rows;
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+async function loadTasks() {
+  const resp = await fetch('/api/tasks');
+  const tasks = await resp.json();
+  const el = document.getElementById('tasks-list');
+
+  let currentTier = null;
+  tasks.forEach(t => {
+    if (t.tier !== currentTier) {
+      currentTier = t.tier;
+      const tierLabels = ['', 'Structural', 'Single Mechanism', 'Mechanism Reasoning', 'Constrained Design', 'Open Design'];
+      el.innerHTML += `<div class="tier-label">Tier ${t.tier} — ${tierLabels[t.tier]}</div>`;
+    }
+    const div = document.createElement('div');
+    div.className = 'task-item';
+    div.innerHTML = `
+      <div class="task-header">
+        <span class="task-id">${t.id}</span>
+        <span class="task-name">${t.name}</span>
+      </div>
+      <div class="task-prompt">${t.prompt.slice(0, 120)}…</div>`;
+    div.onclick = () => loadTask(t);
+    el.appendChild(div);
+  });
+}
+
+function loadTask(task) {
+  const template = {
+    reasoning: `Task ${task.id}: ${task.name}. TODO: fill in your design.`,
+    parts: [],
+    connections: []
+  };
+  document.getElementById('assembly-editor').value = JSON.stringify(template, null, 2);
+  switchTab('editor');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+const DEFAULT_ASSEMBLY = {
+  "reasoning": "Rack-and-pinion: motor drives 8T pinion (radius=1). Rack slides along x-axis. Pinion center is 1 stud above rack (z=1) — perpendicular distance = gear radius = 1, teeth mesh. Each full rotation of motor = rack moves ~6.3 studs. Back-and-forth at same frequency as motor.",
+  "parts": [
+    {"id": "rack",     "type": "rack-4",  "pos": [0,0,0],  "axis": "x"},
+    {"id": "pinion",   "type": "gear-8t", "pos": [2,0,1],  "axis": "y"},
+    {"id": "axle",     "type": "axle-5",  "pos": [2,-2,1], "axis": "y"},
+    {"id": "frame_f",  "type": "beam-5",  "pos": [0,-2,0], "axis": "x"},
+    {"id": "frame_b",  "type": "beam-5",  "pos": [0,-2,2], "axis": "x"},
+    {"id": "post_l",   "type": "beam-3",  "pos": [0,-2,0], "axis": "z"},
+    {"id": "post_r",   "type": "beam-3",  "pos": [4,-2,0], "axis": "z"},
+    {"id": "bush_bot", "type": "bush",    "pos": [2,-2,1], "axis": "y"},
+    {"id": "bush_top", "type": "bush",    "pos": [2,1,1],  "axis": "y"}
+  ],
+  "connections": [
+    {"type": "rack_pinion",  "gear": "pinion",  "rack": "rack"},
+    {"type": "axle_through", "axle": "axle",    "part": "pinion"},
+    {"type": "bush_on_axle", "axle": "axle",    "bush": "bush_bot"},
+    {"type": "bush_on_axle", "axle": "axle",    "bush": "bush_top"},
+    {"type": "pin_in_beam",  "beam": "frame_f", "hole": 2, "part": "post_l"},
+    {"type": "pin_in_beam",  "beam": "frame_b", "hole": 2, "part": "post_r"}
+  ]
+};
+
+document.getElementById('assembly-editor').value = JSON.stringify(DEFAULT_ASSEMBLY, null, 2);
+loadParts();
+loadTasks();
+
+// Auto-compile on load
+window.addEventListener('load', () => setTimeout(compileAssembly, 300));
+</script>
+</body>
+</html>
