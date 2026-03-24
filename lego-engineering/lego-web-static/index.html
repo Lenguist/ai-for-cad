@@ -672,13 +672,11 @@ let selectedPart = null;
 async function loadParts() {
   partsLib = PARTS_DATA;
   const cats = [...new Set(Object.values(PARTS_DATA).map(v => v.category))].sort();
-  {
   const filtersEl = document.getElementById('cat-filters');
   filtersEl.innerHTML = '<button class="cat-btn active" onclick="filterCat(\'\')">All</button>';
   cats.forEach(c => {
     filtersEl.innerHTML += `<button class="cat-btn" onclick="filterCat('${c}')">${c}</button>`;
   });
-
   renderPartsList(partsLib);
 }
 
