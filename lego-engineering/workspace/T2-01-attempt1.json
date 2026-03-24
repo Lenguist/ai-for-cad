@@ -1,0 +1,19 @@
+{
+  "reasoning": "3:1 gear reduction. 8T drives 24T. Centers must be 1+3=4 studs apart. Both on y-axis. Supported by a beam-5 frame.",
+  "parts": [
+    {"id": "g_input",  "type": "gear-8t",   "pos": [0, 0, 0], "axis": "y"},
+    {"id": "g_output", "type": "gear-24t",  "pos": [4, 0, 0], "axis": "y"},
+    {"id": "ax_in",    "type": "axle-3",    "pos": [0, -1, 0], "axis": "y"},
+    {"id": "ax_out",   "type": "axle-5",    "pos": [4, -2, 0], "axis": "y"},
+    {"id": "beam1",    "type": "beam-5",    "pos": [0, -2, 0], "axis": "x"},
+    {"id": "bush1",    "type": "bush",      "pos": [0, 1, 0],  "axis": "y"},
+    {"id": "bush2",    "type": "bush",      "pos": [4, 2, 0],  "axis": "y"}
+  ],
+  "connections": [
+    {"type": "gear_mesh",    "parts": ["g_input", "g_output"]},
+    {"type": "axle_through", "axle": "ax_in",  "part": "g_input"},
+    {"type": "axle_through", "axle": "ax_out", "part": "g_output"},
+    {"type": "bush_on_axle", "axle": "ax_in",  "bush": "bush1"},
+    {"type": "bush_on_axle", "axle": "ax_out", "bush": "bush2"}
+  ]
+}
