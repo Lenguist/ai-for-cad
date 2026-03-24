@@ -361,30 +361,58 @@ function buildPartMesh(part, spec) {
     const r = spec.radius_studs || 1;
     const isWorm = spec.teeth === 1;
     if (isWorm) {
-      // Worm: elongated cylinder
-      const geo = new THREE.CylinderGeometry(0.35, 0.35, 2.5, 16);
-      mesh = new THREE.Mesh(geo, mat);
-      // Add helical look with a torus
-      const torusMat = new THREE.MeshPhongMaterial({ color: 0xb8902a });
-      for (let i = 0; i < 4; i++) {
-        const t = new THREE.TorusGeometry(0.35, 0.12, 8, 12);
-        const tm = new THREE.Mesh(t, torusMat);
-        tm.position.y = -0.9 + i * 0.6;
-        mesh.add(tm);
+      // Worm: elongated cylinder with helix rings
+      const group = new THREE.Group();
+      const bodyGeo = new THREE.CylinderGeometry(0.28, 0.28, 2.4, 16);
+      group.add(new THREE.Mesh(bodyGeo, mat));
+      const threadMat = new THREE.MeshPhongMaterial({ color: 0xb8902a, shininess: 80 });
+      for (let i = 0; i < 5; i++) {
+        const t = new THREE.TorusGeometry(0.32, 0.07, 8, 16);
+        const tm = new THREE.Mesh(t, threadMat);
+        tm.position.y = -0.96 + i * 0.48;
+        group.add(tm);
       }
+      // Axle hole
+      const holeMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+      group.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.6, 8), holeMat));
+      mesh = group;
     } else {
-      // Spur gear: disk with tooth ring
-      const geo = new THREE.CylinderGeometry(r, r, 0.4, Math.max(8, spec.teeth));
-      mesh = new THREE.Mesh(geo, mat);
-      // Tooth ring
-      const toothMat = new THREE.MeshPhongMaterial({ color: color });
-      const toothGeo = new THREE.TorusGeometry(r, 0.15, 6, spec.teeth);
-      const toothMesh = new THREE.Mesh(toothGeo, toothMat);
-      mesh.add(toothMesh);
-      // Axle hole (dark center)
-      const holeMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
-      const holeGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 8);
-      mesh.add(new THREE.Mesh(holeGeo, holeMat));
+      // Spur gear: main disk + individual teeth + hub + axle hole
+      const group = new THREE.Group();
+      const darkMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+      const hubMat  = new THREE.MeshPhongMaterial({ color: 0xb8902a, shininess: 80 });
+
+      // Main disk (slightly inset from teeth)
+      const diskGeo = new THREE.CylinderGeometry(r - 0.14, r - 0.14, 0.52, 48);
+      group.add(new THREE.Mesh(diskGeo, mat));
+
+      // Individual tooth blocks around circumference
+      const toothCount = spec.teeth;
+      const toothW = (2 * Math.PI * r) / toothCount * 0.55; // ~55% duty cycle
+      const toothH = 0.28;
+      const toothD = 0.42;
+      for (let i = 0; i < toothCount; i++) {
+        const angle = (i / toothCount) * Math.PI * 2;
+        const toothGeo = new THREE.BoxGeometry(toothW, toothD, toothH);
+        const tooth = new THREE.Mesh(toothGeo, hubMat);
+        tooth.position.set(
+          Math.cos(angle) * (r - 0.04),
+          0,
+          Math.sin(angle) * (r - 0.04)
+        );
+        tooth.rotation.y = -angle;
+        group.add(tooth);
+      }
+
+      // Hub circle (raised center)
+      const hubGeo = new THREE.CylinderGeometry(r * 0.35, r * 0.35, 0.65, 16);
+      group.add(new THREE.Mesh(hubGeo, hubMat));
+
+      // Axle hole
+      const holeGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.75, 8);
+      group.add(new THREE.Mesh(holeGeo, darkMat));
+
+      mesh = group;
     }
     applyAxis(mesh, part.axis || 'y');
 
