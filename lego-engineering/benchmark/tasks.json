@@ -1,0 +1,290 @@
+[
+  {
+    "id": "T1-01",
+    "tier": 1,
+    "name": "Parallel axle frame",
+    "prompt": "Build a Lego Technic frame that holds two parallel axles exactly 4 studs apart, horizontally. The frame should be rigid and use beams as the structure.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "min_parts": 3,
+      "part_categories_required": ["beam", "axle"],
+      "notes": "Check: two axles present, both horizontal (axis=x or z), positions differ by exactly 4 in the perpendicular direction"
+    },
+    "relevant_parts": ["beam-5", "beam-7", "beam-9", "axle-3", "axle-5", "pin", "bush"],
+    "difficulty_notes": "Tests basic beam + axle assembly. No kinematics required."
+  },
+  {
+    "id": "T1-02",
+    "name": "Rectangular beam frame",
+    "tier": 1,
+    "prompt": "Build a rectangular Lego Technic frame using beams. The frame should be 9 studs wide and 7 studs tall (outer dimensions), with beams connected at the corners using pins.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "part_categories_required": ["beam", "pin"],
+      "bounding_box_max": [9, 7, 2],
+      "notes": "Check: beams present, connected at corners, overall footprint ~9x7"
+    },
+    "relevant_parts": ["beam-9", "beam-7", "pin", "pin-friction", "connector-2x2"],
+    "difficulty_notes": "Tests corner connection and framing. No kinematics."
+  },
+  {
+    "id": "T1-03",
+    "name": "Axle through beam",
+    "tier": 1,
+    "prompt": "Mount a single axle horizontally through the center holes of two parallel beams, with the beams spaced 3 studs apart along the axle. Use bushes to prevent the axle from sliding.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "part_categories_required": ["beam", "axle", "connector"],
+      "notes": "Check: 1 axle, 2 beams, 2 bushes; axle axis perpendicular to beam axis"
+    },
+    "relevant_parts": ["beam-5", "beam-7", "axle-5", "axle-8", "bush"],
+    "difficulty_notes": "Tests understanding of axle-through-beam + bush usage."
+  },
+
+  {
+    "id": "T2-01",
+    "name": "3:1 gear reduction",
+    "tier": 2,
+    "prompt": "Build a Lego Technic gear pair that produces a 3:1 speed reduction. The input gear should spin 3 times for every 1 rotation of the output gear. Mount both gears on separate parallel axles supported by a beam frame.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 3.0,
+      "gear_ratio_tolerance": 0.05,
+      "part_categories_required": ["gear", "axle", "beam"]
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"],
+    "difficulty_notes": "Standard gear ratio task. 8T + 24T = exactly 3:1. Tests basic gear meshing knowledge."
+  },
+  {
+    "id": "T2-02",
+    "name": "2:1 gear reduction",
+    "tier": 2,
+    "prompt": "Build a Lego Technic gear pair that produces a 2:1 speed reduction. Use available gears from the parts library.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 2.0,
+      "gear_ratio_tolerance": 0.05
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"],
+    "difficulty_notes": "Tests whether model knows 8T:16T or 16T:32T etc. Only 8T+16T works with available parts."
+  },
+  {
+    "id": "T2-03",
+    "name": "5:1 gear reduction",
+    "tier": 2,
+    "prompt": "Build a Lego Technic gear pair or simple gear train with a 5:1 speed reduction ratio. The input should rotate 5 times for each output rotation.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 5.0,
+      "gear_ratio_tolerance": 0.05,
+      "notes": "No single pair gives 5:1. Requires 8T+40T. Tests whether model knows tooth counts."
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"],
+    "difficulty_notes": "Requires 8T+40T. Tests whether model knows exact tooth counts."
+  },
+  {
+    "id": "T2-04",
+    "name": "Rack and pinion",
+    "tier": 2,
+    "prompt": "Build a rack and pinion mechanism using Lego Technic parts. An input axle with a gear should drive a rack that slides horizontally. The mechanism should convert rotational motion to linear motion.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motion_type": "rotational_to_linear",
+      "part_types_required": ["rack-4"]
+    },
+    "relevant_parts": ["rack-4", "gear-8t", "axle-3", "axle-5", "beam-5", "beam-7", "pin"],
+    "difficulty_notes": "Tests knowledge of rack-and-pinion. The 8T gear meshes correctly with the rack."
+  },
+  {
+    "id": "T2-05",
+    "name": "Worm gear reduction",
+    "tier": 2,
+    "prompt": "Build a worm gear drive using a worm gear driving a 24-tooth spur gear. Mount both on axles supported by a frame. The worm gear should give a high speed reduction.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "part_types_required": ["gear-worm"],
+      "gear_ratio_min": 20.0,
+      "notes": "worm(1T) + 24T = 24:1 reduction. Axes must be perpendicular."
+    },
+    "relevant_parts": ["gear-worm", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"],
+    "difficulty_notes": "Tests worm gear knowledge. Requires perpendicular axis understanding."
+  },
+
+  {
+    "id": "T3-01",
+    "name": "9:1 compound gear train",
+    "tier": 3,
+    "prompt": "Build a compound gear train that achieves a 9:1 total speed reduction using two gear stages. Each stage should use a separate intermediate axle. The input spins 9 times for every 1 output rotation.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 9.0,
+      "gear_ratio_tolerance": 0.1,
+      "min_gear_count": 4,
+      "notes": "Two 3:1 stages (8T+24T twice) = 9:1. Intermediate axle carries both a 24T and an 8T."
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"],
+    "difficulty_notes": "Requires compound gear understanding — intermediate axle carries driven + driving gear."
+  },
+  {
+    "id": "T3-02",
+    "name": "Maximum ratio with 4 gears",
+    "tier": 3,
+    "prompt": "Using exactly 4 gears from the parts library, build the gear train with the highest possible total speed reduction ratio. Explain your gear choices and why this gives the maximum ratio.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "exact_gear_count": 4,
+      "gear_ratio_min": 9.0,
+      "notes": "Optimal: worm + 40T (40:1) or two 8T+24T stages (9:1). Worm counts as 1 gear."
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "beam-7"],
+    "difficulty_notes": "Optimization task. Tests whether model reasons about maximizing ratio, not just building a valid one."
+  },
+  {
+    "id": "T3-03",
+    "name": "Rotation direction reversal",
+    "tier": 3,
+    "prompt": "Build a gear train where the output axle rotates in the OPPOSITE direction to the input axle. Use the minimum number of gears needed to achieve this.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "output_direction": "reversed",
+      "notes": "One spur gear pair reverses direction. Even number of stages = same direction, odd = reversed."
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-3", "axle-5", "beam-5", "bush"],
+    "difficulty_notes": "Tests understanding of gear rotation direction, not just ratio."
+  },
+  {
+    "id": "T3-04",
+    "name": "Speed increase (overdrive)",
+    "tier": 3,
+    "prompt": "Build a gear pair where the output axle spins FASTER than the input. The output should spin at least 3 times faster than the input.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_max": 0.34,
+      "notes": "Ratio < 1 means speed increase. 24T driving 8T = 1/3 ratio = output spins 3x faster."
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"],
+    "difficulty_notes": "Tests whether model understands that gear ratios work both ways (driving vs. driven)."
+  },
+  {
+    "id": "T3-05",
+    "name": "Three-axle gear chain",
+    "tier": 3,
+    "prompt": "Build a gear chain connecting three axles in series: axle A drives axle B which drives axle C. Each stage should reduce speed by 3:1, for a total of 9:1 from A to C. Use a beam structure to hold all three axles in alignment.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 9.0,
+      "gear_ratio_tolerance": 0.15,
+      "min_axle_count": 3
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-11", "beam-15", "bush", "pin"],
+    "difficulty_notes": "Tests spatial arrangement of compound gear train across multiple axles."
+  },
+
+  {
+    "id": "T4-01",
+    "name": "Compact 3:1 reduction",
+    "tier": 4,
+    "prompt": "Build a 3:1 gear reduction that fits within a 10×5×5 stud bounding box. All parts must be within this volume. The assembly should include the frame/support structure.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 3.0,
+      "gear_ratio_tolerance": 0.05,
+      "bounding_box_max": [10, 5, 5]
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "pin"],
+    "difficulty_notes": "Adds spatial constraint on top of gear ratio. Tests 3D packing reasoning."
+  },
+  {
+    "id": "T4-02",
+    "name": "Minimal part count rack-and-pinion",
+    "tier": 4,
+    "prompt": "Build a working rack and pinion mechanism using the fewest possible parts. The mechanism must convert rotation to linear motion. Use no more than 6 parts total.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motion_type": "rotational_to_linear",
+      "max_parts": 6
+    },
+    "relevant_parts": ["rack-4", "gear-8t", "axle-3", "beam-5", "bush"],
+    "difficulty_notes": "Part count constraint forces minimal design. Tests understanding of what's strictly necessary."
+  },
+  {
+    "id": "T4-03",
+    "name": "9:1 reduction under part budget",
+    "tier": 4,
+    "prompt": "Build a gear train with at least 9:1 speed reduction using no more than 10 parts total (including axles, beams, bushes, and gears).",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_min": 9.0,
+      "max_parts": 10
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"],
+    "difficulty_notes": "Worm + 40T (40:1) uses fewer parts than 2-stage spur train. Tests optimization under budget."
+  },
+  {
+    "id": "T4-04",
+    "name": "Symmetric dual-output drivetrain",
+    "tier": 4,
+    "prompt": "Build a drivetrain where one input axle drives two output axles simultaneously, both spinning at the same speed. The two output axles should be parallel and symmetric around the input.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "min_axle_count": 3,
+      "notes": "Two identical gear pairs from the same input gear. Tests symmetry and multi-output reasoning."
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush", "pin"],
+    "difficulty_notes": "Multi-output topology. Tests whether model can reason about branching power transmission."
+  },
+
+  {
+    "id": "T5-01",
+    "name": "Highest ratio from any 6 parts",
+    "tier": 5,
+    "prompt": "Using any 6 parts from the parts library, design a mechanism that achieves the highest possible speed reduction ratio. You may use any combination of gears, axles, beams, pins, or connectors. State the ratio your design achieves and explain why it is optimal.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "exact_part_count": 6,
+      "gear_ratio_min": 24.0,
+      "notes": "Optimal: worm(1) + gear-24t(1) + 2 axles + 2 beams = 24:1. Or worm + 40T = 40:1 with right support."
+    },
+    "relevant_parts": ["all"],
+    "difficulty_notes": "Open optimization. Requires knowing worm gear gives highest ratio. Also tests whether model can reason about what support is minimally needed."
+  },
+  {
+    "id": "T5-02",
+    "name": "Motion conversion chain",
+    "tier": 5,
+    "prompt": "Build a mechanism with three stages: (1) a 3:1 gear reduction, then (2) conversion from rotational to linear motion via rack and pinion, then (3) the rack drives a second axle via a pin connection. The full chain: rotation in → reduced rotation → linear motion → rotation out.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "gear_ratio_target": 3.0,
+      "motion_type": "rotational_to_linear",
+      "notes": "Complex chain requiring multiple mechanism types. Full pass requires all three stages present."
+    },
+    "relevant_parts": ["gear-8t", "gear-24t", "rack-4", "axle-3", "axle-5", "beam-7", "beam-9", "pin", "bush"],
+    "difficulty_notes": "Multi-stage mechanism. Tests whether model can chain different mechanism types correctly."
+  },
+  {
+    "id": "T5-03",
+    "name": "Differential concept",
+    "tier": 5,
+    "prompt": "Describe and build a differential mechanism using Lego Technic parts: one input axle drives two output axles, but the two outputs can rotate at different speeds (e.g., for a vehicle turning). Approximate a differential using available gears and axles.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "min_gear_count": 4,
+      "notes": "No true differential part available — model must approximate with bevel-style arrangement or explain limitation. Partial credit for correct description even if geometry is incomplete."
+    },
+    "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "bush", "connector-2x2"],
+    "difficulty_notes": "Hard. No differential part in library. Tests whether model recognizes constraint, explains it, and attempts best approximation. Failure mode reveals mechanical reasoning depth."
+  },
+  {
+    "id": "T5-04",
+    "name": "Free design: mechanical clock escapement",
+    "tier": 5,
+    "prompt": "Design a Lego Technic mechanism that simulates the escapement of a mechanical clock: an oscillating or stepping motion that releases one tooth at a time from a gear, creating a controlled tick-tick rotation. Use any available parts.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "notes": "No ground truth — scored by: (1) gear present, (2) some stop/release mechanism described, (3) reasoning quality. Primarily a qualitative eval task."
+    },
+    "relevant_parts": ["all"],
+    "difficulty_notes": "Intentionally under-constrained. Tests creative mechanism design and whether model understands escapement concept at all. Expected to fail for most models — that's the point."
+  }
+]
