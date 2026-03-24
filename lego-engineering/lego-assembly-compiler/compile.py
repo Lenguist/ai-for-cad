@@ -471,12 +471,23 @@ def visualize(valid_parts):
 
     part_at = {}  # (col, row) -> pid
 
+    # Priority: gear > rack > beam > axle > pin/connector (so gears show on top)
+    priority = {"gear": 5, "rack": 4, "beam": 3, "axle": 2, "pin": 1, "connector": 1}
+    placed = {}  # (col,row) -> (pid, prio)
+
     for pid, p in valid_parts.items():
         col = int(p["pos"][0] - min_x)
         row = int(p["pos"][2] - min_z)
         cat = p["spec"]["category"]
+        prio = priority.get(cat, 0)
+        existing = placed.get((col, row))
+        if existing is None or prio > existing[1]:
+            placed[(col, row)] = (pid, prio)
+
+    for (col, row), (pid, _) in placed.items():
+        p = valid_parts[pid]
+        cat = p["spec"]["category"]
         sym = symbol(cat, p["spec"])
-        # truncate label to 2 chars
         label = (sym + pid)[:2].ljust(2)
         grid[row][col] = label
         part_at[(col, row)] = pid
