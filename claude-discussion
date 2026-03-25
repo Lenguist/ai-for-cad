@@ -1,0 +1,475 @@
+❯ so okay cadarena. let's look at launchign it.   
+whr eshoudl i post? linkeidn/twitter probably     
+maybe some slacks i am in. what shoudl be the     
+pitch? i also want to email/reach out to          
+researchers and comapneis for potential           
+collaborations/host their models. and for         
+potential researchers to work toegther on the     
+paper for this. ideally egt connected with a prof 
+ somewhere who si itnerested in this and would be 
+ wiling to mentor me in some sense. so i want     
+list of all of thos things. finally, where could  
+it be submitted as a paper? what are possibel     
+options? and also how far away from ebing a       
+viable paper is it now? think about how to        
+organzie these tska nad questions i just gave.    
+then come back to me with a plan on how to asnwer 
+ them/where will you save answers/how will you    
+find them                                         
+                                                  
+⏺ Good set of questions. Let me organize them     
+  first before doing anything.                   
+                                            
+  ---                                          
+  These are 4 distinct workstreams:
+                                                  
+  A. Launch content — where to post + what to say
+  - Platforms: LinkedIn, Twitter/X, specific      
+  Slacks                                          
+  - Needs: a tight pitch + drafted posts per      
+  platform                                        
+                                                  
+  B. Outreach lists — two separate lists
+  - Companies (model hosting / commercial         
+  collaboration)                                  
+  - Researchers (co-authorship, mentorship, prof
+  connection)                                     
+                                                
+  C. Academic path — venue + readiness assessment
+  - Which conferences/workshops could accept this 
+  - What's missing from current work to make it   
+  submittable                                     
+                                                  
+  D. Mentor search — subset of researcher       
+  outreach, but different ask                     
+  
+  ---                                             
+  How I'll answer each:                         
+                       
+  Workstream: A — pitch + posts                
+  Source: I draft based on the site               
+  Output: cadarena/launch/posts.md             
+  ────────────────────────────────────────        
+  Workstream: B — companies                       
+  Source: feb8/companies.md (60 companies         
+    cataloged)                                    
+  Output: cadarena/launch/outreach-companies.md   
+  ────────────────────────────────────────        
+  Workstream: B — researchers                     
+  Source: feb8/papers-database.md (173 papers) 
+  Output: cadarena/launch/outreach-researchers.md 
+  ────────────────────────────────────────      
+  Workstream: C — venues                       
+  Source: My knowledge of ML/CAD venues        
+  Output: cadarena/launch/academic-path.md     
+  ────────────────────────────────────────     
+  Workstream: D — mentors                      
+  Source: Subset of researchers list, flagged  
+    separately                                 
+  Output: same file, flagged                      
+                                               
+  ---                                             
+  Proposed order of execution:                  
+  1. Draft the pitch (everything else depends on  
+  it)                                             
+  2. Academic path assessment (quick, from        
+  knowledge)                                      
+  3. Pull researcher + company lists from existing
+   databases                                      
+  4. Draft posts per platform                     
+                             
+  Each output goes into cadarena/launch/. Want me 
+  to proceed in this order now, or is anything out
+   of scope / different priority?                 
+                                                  
+❯ okay so large picture things first. i am really 
+ interested in thsi place of ai for mechanical    
+enginering. ithink it's underexplored and it's a  
+very intresting avenue for research. iw oudl      
+dlove to raise money to run a vc funded research  
+lab working on this. however, i currently lack    
+credibility in the sapce. so one of my goals is   
+to build credibility, entwork and connections.    
+those are all kidn of related. i want to try to   
+publsih, at least submit nad keep trying those    
+two separate ig resarch ideas/thesis. one is a    
+live survey/benchmakr based on collected user     
+prompts/idk that is cadarena. idk if it's enough  
+for pfull paper bc it's mostly a survey/behcnakrk 
+ type thing as of rn,but maybe a short            
+paper/workshop apper. and second one is lego      
+enginereing. in egenral thesis is lego is a good  
+substrate for mechanical enginering. the          
+compelxity ceiling is really high, ie being able  
+to ask a prompt to buidl a very complex           
+mechanism, etc. it's a very good benchamrk for    
+general "engineering intelligence" in some snes.e 
+ we proposae this new benchamrk, and we evlauate  
+every existing approach on it, and provide a      
+conveinnentmaybe api or enviroenemtn so pepole    
+int he end of the day can keep trying it and      
+building on it. so those are two dieas, and the   
+meta goals generally. does thi amake sense?       
+                                                  
+⏺ Yeah this makes a lot of sense, and honestly    
+  both ideas are solid. Let me reflect back what  
+  I'm hearing to make sure I've got it right.     
+                                               
+  ---
+  Meta goal: Build credibility in                 
+  AI-for-mechanical-engineering to eventually     
+  raise money for a VC-funded research lab in this
+   space. Credibility comes from: publications,   
+  network, demonstrated work.                   
+
+  ---
+  Paper 1: CAD Arena
+                                                  
+  A live survey/benchmark of text-to-CAD models,
+  with real user prompts collected from the       
+  platform. The novel angle isn't just "we      
+  benchmarked some models" — it's the living      
+  nature of it: user-submitted prompts, community
+  votes on best outputs, continuously updated
+  leaderboard.
+
+  You're right that it's probably a short paper / 
+  workshop paper, not a full venue submission on
+  its own. But that's actually fine — workshop    
+  papers at top venues (NeurIPS, ICLR, ICML) get
+  you in the room, get you cited, and are faster
+  to ship.
+
+  ---
+  Paper 2: Lego as a Benchmark for Engineering 
+  Intelligence                                    
+              
+  This is the stronger thesis IMO. The argument:  
+  - Lego is a uniquely good substrate for         
+  evaluating "engineering intelligence" — it's    
+  discrete, constrained, verifiable, and the      
+  complexity ceiling is enormous (you can describe
+   a simple brick or a full Technic gearbox)      
+  - Existing benchmarks (text-to-CAD,       
+  code-to-shape) don't capture mechanism design —
+  things that move, interlock, have functional    
+  constraints                                 
+  - You propose this as a new benchmark, evaluate 
+  all existing approaches, and release an        
+  environment/API so others can build on it       
+                                           
+  This is a full paper idea. It has a clear novel 
+  contribution (new benchmark + environment), a   
+  thesis (Lego as proxy for engineering
+  intelligence), and a natural evaluation section 
+  (run everything on it).                       
+
+  ---
+  How they relate:
+                                                  
+  CAD Arena is the quick credibility move — get
+  something published and cited this year. Lego   
+  Engineering is the bigger bet — takes longer but
+   has higher ceiling. They also reinforce each   
+  other: CAD Arena shows you can run evaluations
+  at scale, Lego is the "here's the hard version
+  of the problem."
+
+  ---
+  Does this framing match what you're thinking? 
+  And one honest question: on the Lego paper — do 
+  you have a hypothesis about what current models
+  fail at specifically? Like, is the claim        
+  "nothing can do this at all," or "here's the  
+  specific failure modes"? That shapes whether
+  it's a benchmark paper or a benchmark + analysis
+   paper.
+
+❯ like my gut feeling is that in some ways a      
+promt like "build me a working mechanical wathc   
+using lego technic" and "build me a a social      
+network todo list app" are both areound similar   
+level of comolexity. they invovel breaking big    
+task into small tasks (to make a working          
+mechanical watch, first let's make a working      
+seocn dcounter , then maakei titneract with the   
+minute counter, etc", both are simulatable in     
+some sense (easier than typical mech e) when ic   
+an run the code or specification and see what it  
+does, and btoh woudl probaably require reacting   
+to that feedback and iterating from tehre (the    
+lego poeces can't connect here, what can we do).  
+i think the issue with the clock is first of all  
+the models lack some good priorrs about it - thre 
+ is little of it in traininig data. and secondly  
+the models are by default not good at             
+itnerepeeting the type of feedback we might get   
+whiel buidling legos (the pieces do not touch     
+ehre, what to do?) is a harder thing to decide    
+hwo to fix then "oh the code is currently         
+throwing this error). so i think to ehtgto really 
+ gof oeprformance woudl require some rl module or 
+ harness of soem sorts or system that owuld allow 
+ ai to take that mechanical feedback and deicde   
+what to do with it. ai i sjust liek a person who  
+only interacts with a world theough text and      
+maybe some 2d vision and i think fundanemtnally   
+it is difficult to "understand" spatial reality   
+in this way. but i dont think it is smpsisbel and 
+ i think a lotfo the task breakdown/act based on  
+feedbackcapability si alraedy really good for     
+llms                                              
+                                                  
+⏺ This is a really sharp thesis. Let me sharpen it
+   because I think you're onto something specific.
+                                                  
+  ---                                          
+  The core claim:       
+                                                  
+  Mechanical engineering tasks and software
+  engineering tasks are structurally equivalent in
+   complexity — both require hierarchical       
+  decomposition, both are simulatable, both       
+  require iterative feedback. But AI performs   
+  dramatically worse on mechanical tasks. Why?
+
+  You're identifying two specific failure modes:  
+   
+  1. Prior scarcity — almost no Lego Technic      
+  mechanism design in training data vs. enormous
+  amounts of code. The model has weak priors about
+   what a working escapement looks like.        
+  2. Feedback interpretation gap — "TypeError on
+  line 47" maps cleanly to a fix. "These two      
+  pieces can't connect here" requires spatial
+  reasoning to diagnose and fix. The feedback     
+  signal is the same type of thing (error +     
+  location) but requires fundamentally different
+  capability to act on.
+
+  And your claim is: capability #1 (task          
+  decomposition, acting on feedback) is already
+  largely solved by LLMs. Capability #2           
+  (mechanical feedback → spatial fix) is the    
+  actual bottleneck. So the gap isn't "AI can't
+  plan" — it's "AI can't yet close the loop on
+  spatial/physical feedback."
+
+  ---
+  Why this is a paper and not just a benchmark:
+                                                  
+  Most benchmark papers are: "here's a new task,
+  here are scores." Yours has a thesis — a        
+  specific claim about why the gap exists and what
+   would close it. That's the difference between a
+   leaderboard and a research contribution.     
+
+  The paper structure writes itself:
+  1. We claim mechanical and software engineering
+  are structurally equivalent                     
+  2. We build a benchmark to test this (Lego)
+  3. We show the gap is real and large            
+  4. We analyze where models fail (decomposition?
+  or feedback-response?)                          
+  5. We show decomposition is mostly fine,        
+  feedback-response is the bottleneck             
+  6. We propose what a system that closes the gap 
+  looks like (RL harness / feedback interpreter) 
+                                                  
+  ---                                           
+  One thing worth being precise about:            
+                                                
+  You said "AI only interacts with the world      
+  through text and maybe 2D vision." This is true 
+  now but changing fast (physical simulation,
+  point clouds, etc.). The interesting version of 
+  your thesis isn't "AI can't do spatial        
+  reasoning" — it's "the feedback loop for
+  mechanical tasks is currently broken, and here's
+   specifically what's missing." That's more
+  actionable and more publishable.
+
+  ---
+  Honest gap check — what would you need to run 
+  this paper?                                     
+             
+  - A Lego benchmark dataset (prompts + reference 
+  assemblies, graded by complexity) — doesn't     
+  exist, you'd build it
+  - An evaluator that can check if a Lego assembly
+   is mechanically valid/functional — LDraw + some
+   physics check
+  - Results from 3-5 models on the benchmark      
+  - An ablation that isolates "fails at           
+  decomposition" vs "fails at feedback response"  
+                                                  
+  The ablation is the key experiment. Without it, 
+  it's just a benchmark. With it, it's a thesis.
+                                                  
+  ---                                           
+  Does this match your intuition? And separately —
+   how far have you gotten on the BrickGPT setup? 
+  Because that's the most relevant existing work
+  to build on/differentiate from.                 
+                                                
+✻ Cogitated for 35s                     
+                                                
+❯ my point ig is that capability 2 shoudl require 
+ more focus from researchers and is sufficient    
+and necceary condition for ai to become useful in 
+ such me hanical engineering tasks. i dont wat to 
+ neccearily solve it in this initial version of   
+the paper/benchmakr, which i think is fine        
+                                                  
+⏺ Yeah that's the right call. You don't need to   
+  solve it — you need to name it, demonstrate it  
+  exists, and argue it's the bottleneck. That's a 
+  legitimate and valuable contribution.        
+
+  The paper becomes:                              
+   
+  ▎ "We introduce a benchmark for mechanical      
+  engineering tasks using Lego Technic. We show 
+  current models fail not at task decomposition   
+  but at mechanical feedback interpretation. We 
+  argue this capability — which we call [X] — is a
+   necessary condition for AI to be useful in real
+   mechanical engineering. We release the
+  benchmark and environment as a platform for
+  future work."
+
+  You're planting a flag and framing the problem. 
+  Someone else (or your future self with the RL
+  paper) solves it. This is how good benchmark    
+  papers work — ImageNet didn't solve vision, it
+  defined the problem clearly enough that others
+  could.
+
+  ---
+  What to call capability #2 is actually worth
+  thinking about. "Mechanical feedback            
+  interpretation" is descriptive but a bit flat.
+  Some options:                                   
+                                                
+  - Spatial error recovery — emphasizes the
+  spatial nature                                  
+  - Physical grounding — broader, maybe too broad
+  - Mechanical loop closure — engineering-flavored
+  - Embodied debugging — provocative, links to  
+  embodied AI literature                          
+                                                
+  No need to decide now, but the name will matter 
+  for citation/uptake.                          
+                                                  
+  ---                                           
+  So in practical terms, this paper needs:
+                                                  
+  1. The benchmark (prompts + reference assemblies
+   + complexity tiers)                            
+  2. Evaluator (LDraw validity + functional check)
+  3. Results showing models fail                  
+  4. One targeted experiment showing where they 
+  fail (decomposition fine, feedback-response     
+  broken)                                       
+  5. That's it                                    
+                                                  
+  The BrickGPT setup you already started is       
+  directly relevant — it's the closest prior work.
+   Should we map out what's actually needed to go 
+  from where you are now to a submittable paper?
+
+❯ anyway does this make sense? what do you thinka 
+ bout this thesis based on your own priorirs and  
+what you know? does it seem reasonable? why       
+wasnt' this done before?                          
+                                                  
+⏺ Yeah it makes sense and I think it's genuinely  
+  good. Let me give you my honest take.           
+                                                  
+  ---                                             
+  Why the thesis is solid:
+                                                  
+  The structural equivalence argument is the    
+  strongest part. It's not obvious and it's       
+  falsifiable. Most people's intuition is         
+  "mechanical engineering is harder because       
+  physics is hard" — your reframe is more precise:
+   the task structure is similar, the feedback
+  loop is what's broken. That's a cleaner and more
+   useful claim.
+
+  The "necessary and sufficient condition" framing
+   is also strong. You're not saying "here's a
+  marginally harder benchmark." You're saying     
+  "here's the specific capability that blocks AI
+  from being useful in an entire domain of
+  engineering." That's a much bigger claim and if
+  you can demonstrate it even partially, it's
+  worth publishing.
+
+  ---
+  Why hasn't this been done before — my honest 
+  read:                                           
+   
+  A few reasons:                                  
+                                                
+  1. ML researchers don't know Lego Technic. The  
+  people who build benchmarks are ML people. Lego
+  Technic as a substrate for mechanism design     
+  isn't obvious if you're not a mechanical      
+  engineering nerd. It requires knowing that Lego
+  Technic actually models real mechanisms — gears,
+   cams, linkages — not just aesthetics.
+
+  2. The feedback loop problem is hard to         
+  formalize. Most benchmark papers need a clean
+  success metric. "Does the code run" is easy.    
+  "Does this mechanism function as intended" is 
+  harder to define and evaluate programmatically.
+  People avoid benchmarks where the evaluator is
+  hard to build.
+
+  3. AI-for-mechanical-engineering is genuinely   
+  underindexed. The field has piled into code
+  generation, math, and text because that's where 
+  the easy evals are and where the training data
+  is dense. Mechanical engineering is data-sparse
+  and eval-hard — two things that discourage
+  benchmark papers.
+
+  4. Nobody connected the software engineering    
+  analogy explicitly. The framing of "these two
+  tasks are structurally equivalent" requires     
+  standing with one foot in SE and one foot in ME.
+   Most researchers are in one camp.
+
+  ---
+  Where I'd push back slightly:
+                               
+  The claim that task decomposition is "already
+  solved" is probably 80% true but not 100%. LLMs 
+  are good at decomposition in well-trodden
+  domains because they've seen thousands of       
+  examples of how to break down similar problems.
+  For novel mechanism design — "build a variable
+  transmission" — the decomposition itself might
+  also be weak, not just the feedback response.
+  You'd want your ablation to actually test this
+  rather than assume it.
+
+  This doesn't undermine the thesis. It might just
+   mean both problems exist, and feedback-response
+   is the harder one.                             
+                                                
+  ---
+  Bottom line: It's a real gap, the framing is
+  original, and the reason it hasn't been done is 
+  a combination of domain unfamiliarity, eval
+  difficulty, and nobody connecting the SE        
+  analogy. Those are all surmountable. The risk 
+  isn't "is this interesting" — the risk is
+  execution: building a good enough evaluator and
+  benchmark that the results are convincing.
+
+──────────────────────────────────────────────────
+❯ anyway    
