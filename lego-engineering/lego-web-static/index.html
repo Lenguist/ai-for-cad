@@ -205,6 +205,40 @@
     letter-spacing: 1px; color: #e94560; background: #0a1628;
     border-bottom: 1px solid #0f3460;
   }
+
+  /* Prompt bar */
+  .prompt-bar {
+    background: #0f1f3d; border-bottom: 2px solid #e94560;
+    padding: 10px 16px; display: flex; gap: 10px; align-items: center; flex-shrink: 0;
+  }
+  .prompt-bar input {
+    flex: 1; padding: 9px 14px; background: #16213e;
+    border: 1px solid #1a4a80; border-radius: 6px; color: #e0e0e0;
+    font-size: 14px; outline: none; transition: border-color 0.15s;
+  }
+  .prompt-bar input:focus { border-color: #e94560; }
+  .prompt-bar input::placeholder { color: #445; }
+  .btn-generate {
+    padding: 9px 20px; background: #e94560; border: none; color: white;
+    border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;
+    white-space: nowrap; transition: background 0.15s;
+  }
+  .btn-generate:hover { background: #c73652; }
+  .btn-generate:disabled { background: #444; cursor: not-allowed; }
+
+  /* Agent log */
+  .agent-log { padding: 10px; }
+  .agent-entry {
+    padding: 6px 10px; border-radius: 4px; font-size: 12px;
+    margin-bottom: 5px; line-height: 1.4; border-left: 3px solid transparent;
+  }
+  .agent-thinking { background: #0a1628; border-color: #1a4a80; color: #99b; font-style: italic; white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow-y: auto; }
+  .agent-tool { background: #1a2a3a; border-color: #7eb8e8; color: #7eb8e8; }
+  .agent-valid { background: #1a3a1a; border-color: #4caf50; color: #4caf50; }
+  .agent-error-entry { background: #3a1a1a; border-color: #e94560; color: #e94560; }
+  .agent-done { background: #1a3a2a; border-color: #4caf50; color: #e0e0e0; font-weight: bold; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
 </style>
 </head>
 <body>
@@ -213,6 +247,11 @@
   <h1>🧱 Lego Technic Studio</h1>
   <span>Place parts · Verify connections · Visualize in 3D</span>
 </header>
+
+<div class="prompt-bar">
+  <input type="text" id="prompt-input" placeholder="Describe a mechanism... e.g. 'build a 3:1 gear reduction'" onkeydown="if(event.key==='Enter')generateAssembly()">
+  <button class="btn-generate" id="btn-generate" onclick="generateAssembly()">Generate ✦</button>
+</div>
 
 <div class="gallery-strip" id="gallery-strip"></div>
 
@@ -735,6 +774,107 @@ function selectPart(id, spec) {
   if (spec.length != null) rows += `<div class="detail-row"><span class="detail-key">Length</span><span class="detail-val">${spec.length} studs</span></div>`;
   rows += `<div style="margin-top:6px;color:#888;font-size:11px">${spec.description}</div>`;
   detail.innerHTML = rows;
+}
+
+// ── AI Generation ─────────────────────────────────────────────────────────
+
+// TODO: set this after running `modal deploy modal_agent.py`
+const MODAL_AGENT_URL = 'https://REPLACE-WITH-YOUR-MODAL-URL.modal.run';
+
+async function generateAssembly() {
+  const prompt = document.getElementById('prompt-input').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+
+  switchTab('results');
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '<div class="agent-log" id="agent-log"></div>';
+  const log = document.getElementById('agent-log');
+
+  function addEntry(cls, html) {
+    const div = document.createElement('div');
+    div.className = `agent-entry ${cls}`;
+    div.innerHTML = html;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  let thinkingEl = null;
+  addEntry('agent-tool', '<span class="spinner">⟳</span> Sending to Claude...');
+
+  try {
+    const resp = await fetch(MODAL_AGENT_URL + '/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop();
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith('data: ')) continue;
+        let ev;
+        try { ev = JSON.parse(chunk.slice(6)); } catch { continue; }
+
+        if (ev.type === 'thinking') {
+          if (!thinkingEl) {
+            // Remove the "Sending to Claude..." entry
+            const entries = log.querySelectorAll('.agent-entry');
+            if (entries.length === 1) entries[0].remove();
+            thinkingEl = addEntry('agent-thinking', '');
+          }
+          thinkingEl.textContent = (thinkingEl.textContent + ev.text).slice(-400);
+          log.scrollTop = log.scrollHeight;
+
+        } else if (ev.type === 'tool_call') {
+          thinkingEl = null;
+          addEntry('agent-tool', `<span class="spinner">⟳</span> Round ${ev.round}: validating assembly...`);
+
+        } else if (ev.type === 'validation') {
+          // Replace last spinner
+          const last = log.querySelector('.agent-entry:last-child');
+          if (last && last.innerHTML.includes('⟳')) last.remove();
+          if (ev.valid) {
+            addEntry('agent-valid', `✓ Round ${ev.round}: Assembly valid!`);
+          } else {
+            let html = `✗ Round ${ev.round}: ${ev.errors.length} error(s)`;
+            ev.errors.slice(0, 3).forEach(e => { html += `<div style="margin-top:3px;font-size:11px;opacity:.85">→ ${e}</div>`; });
+            addEntry('agent-error-entry', html);
+          }
+
+        } else if (ev.type === 'done') {
+          thinkingEl = null;
+          addEntry('agent-done', `✓ Done in ${ev.rounds} round(s) — loading assembly...`);
+          const assemblyStr = JSON.stringify(ev.assembly, null, 2);
+          document.getElementById('assembly-editor').value = assemblyStr;
+          renderAssembly(ev.assembly);
+          setTimeout(() => { const d = compileLocal(ev.assembly); showResults(d); }, 900);
+
+        } else if (ev.type === 'error') {
+          addEntry('agent-error-entry', `✗ ${ev.message}`);
+        }
+      }
+    }
+  } catch (err) {
+    addEntry('agent-error-entry', `✗ Connection failed: ${err.message}<br><small>Is the Modal endpoint deployed?</small>`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate ✦';
+  }
 }
 
 // ── Tasks ────────────────────────────────────────────────────────────────────
