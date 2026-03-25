@@ -9,7 +9,7 @@ import json
 import math
 import os
 
-app_modal = modal.App("lego-mechanic-agent")
+app = modal.App("lego-mechanic-agent")
 
 image = (
     modal.Image.debian_slim()
@@ -319,7 +319,7 @@ async def generate(request: Request):
     )
 
 
-@app_modal.function(
+@app.function(
     image=image,
     secrets=[modal.Secret.from_name("anthropic-secret")],
     timeout=120,
