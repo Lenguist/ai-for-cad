@@ -40,13 +40,20 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/ldraw-bundle":
             # One-shot bundle: all primitives + sub-parts as JSON for cache preloading
             bundle = {}
-            prim_dir = STATIC_DIR / "ldraw" / "p"
-            parts_s_dir = STATIC_DIR / "ldraw" / "parts" / "s"
-            for f in prim_dir.iterdir():
-                bundle[f.name.lower()] = f.read_text(errors="ignore")
-            if parts_s_dir.exists():
-                for f in parts_s_dir.iterdir():
-                    bundle["s/" + f.name.lower()] = f.read_text(errors="ignore")
+            ldraw = STATIC_DIR / "ldraw"
+            for f in (ldraw / "p").iterdir():
+                if f.is_file():
+                    bundle[f.name.lower()] = f.read_text(errors="ignore")
+            p48 = ldraw / "p" / "48"
+            if p48.exists():
+                for f in p48.iterdir():
+                    if f.is_file():
+                        bundle["48/" + f.name.lower()] = f.read_text(errors="ignore")
+            parts_s = ldraw / "parts" / "s"
+            if parts_s.exists():
+                for f in parts_s.iterdir():
+                    if f.is_file():
+                        bundle["s/" + f.name.lower()] = f.read_text(errors="ignore")
             self._json(bundle)
         elif path.startswith("/ldraw/"):
             # Serve LDraw part files
