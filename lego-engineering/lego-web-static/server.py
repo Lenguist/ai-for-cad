@@ -12,6 +12,7 @@ import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 from pathlib import Path
 
 # Add mar11-demo-attempt to path for physics + validator imports
@@ -122,9 +123,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle each request in a new thread."""
+
 if __name__ == "__main__":
     port = 8765
     print(f"Serving at http://localhost:{port}")
     print(f"  Static: {STATIC_DIR}/index.html")
     print(f"  Physics API: POST http://localhost:{port}/physics")
-    HTTPServer(("localhost", port), Handler).serve_forever()
+    ThreadedHTTPServer(("localhost", port), Handler).serve_forever()
