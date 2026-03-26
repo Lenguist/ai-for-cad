@@ -1,0 +1,51 @@
+{
+  "project": "lego-engineering",
+  "events": [
+    {
+      "id": "initial-announce",
+      "date": "2026-03-24",
+      "title": "Initial announcement — AI LEGO Technic generator (BrickGPT / lego-web-static demo)",
+      "posts": [
+        {
+          "channel": "twitter",
+          "url": "",
+          "content_summary": "Announced AI LEGO Technic assembly generator",
+          "metrics_1d": {
+            "impressions": null,
+            "likes": null,
+            "reposts": null,
+            "replies": null,
+            "link_clicks": null
+          },
+          "metrics_1w": {
+            "impressions": null,
+            "likes": null,
+            "reposts": null,
+            "replies": null,
+            "link_clicks": null
+          }
+        },
+        {
+          "channel": "linkedin",
+          "url": "",
+          "content_summary": "Announced AI LEGO Technic assembly generator",
+          "metrics_1d": {
+            "impressions": null,
+            "likes": null,
+            "comments": null,
+            "reposts": null,
+            "link_clicks": null
+          },
+          "metrics_1w": {
+            "impressions": null,
+            "likes": null,
+            "comments": null,
+            "reposts": null,
+            "link_clicks": null
+          }
+        }
+      ],
+      "notes": "Fill in URLs and paste metrics at 1d and 1w marks."
+    }
+  ]
+}

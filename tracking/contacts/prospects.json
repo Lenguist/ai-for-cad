@@ -1,0 +1,16 @@
+[
+  {
+    "_comment": "People in the AI-for-CAD / generative geometry space you haven't contacted yet. Fields: name, handle, why_relevant, public_info, status.",
+    "_statuses": ["not_contacted", "in_progress", "done"],
+    "_example": {
+      "name": "Alex Chen",
+      "handle": "@alexchen_cad",
+      "why_relevant": "Runs ML-for-manufacturing newsletter, 5k subscribers, would be a good distribution channel",
+      "public_info": {
+        "role": "ML Engineer @ Autodesk Research",
+        "notable": "Open-sourced a CadQuery dataset"
+      },
+      "status": "not_contacted"
+    }
+  }
+]
