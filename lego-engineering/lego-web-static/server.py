@@ -33,11 +33,12 @@ class Handler(BaseHTTPRequestHandler):
         print(f"  {self.command} {self.path} → {args[1] if len(args) > 1 else ''}")
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        path = self.path.split("?")[0]
+        if path in ("/", "/index.html") or path.startswith("/library") or path.startswith("/studio"):
             self._serve_file(STATIC_DIR / "index.html", "text/html")
-        elif self.path.startswith("/ldraw/"):
+        elif path.startswith("/ldraw/"):
             # Serve LDraw part files
-            rel = self.path[len("/ldraw/"):].split("?")[0]
+            rel = path[len("/ldraw/"):]
             local = STATIC_DIR / "ldraw" / rel
             if local.exists():
                 self._serve_file(local, "text/plain")

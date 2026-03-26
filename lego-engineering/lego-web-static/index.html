@@ -1698,7 +1698,7 @@ loadTasks();
 
 // ── Page navigation ──────────────────────────────────────────────────────────
 
-function switchPage(page) {
+function switchPage(page, partId, pushState) {
   const isLib = page === 'library';
   document.getElementById('page-studio').style.display = isLib ? 'none' : 'flex';
   document.getElementById('page-library').style.display = isLib ? 'flex' : 'none';
@@ -1709,8 +1709,13 @@ function switchPage(page) {
     buildLibraryGrid();
     libAnimating = true;
     animateLib();
+    if (partId) showLibraryPart(partId);
   } else {
     libAnimating = false;
+  }
+  if (pushState !== false) {
+    const url = isLib ? (partId ? `/library/${partId}` : '/library') : '/';
+    history.pushState({ page, partId }, '', url);
   }
 }
 
@@ -1757,7 +1762,7 @@ function animateLib() {
   libRenderer.render(libScene, libCamera);
 }
 
-async function showLibraryPart(type) {
+async function showLibraryPart(type, pushState) {
   if (!libRenderer) initLibViewer();
   const spec = partsLib[type];
   if (!spec) return;
@@ -1833,7 +1838,7 @@ function buildLibraryGrid(filter) {
         <div class="lib-card-meta">${spec.name}</div>
         ${meta.length ? `<div class="lib-card-spec">${meta.join(' · ')}</div>` : ''}
       `;
-      card.onclick = () => showLibraryPart(type);
+      card.onclick = () => { history.pushState({ page: 'library', partId: type }, '', `/library/${type}`); showLibraryPart(type, false); };
       grid.appendChild(card);
     }
   }
@@ -1844,8 +1849,29 @@ function filterLibrary() {
   buildLibraryGrid(q || null);
 }
 
+// ── Router ────────────────────────────────────────────────────────────────────
+
+function route(path) {
+  const m = path.match(/^\/library\/?([^/]*)$/);
+  if (m) {
+    switchPage('library', m[1] || null, false);
+  } else {
+    switchPage('studio', null, false);
+  }
+}
+
+window.addEventListener('popstate', e => {
+  route(window.location.pathname);
+});
+
 // Load first gallery item on start
-window.addEventListener('load', () => { _initLDraw(); buildLibraryGrid(); setTimeout(() => loadGallery('rack-pinion'), 300); });
+window.addEventListener('load', () => {
+  _initLDraw();
+  route(window.location.pathname);
+  if (window.location.pathname === '/' || window.location.pathname === '/studio') {
+    setTimeout(() => loadGallery('rack-pinion'), 300);
+  }
+});
 </script>
 </body>
 </html>
