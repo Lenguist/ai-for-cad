@@ -244,6 +244,61 @@
   .agent-done { background: #1a3a2a; border-color: #4caf50; color: #e0e0e0; font-weight: bold; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner { display: inline-block; animation: spin 1s linear infinite; }
+
+  /* ── Page nav ── */
+  .page-nav { display: flex; gap: 0; margin-left: 24px; }
+  .page-nav-btn {
+    padding: 6px 18px; background: none; border: none; color: #888;
+    font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .page-nav-btn.active { color: #e94560; border-bottom-color: #e94560; }
+  .page-nav-btn:hover:not(.active) { color: #aaa; }
+
+  /* ── Page containers ── */
+  #page-studio { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  #page-library { display: none; flex: 1; overflow: hidden; }
+
+  /* ── Library layout ── */
+  .lib-layout { display: flex; flex: 1; overflow: hidden; height: 100%; }
+  .lib-sidebar {
+    width: 280px; background: #16213e; border-right: 1px solid #0f3460;
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  .lib-sidebar-header { padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 1px solid #0f3460; }
+  .lib-search { padding: 8px 10px; border-bottom: 1px solid #0f3460; }
+  .lib-search input {
+    width: 100%; padding: 6px 10px; background: #0f3460;
+    border: 1px solid #1a4a80; border-radius: 4px; color: #e0e0e0; font-size: 13px;
+  }
+  .lib-search input:focus { outline: none; border-color: #e94560; }
+  .lib-grid { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .lib-cat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #e94560; padding: 8px 6px 4px; }
+  .lib-card {
+    padding: 8px 12px; background: #0f3460; border: 1px solid #1a4a80;
+    border-radius: 5px; cursor: pointer; transition: all 0.1s;
+  }
+  .lib-card:hover { background: #1a4a80; }
+  .lib-card.active { border-color: #e94560; background: #1a2a40; }
+  .lib-card-name { font-size: 13px; font-weight: bold; color: #7eb8e8; }
+  .lib-card-meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .lib-card-spec { font-size: 11px; color: #d4a843; }
+
+  /* ── Library right side ── */
+  .lib-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .lib-viewer { flex: 1; position: relative; }
+  #lib-canvas { width: 100%; height: 100%; display: block; }
+  .lib-viewer-hint { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #555; font-size: 12px; pointer-events: none; }
+  .lib-detail {
+    padding: 14px 18px; background: #16213e; border-top: 1px solid #0f3460;
+    max-height: 180px; overflow-y: auto;
+  }
+  .lib-detail h3 { font-size: 15px; color: #7eb8e8; margin-bottom: 10px; }
+  .lib-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .lib-spec-box { background: #0f3460; border-radius: 4px; padding: 8px 10px; }
+  .lib-spec-key { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .lib-spec-val { font-size: 14px; font-weight: bold; color: #e0e0e0; margin-top: 2px; }
+  .lib-empty { color: #555; font-size: 13px; padding: 40px; text-align: center; }
 </style>
 </head>
 <body>
@@ -251,8 +306,13 @@
 <header>
   <h1>🧱 Lego Technic Studio</h1>
   <span>Place parts · Verify connections · Visualize in 3D</span>
+  <nav class="page-nav">
+    <button class="page-nav-btn active" id="nav-studio" onclick="switchPage('studio')">Studio</button>
+    <button class="page-nav-btn" id="nav-library" onclick="switchPage('library')">Library</button>
+  </nav>
 </header>
 
+<div id="page-studio">
 <div class="prompt-bar">
   <input type="text" id="prompt-input" placeholder="Describe a mechanism... e.g. 'build a 3:1 gear reduction'" onkeydown="if(event.key==='Enter')generateAssembly()">
   <button class="btn-generate" id="btn-generate" onclick="generateAssembly()">Generate ✦</button>
@@ -308,6 +368,24 @@
     </div>
   </div>
 
+</div>
+</div><!-- #page-studio -->
+
+<div id="page-library">
+  <div class="lib-layout">
+    <div class="lib-sidebar">
+      <div class="lib-sidebar-header">Parts Library</div>
+      <div class="lib-search"><input type="text" id="lib-search-input" placeholder="Search parts..." oninput="filterLibrary()"></div>
+      <div class="lib-grid" id="lib-grid"></div>
+    </div>
+    <div class="lib-main">
+      <div class="lib-viewer">
+        <canvas id="lib-canvas"></canvas>
+        <div class="lib-viewer-hint" id="lib-hint">← Select a part to preview</div>
+      </div>
+      <div class="lib-detail" id="lib-detail"><p class="lib-empty">Select a part from the list to see specs and 3D preview.</p></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1616,8 +1694,155 @@ buildGallery();
 loadParts();
 loadTasks();
 
+// ── Page navigation ──────────────────────────────────────────────────────────
+
+function switchPage(page) {
+  const isLib = page === 'library';
+  document.getElementById('page-studio').style.display = isLib ? 'none' : 'flex';
+  document.getElementById('page-library').style.display = isLib ? 'flex' : 'none';
+  document.getElementById('nav-studio').classList.toggle('active', !isLib);
+  document.getElementById('nav-library').classList.toggle('active', isLib);
+  if (isLib) {
+    if (!libRenderer) initLibViewer();
+    libAnimating = true;
+    animateLib();
+  } else {
+    libAnimating = false;
+  }
+}
+
+// ── Library viewer ───────────────────────────────────────────────────────────
+
+let libRenderer = null, libScene = null, libCamera = null, libControls = null;
+let libAnimating = false;
+let libPartGroup = null;
+
+function initLibViewer() {
+  const canvas = document.getElementById('lib-canvas');
+  libRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  libRenderer.setPixelRatio(window.devicePixelRatio);
+  libRenderer.setClearColor(0x0a1628);
+
+  libScene = new THREE.Scene();
+  libCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  libCamera.position.set(5, 4, 7);
+
+  libControls = new THREE.OrbitControls(libCamera, canvas);
+  libControls.enableDamping = true;
+  libControls.dampingFactor = 0.08;
+
+  libScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+  dl.position.set(5, 10, 5);
+  libScene.add(dl);
+  libScene.add(new THREE.GridHelper(10, 10, 0x1a4a80, 0x0f3460));
+  libPartGroup = new THREE.Group();
+  libScene.add(libPartGroup);
+}
+
+function animateLib() {
+  if (!libAnimating) return;
+  requestAnimationFrame(animateLib);
+  libControls.update();
+  const canvas = document.getElementById('lib-canvas');
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (w > 0 && h > 0) {
+    libRenderer.setSize(w, h, false);
+    libCamera.aspect = w / h;
+    libCamera.updateProjectionMatrix();
+  }
+  libRenderer.render(libScene, libCamera);
+}
+
+async function showLibraryPart(type) {
+  if (!libRenderer) initLibViewer();
+  const spec = partsLib[type];
+  if (!spec) return;
+
+  // Clear previous part
+  while (libPartGroup.children.length) libPartGroup.remove(libPartGroup.children[0]);
+
+  const part = { id: 'preview', type, pos: [0, 0, 0], axis: 'y' };
+  const partColor = hexColor(spec.category);
+  let mesh = await _loadLDraw(type, partColor);
+  if (!mesh) mesh = buildPartMesh(part, spec);
+  libPartGroup.add(mesh);
+
+  // Auto-fit camera
+  const box = new THREE.Box3().setFromObject(libPartGroup);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3()).length();
+  libCamera.position.copy(center).add(new THREE.Vector3(size, size * 0.8, size * 1.2));
+  libControls.target.copy(center);
+  libControls.update();
+
+  document.getElementById('lib-hint').style.display = 'none';
+
+  // Update detail panel
+  const rows = [];
+  if (spec.teeth != null)         rows.push({ k: 'Teeth', v: spec.teeth });
+  if (spec.radius_studs != null)  rows.push({ k: 'Radius (studs)', v: spec.radius_studs });
+  if (spec.length != null)        rows.push({ k: 'Length (studs)', v: spec.length });
+  if (spec.holes)                 rows.push({ k: 'Holes', v: spec.holes.length });
+  if (spec.bl_id)                 rows.push({ k: 'BL ID', v: spec.bl_id });
+  rows.push({ k: 'Category', v: spec.category });
+
+  document.getElementById('lib-detail').innerHTML = `
+    <h3>${spec.name}</h3>
+    <div class="lib-detail-grid">
+      ${rows.map(r => `<div class="lib-spec-box"><div class="lib-spec-key">${r.k}</div><div class="lib-spec-val">${r.v}</div></div>`).join('')}
+    </div>
+    <p style="font-size:12px;color:#888;margin-top:10px">${spec.description || ''}</p>
+  `;
+
+  // Highlight active card
+  document.querySelectorAll('.lib-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('lib-card-' + type.replace(/[^a-z0-9]/g, '-'));
+  if (card) { card.classList.add('active'); card.scrollIntoView({ block: 'nearest' }); }
+}
+
+// ── Build library grid ────────────────────────────────────────────────────────
+
+function buildLibraryGrid(filter) {
+  const grid = document.getElementById('lib-grid');
+  const categories = {};
+  for (const [type, spec] of Object.entries(partsLib)) {
+    if (filter && !spec.name.toLowerCase().includes(filter) && !type.includes(filter)) continue;
+    if (!categories[spec.category]) categories[spec.category] = [];
+    categories[spec.category].push([type, spec]);
+  }
+  grid.innerHTML = '';
+  for (const [cat, parts] of Object.entries(categories)) {
+    const label = document.createElement('div');
+    label.className = 'lib-cat-label';
+    label.textContent = cat;
+    grid.appendChild(label);
+    for (const [type, spec] of parts) {
+      const card = document.createElement('div');
+      card.className = 'lib-card';
+      card.id = 'lib-card-' + type.replace(/[^a-z0-9]/g, '-');
+      const meta = [];
+      if (spec.teeth != null) meta.push(`${spec.teeth}T`);
+      if (spec.length != null) meta.push(`L=${spec.length}`);
+      if (spec.radius_studs != null) meta.push(`r=${spec.radius_studs}`);
+      card.innerHTML = `
+        <div class="lib-card-name">${type}</div>
+        <div class="lib-card-meta">${spec.name}</div>
+        ${meta.length ? `<div class="lib-card-spec">${meta.join(' · ')}</div>` : ''}
+      `;
+      card.onclick = () => showLibraryPart(type);
+      grid.appendChild(card);
+    }
+  }
+}
+
+function filterLibrary() {
+  const q = document.getElementById('lib-search-input').value.toLowerCase().trim();
+  buildLibraryGrid(q || null);
+}
+
 // Load first gallery item on start
-window.addEventListener('load', () => { _initLDraw(); setTimeout(() => loadGallery('rack-pinion'), 300); });
+window.addEventListener('load', () => { _initLDraw(); buildLibraryGrid(); setTimeout(() => loadGallery('rack-pinion'), 300); });
 </script>
 </body>
 </html>
