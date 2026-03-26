@@ -36,6 +36,17 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?")[0]
         if path in ("/", "/index.html") or path.startswith("/library") or path.startswith("/studio"):
             self._serve_file(STATIC_DIR / "index.html", "text/html")
+        elif path == "/ldraw-bundle":
+            # One-shot bundle: all primitives + sub-parts as JSON for cache preloading
+            bundle = {}
+            prim_dir = STATIC_DIR / "ldraw" / "p"
+            parts_s_dir = STATIC_DIR / "ldraw" / "parts" / "s"
+            for f in prim_dir.iterdir():
+                bundle[f.name.lower()] = f.read_text(errors="ignore")
+            if parts_s_dir.exists():
+                for f in parts_s_dir.iterdir():
+                    bundle["s/" + f.name.lower()] = f.read_text(errors="ignore")
+            self._json(bundle)
         elif path.startswith("/ldraw/"):
             # Serve LDraw part files
             rel = path[len("/ldraw/"):]

@@ -1238,10 +1238,15 @@ let _ldrawLoader = null;
 const _ldrawCache = {};  // partType → THREE.Group (master copy, not in scene)
 let _ldrawAvailable = false;
 
-function _initLDraw() {
+async function _initLDraw() {
   if (typeof THREE.LDrawLoader === 'undefined') return;
   _ldrawLoader = new THREE.LDrawLoader();
-  _ldrawLoader.setPath(LDRAW_BASE);  // base path for resolving sub-parts
+  _ldrawLoader.setPath(LDRAW_BASE);
+  // Preload all primitives + sub-parts into the loader's cache (one fetch vs. 80+ individual requests)
+  try {
+    const bundle = await fetch('/ldraw-bundle').then(r => r.json());
+    Object.assign(_ldrawLoader.subobjectCache, bundle);
+  } catch(e) { console.warn('LDraw bundle preload failed:', e); }
   _ldrawAvailable = true;
 }
 
@@ -1865,8 +1870,8 @@ window.addEventListener('popstate', e => {
 });
 
 // Load first gallery item on start
-window.addEventListener('load', () => {
-  _initLDraw();
+window.addEventListener('load', async () => {
+  await _initLDraw();
   route(window.location.pathname);
   if (window.location.pathname === '/' || window.location.pathname === '/studio') {
     setTimeout(() => loadGallery('rack-pinion'), 300);
