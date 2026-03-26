@@ -1,8 +1,8 @@
 [
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Markus Buehler",
     "handle": "@ProfBuehlerMIT",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "Created MechGPT — LLMs for mechanical reasoning and materials. Closest match to the AI-for-MechE thesis. MIT faculty.",
     "public_info": {
       "role": "McAfee Professor of Engineering (Institute-wide Endowed Chair)",
@@ -13,9 +13,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Daniel Ritchie",
     "handle": "",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "ShapeCoder, ShapeAssembly — shape program synthesis. Very active, approachable. Brown University.",
     "public_info": {
       "role": "Associate Professor of Computer Science",
@@ -26,9 +26,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Adriana Schulz",
     "handle": "@AdrianaSchulz7",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "AutoMate assembly dataset, parametric joints. Moved to Brown (fall 2025). CAD joints + assembly dataset creator.",
     "public_info": {
       "role": "Associate Professor of Computer Science",
@@ -39,10 +39,10 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Jiajun Wu",
     "handle": "@jiajunwu_cs",
-    "why_relevant": "Stanford faculty, 3D shape programs + neural program synthesis. LEGO manual translation paper (ECCV 2022). Co-advisor of Kenny Jones.",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad", "lego-engineering"],
+    "why_relevant": "Stanford faculty, 3D shape programs + neural program synthesis. Co-authored LEGO manual-to-machine-plan translation paper (ECCV 2022). Co-advisor of Kenny Jones.",
     "public_info": {
       "role": "Assistant Professor of Computer Science",
       "org": "Stanford University",
@@ -52,9 +52,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Wojciech Matusik",
     "handle": "@wojmatusik",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "Fusion 360 dataset co-creator, computational design + fabrication. MIT CSAIL.",
     "public_info": {
       "role": "Cadence Design Systems Professor of EECS",
@@ -65,9 +65,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Niloy J. Mitra",
     "handle": "",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "Free2CAD, ShapeCoder, shape abstraction. UCL + Adobe Research London. Geometry + synthesis intersection.",
     "public_info": {
       "role": "Professor of Geometry Processing; Research Scientist",
@@ -78,9 +78,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Yasutaka Furukawa",
     "handle": "@YasutakaFuruka1",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "BrepGen (SIGGRAPH 2024) — diffusion model for B-rep CAD generation. Leading CAD generation researcher, multiple top papers. SFU + Wayve.",
     "public_info": {
       "role": "Associate Professor; Principal Scientist",
@@ -91,9 +91,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Priority researchers — faculty mentor candidates",
     "name": "Evangelos Kalogerakis",
     "handle": "@EvangelosKalog1",
+    "tags": ["researcher", "faculty-mentor", "ai-for-cad"],
     "why_relevant": "CSGNet, ParSeNet — CSG program learning and parametric surface fitting. UMass Amherst.",
     "public_info": {
       "role": "Associate Professor",
@@ -104,9 +104,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — Autodesk Research",
     "name": "Karl Willis",
     "handle": "@KarlDD",
+    "tags": ["researcher", "autodesk", "ai-for-cad"],
     "why_relevant": "Senior Research Manager at Autodesk AI Lab. Led Fusion 360 Gallery Dataset, co-created BRepNet. Key CAD dataset creator — pitch CAD Arena benchmark inclusion.",
     "public_info": {
       "role": "Senior Research Manager, Autodesk AI Lab",
@@ -117,9 +117,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — Autodesk Research",
     "name": "Pradeep Kumar Jayaraman",
     "handle": "",
+    "tags": ["researcher", "autodesk", "ai-for-cad"],
     "why_relevant": "BRepNet, SolidGen — B-rep learning and autoregressive B-rep synthesis. Autodesk Research Toronto.",
     "public_info": {
       "role": "Senior Manager, Research Science",
@@ -130,9 +130,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — Autodesk Research",
     "name": "Xiang (Sam) Xu",
     "handle": "",
+    "tags": ["researcher", "autodesk", "ai-for-cad"],
     "why_relevant": "Lead author BrepGen (SIGGRAPH 2024) and SkexGen — most active 2024 CAD generation researcher. Now at Autodesk AI Lab.",
     "public_info": {
       "role": "Senior Research Scientist",
@@ -143,9 +143,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Changjian Li",
     "handle": "",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "Sketch2CAD, CADTalk, Free2CAD. Lecturer at University of Edinburgh. Very active in CAD + sketch-based modeling.",
     "public_info": {
       "role": "Lecturer (Assistant Professor)",
@@ -157,9 +157,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Daniele Panozzo",
     "handle": "@DanielePanozzo",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "ABC Dataset (1M+ CAD models), MeshGPT. NYU professor. Dataset foundational for geometric deep learning on CAD.",
     "public_info": {
       "role": "Full Professor",
@@ -170,9 +170,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Faez Ahmed",
     "handle": "@_faezahmed",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "MIT MechE faculty. LInK linkage synthesis, BikeBench engineering design benchmark. Runs DeCoDE Lab — directly overlaps with AI-for-MechE thesis.",
     "public_info": {
       "role": "Associate Professor (Doherty Chair in Ocean Utilization)",
@@ -183,10 +183,10 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Ken Goldberg",
     "handle": "@Ken_Goldberg",
-    "why_relevant": "UC Berkeley EECS + IEOR. Blox-Net (VLM-driven robot assembly design), Dex-Net. Bridge between CAD generation and physical assembly.",
+    "tags": ["researcher", "ai-for-cad", "lego-engineering"],
+    "why_relevant": "UC Berkeley EECS + IEOR. Blox-Net (VLM-driven robot assembly design from prompts), Dex-Net. Bridge between CAD generation and physical assembly.",
     "public_info": {
       "role": "Professor, EECS & IEOR; Director of AUTOLAB",
       "org": "UC Berkeley",
@@ -196,10 +196,10 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "R. Kenny Jones",
     "handle": "@RKennyJones",
-    "why_relevant": "ShapeAssembly, ShapeMOD — program-based 3D shape synthesis. Postdoc at Stanford (Wu + Agrawala). PhD from Brown (Ritchie). Very active.",
+    "tags": ["researcher", "ai-for-cad", "lego-engineering"],
+    "why_relevant": "ShapeAssembly, ShapeMOD — program-based 3D shape synthesis from parts. Postdoc at Stanford (Wu + Agrawala). PhD from Brown (Ritchie). Very active.",
     "public_info": {
       "role": "Postdoctoral Scholar",
       "org": "Stanford CS",
@@ -209,9 +209,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Minhyuk Sung",
     "handle": "@MinhyukSung",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "KAIST faculty. Part-level 3D shape understanding, assembly, decomposition. Formerly Adobe Research.",
     "public_info": {
       "role": "Associate Professor",
@@ -222,9 +222,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Amin Heyrani Nobari",
     "handle": "@ahnobari",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "LInK linkage synthesis paper, deep generative models for engineering design. MIT DeCoDE Lab (Faez Ahmed's group). Very active 2024-2025.",
     "public_info": {
       "role": "PhD Candidate / Researcher",
@@ -235,9 +235,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Lyle Regenwetter",
     "handle": "@regenwetterl",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "Lead author BikeBench — engineering design benchmark with physics objectives and constraints. MIT DeCoDE Lab. Direct overlap with benchmark work.",
     "public_info": {
       "role": "PhD Candidate",
@@ -248,9 +248,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Kevin Ellis",
     "handle": "@ellisk_kellis",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "DreamCoder — wake-sleep program synthesis with library learning. Cornell faculty. Foundational program synthesis work, relevant to CAD program generation.",
     "public_info": {
       "role": "Assistant Professor",
@@ -261,9 +261,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Siddhartha Chaudhuri",
     "handle": "",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "PartNet, assembly-based shape synthesis, probabilistic 3D shape generation. Adobe Research + IIT Bombay. Foundational work on part-based CAD.",
     "public_info": {
       "role": "Senior Research Scientist, Creative Intelligence Lab",
@@ -274,9 +274,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Vladimir Kim",
     "handle": "",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "Director of Applied AI/ML at Adobe. COALESCE, ComplementMe — part-based 3D assembly. Shape correspondence + assembly at Adobe Research.",
     "public_info": {
       "role": "Director of Applied AI/ML, Firefly Foundry",
@@ -287,9 +287,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Gopal Sharma",
     "handle": "",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "CSGNet (CVPR 2018), ParSeNet — learning CSG and parametric surface representations. Now at Samsung Research. PhD UMass Amherst.",
     "public_info": {
       "role": "Senior Researcher",
@@ -301,9 +301,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Collaboration candidates — academia",
     "name": "Angel X. Chang",
     "handle": "@angelxuanchang",
+    "tags": ["researcher", "ai-for-cad"],
     "why_relevant": "Scan2CAD, Text2Shape — text-to-3D pioneer. SFU faculty. Canada CIFAR AI Chair. Note: Twitter account is protected.",
     "public_info": {
       "role": "Associate Professor",
@@ -314,9 +314,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 1",
     "name": "Jessie Frazelle",
     "handle": "@jessfraz",
+    "tags": ["founder", "tier-1", "ai-for-cad"],
     "why_relevant": "Co-founder & CEO of Zoo (KittyCAD) — already integrated in CAD Arena. 131K Twitter followers. Reach out to formalize partnership + co-marketing.",
     "public_info": {
       "role": "Co-Founder & CEO",
@@ -327,9 +327,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 1",
     "name": "Zach Dive",
     "handle": "",
+    "tags": ["founder", "tier-1", "ai-for-cad"],
     "why_relevant": "CEO of Adam AI (YC W25) — text-to-CAD copilot, $4.1M seed. Called 'the v0 of CAD' by Guillermo Rauch. High-upside cold outreach, young team, moves fast.",
     "public_info": {
       "role": "Co-Founder & CEO",
@@ -341,9 +341,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 1",
     "name": "Lin Kayser",
     "handle": "@linkayser",
+    "tags": ["founder", "tier-1", "ai-for-cad"],
     "why_relevant": "Founder of Hyperganic (AI generative design for additive mfg, $13M Series A) and LEAP 71 (AI-native engineering for rockets/heat exchangers). Two relevant companies.",
     "public_info": {
       "role": "Founder & CEO",
@@ -354,9 +354,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 1",
     "name": "Edward Mehr",
     "handle": "@EdwardMehr",
+    "tags": ["founder", "tier-1", "ai-for-cad"],
     "why_relevant": "Co-Founder & CEO of Machina Labs — AI-guided robotic metal forming from CAD files. Ex-SpaceX/Relativity. Bridge between CAD generation and physical manufacturing.",
     "public_info": {
       "role": "Co-Founder & CEO",
@@ -367,9 +367,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 1",
     "name": "Bradley Rothenberg",
     "handle": "@brad_rothenberg",
+    "tags": ["founder", "tier-1", "ai-for-cad"],
     "why_relevant": "Co-Founder & CEO of nTop — implicit modeling / computational engineering. Aerospace, medical, automotive. Interesting benchmark comparison (implicit vs. B-rep).",
     "public_info": {
       "role": "Co-Founder & CEO",
@@ -380,9 +380,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 2",
     "name": "Andreas Edesberg",
     "handle": "@AndreasBryn",
+    "tags": ["founder", "tier-2", "ai-for-cad"],
     "why_relevant": "CEO of Sloyd — AI parametric 3D generation for game assets, backed by a16z + Autodesk. Different approach (procedural/editable) — interesting CAD Arena comparison.",
     "public_info": {
       "role": "Co-Founder & CEO",
@@ -393,9 +393,9 @@
     "added": "2026-03-26"
   },
   {
-    "_group": "Startup founders — Tier 2",
     "name": "Simon Song Yachen",
     "handle": "@tripoai",
+    "tags": ["founder", "tier-2", "ai-for-cad"],
     "why_relevant": "Founder of Tripo AI — text/image-to-3D at 6.5M users, ~$1M/month revenue. API-first, multi-vertical. Easy potential benchmark integration.",
     "public_info": {
       "role": "Founder & CEO",
