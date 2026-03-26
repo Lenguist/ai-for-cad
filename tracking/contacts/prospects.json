@@ -404,5 +404,98 @@
     },
     "status": "not_contacted",
     "added": "2026-03-26"
+  },
+  {
+    "name": "Jun-Yan Zhu",
+    "handle": "@junyanz89",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "PI of BrickGPT / LegoGPT at CMU (repo already cloned). pix2pix creator, very active on X. BrickGPT won Best Paper (Marr Prize) at ICCV 2025. Will reshare relevant LEGO AI work.",
+    "public_info": {
+      "role": "Assistant Professor, Robotics Institute",
+      "org": "Carnegie Mellon University",
+      "website": "https://www.cs.cmu.edu/~junyanz/"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Ava Pun",
+    "handle": "@AvaLovelace0",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "Lead author of BrickGPT (ICCV 2025 Best Paper). PhD student at CMU. The person who built the thing we cloned. High value cold outreach — early-career, would engage.",
+    "public_info": {
+      "role": "PhD Student, Computer Science",
+      "org": "Carnegie Mellon University (CMU GenAI Lab)",
+      "website": "https://avapun.com/",
+      "github": "https://github.com/AvaLovelace1"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Jiahuan Pei",
+    "handle": "",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "LEGO Co-builder and LEGO-MRTA (ACL 2024) — VLM for fine-grained assembly guidance in mixed reality. Now assistant professor at VU Amsterdam.",
+    "public_info": {
+      "role": "Assistant Professor",
+      "org": "Vrije Universiteit Amsterdam (VU Amsterdam)",
+      "website": "https://jiahuan-pei.github.io/"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Pablo Cesar",
+    "handle": "@pablocesar2661",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "Research Lead at CWI Amsterdam. Senior figure behind LEGO-MRTA and CWI's LEGO assembly MR work. Active on Twitter. Netherlands Prize for ICT Research 2020.",
+    "public_info": {
+      "role": "Research Lead, Distributed & Interactive Systems; Professor",
+      "org": "CWI Amsterdam / TU Delft",
+      "website": "https://www.cwi.nl/en/people/pablo-santiago-cesar-garcia/"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Graham Taylor",
+    "handle": "@g_taylor",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "Co-supervised LEGO graph generative model paper (NeurIPS 2020 workshop). Canada CIFAR AI Chair. U of Guelph + Vector Institute — good distribution reach in Canadian ML community. Handle unconfirmed.",
+    "public_info": {
+      "role": "Professor of Engineering; Canada CIFAR AI Chair",
+      "org": "University of Guelph / Vector Institute",
+      "website": "https://www.gwtaylor.ca"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Jaesik Park",
+    "handle": "",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "SNU professor. Supervised Budget-Aware Sequential Brick Assembly paper (TMLR). Co-created Open3D library. Broadly influential in 3D AI.",
+    "public_info": {
+      "role": "Associate Professor, CSE + Interdisciplinary AI",
+      "org": "Seoul National University",
+      "website": "https://jaesik.info/"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
+  },
+  {
+    "name": "Rylee Thompson",
+    "handle": "",
+    "tags": ["researcher", "lego-engineering"],
+    "why_relevant": "First author of 'Building LEGO Using Deep Generative Models of Graphs' (NeurIPS 2020 workshop) — earliest graph generative approach to LEGO. Now ML researcher at Huawei.",
+    "public_info": {
+      "role": "Machine Learning Researcher",
+      "org": "Huawei (previously Vector Institute / U of Guelph)",
+      "github": "https://github.com/RyleeThompson",
+      "linkedin": "https://www.linkedin.com/in/rylee-thompson/"
+    },
+    "status": "not_contacted",
+    "added": "2026-03-26"
   }
 ]
