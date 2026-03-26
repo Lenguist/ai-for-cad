@@ -35,6 +35,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             self._serve_file(STATIC_DIR / "index.html", "text/html")
+        elif self.path.startswith("/ldraw/"):
+            # Serve LDraw part files
+            rel = self.path[len("/ldraw/"):].split("?")[0]
+            local = STATIC_DIR / "ldraw" / rel
+            if local.exists():
+                self._serve_file(local, "text/plain")
+            else:
+                # Return empty .dat instead of 404 — missing sub-parts just add no geometry
+                self._raw(200, "text/plain", b"0 Missing sub-part placeholder\n")
         else:
             self.send_response(404)
             self.end_headers()
@@ -77,6 +86,14 @@ class Handler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             self.send_response(404)
             self.end_headers()
+
+    def _raw(self, code, content_type, data):
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", len(data))
+        self._cors_headers()
+        self.end_headers()
+        self.wfile.write(data)
 
     def _json(self, obj):
         data = json.dumps(obj).encode()

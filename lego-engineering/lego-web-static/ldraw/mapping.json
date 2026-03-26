@@ -1,0 +1,94 @@
+{
+  "gear-8t": {
+    "file": "3647.dat",
+    "ldraw_num": "3647"
+  },
+  "gear-16t": {
+    "file": "4019.dat",
+    "ldraw_num": "4019"
+  },
+  "gear-24t": {
+    "file": "3648.dat",
+    "ldraw_num": "3648"
+  },
+  "gear-40t": {
+    "file": "3649.dat",
+    "ldraw_num": "3649"
+  },
+  "gear-worm": {
+    "file": "4716.dat",
+    "ldraw_num": "4716"
+  },
+  "rack-4": {
+    "file": "3743.dat",
+    "ldraw_num": "3743"
+  },
+  "axle-3": {
+    "file": "4519.dat",
+    "ldraw_num": "4519"
+  },
+  "axle-4": {
+    "file": "3705.dat",
+    "ldraw_num": "3705"
+  },
+  "axle-5": {
+    "file": "32073.dat",
+    "ldraw_num": "32073"
+  },
+  "axle-6": {
+    "file": "3706.dat",
+    "ldraw_num": "3706"
+  },
+  "axle-8": {
+    "file": "3707.dat",
+    "ldraw_num": "3707"
+  },
+  "axle-10": {
+    "file": "3737.dat",
+    "ldraw_num": "3737"
+  },
+  "beam-3": {
+    "file": "32523.dat",
+    "ldraw_num": "32523"
+  },
+  "beam-5": {
+    "file": "32316.dat",
+    "ldraw_num": "32316"
+  },
+  "beam-7": {
+    "file": "32524.dat",
+    "ldraw_num": "32524"
+  },
+  "beam-9": {
+    "file": "40490.dat",
+    "ldraw_num": "40490"
+  },
+  "beam-11": {
+    "file": "32525.dat",
+    "ldraw_num": "32525"
+  },
+  "beam-15": {
+    "file": "32278.dat",
+    "ldraw_num": "32278"
+  },
+  "pin": {
+    "file": "3673.dat",
+    "ldraw_num": "3673"
+  },
+  "pin-friction": {
+    "file": "2780.dat",
+    "ldraw_num": "2780"
+  },
+  "pin-long": {
+    "file": "6558.dat",
+    "ldraw_num": "6558"
+  },
+  "bush": {
+    "file": "6590.dat",
+    "ldraw_num": "6590"
+  },
+  "connector-2x2": {
+    "file": "6536.dat",
+    "ldraw_num": "6536"
+  }
+}
