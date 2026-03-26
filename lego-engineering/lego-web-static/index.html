@@ -410,8 +410,8 @@ function startAnimation(assembly, kinematics) {
     const mesh = partMeshes[partId];
     if (!mesh) continue;
     const part = (assembly.parts || []).find(p => p.id === partId);
-    const axisKey = part?.axis || 'y';
-    animGears.push({ mesh, axisKey, omega });
+    // Always animate around local 'y' — gears are cylinders along Y before applyAxis tilts them
+    animGears.push({ mesh, axisKey: 'y', omega });
   }
 
   if (kinematics.rack_pinion?.length) {
