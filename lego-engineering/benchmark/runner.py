@@ -24,7 +24,8 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "mar11-demo-attempt"))
-from validator import validate_assembly, compute_kinematics
+from validator import validate_assembly
+from physics import compile_and_simulate as compute_kinematics
 from checker import check_task
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
