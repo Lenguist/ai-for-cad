@@ -1,16 +1,1 @@
-[
-  {
-    "_comment": "Add people you already know here. Fields: name, handle, context (how you know them), what_they_do, notes, public_info (optional freeform).",
-    "_example": {
-      "name": "Jane Smith",
-      "handle": "@janesmith",
-      "context": "Met at NeurIPS 2025 workshop on geometry",
-      "what_they_do": "PhD @ MIT, generative models for 3D shapes",
-      "notes": "We talked about CAD datasets. She's interested in the arena idea.",
-      "public_info": {
-        "org": "MIT CSAIL",
-        "website": "https://janesmith.github.io"
-      }
-    }
-  }
-]
+[]
