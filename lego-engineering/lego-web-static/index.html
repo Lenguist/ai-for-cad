@@ -727,6 +727,8 @@ function switchTab(name) {
 
 // ── Compile ─────────────────────────────────────────────────────────────────
 
+const PHYSICS_SERVER = 'http://localhost:8765/physics';
+
 async function compileAssembly() {
   let assembly;
   try {
@@ -739,11 +741,35 @@ async function compileAssembly() {
 
   renderAssembly(assembly);
 
-  const data = compileLocal(assembly);
+  // Try Python physics server first; fall back to JS kinematics if not running
+  let data;
+  try {
+    const resp = await fetch(PHYSICS_SERVER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assembly),
+      signal: AbortSignal.timeout(3000),
+    });
+    const serverResult = await resp.json();
+    // Merge server result into the local compile result (which has connections etc.)
+    const local = compileLocal(assembly);
+    data = {
+      ...local,
+      ok: serverResult.validation_errors.length === 0,
+      errors: serverResult.validation_errors,
+      warnings: [...(local.warnings || []), ...(serverResult.validation_warnings || [])],
+      kinematics: serverResult.kinematics,
+      physics_source: 'python',
+    };
+  } catch(e) {
+    // Server not running — use JS kinematics
+    data = compileLocal(assembly);
+    data.physics_source = 'js';
+  }
+
   showResults(data);
   switchTab('results');
 
-  // Start animation if there are gear pairs or rack-and-pinion
   if (data.ok && data.kinematics) {
     startAnimation(assembly, data.kinematics);
   }
@@ -867,6 +893,12 @@ function showResults(data) {
         <div class="check-msg">${s[0].toFixed(1)} × ${s[1].toFixed(1)} × ${s[2].toFixed(1)} studs</div>
       </div></div>`;
   }
+
+  // Physics source badge
+  const src = data.physics_source || 'js';
+  html += `<div style="margin-top:12px;font-size:10px;color:#555;text-align:right">
+    physics: <span style="color:${src==='python'?'#4caf50':'#888'}">${src==='python'?'● python (physics.py)':'○ js (fallback)'}</span>
+  </div>`;
 
   if (!html) html = '<p style="color:#888;padding:20px">No results.</p>';
   el.innerHTML = html;
