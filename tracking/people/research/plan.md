@@ -28,10 +28,13 @@ Search terms: `"AI for mechanical engineering" newsletter`, `"text to CAD" twitt
 
 | Batch | Status | # Found | Notes |
 |---|---|---|---|
-| 1 — Researchers | in_progress | 0 | |
-| 2 — Startup founders | not_started | 0 | |
-| 3 — Paper authors | not_started | 0 | |
-| 4 — Community | not_started | 0 | |
+| 1 — Researchers | done | 13 | 8/13 have Twitter handles |
+| 2 — Startup founders | done | 8 | Jessie Frazelle (Zoo) most reachable, 131K followers |
+| 3 — Paper authors | done | 11 | Faez Ahmed, Ken Goldberg, Ellis, Jones, etc. |
+| 4 — Community | skipped | — | Punted — enough people for now |
+
+**Total added to prospects.json: 32 people**
+Run complete: 2026-03-26
 
 ---
 
