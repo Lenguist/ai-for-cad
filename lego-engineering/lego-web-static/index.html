@@ -256,11 +256,11 @@
   .page-nav-btn:hover:not(.active) { color: #aaa; }
 
   /* ── Page containers ── */
-  #page-studio { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-  #page-library { display: none; flex: 1; overflow: hidden; }
+  #page-studio { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+  #page-library { display: none; flex: 1; min-height: 0; overflow: hidden; }
 
   /* ── Library layout ── */
-  .lib-layout { display: flex; flex: 1; overflow: hidden; height: 100%; }
+  .lib-layout { display: flex; width: 100%; height: 100%; overflow: hidden; }
   .lib-sidebar {
     width: 280px; background: #16213e; border-right: 1px solid #0f3460;
     display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
@@ -1704,6 +1704,7 @@ function switchPage(page) {
   document.getElementById('nav-library').classList.toggle('active', isLib);
   if (isLib) {
     if (!libRenderer) initLibViewer();
+    buildLibraryGrid();
     libAnimating = true;
     animateLib();
   } else {
