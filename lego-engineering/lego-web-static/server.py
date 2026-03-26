@@ -43,8 +43,8 @@ class Handler(BaseHTTPRequestHandler):
             if local.exists():
                 self._serve_file(local, "text/plain")
             else:
-                # Return empty .dat instead of 404 — missing sub-parts just add no geometry
-                self._raw(200, "text/plain", b"0 Missing sub-part placeholder\n")
+                self.send_response(404)
+                self.end_headers()
         else:
             self.send_response(404)
             self.end_headers()

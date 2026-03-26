@@ -1241,7 +1241,7 @@ let _ldrawAvailable = false;
 function _initLDraw() {
   if (typeof THREE.LDrawLoader === 'undefined') return;
   _ldrawLoader = new THREE.LDrawLoader();
-  _ldrawLoader.setPartsLibraryPath(LDRAW_BASE);
+  _ldrawLoader.setPath(LDRAW_BASE);  // base path for resolving sub-parts
   _ldrawAvailable = true;
 }
 
@@ -1261,7 +1261,7 @@ function _loadLDraw(partType, hexColor) {
     _applyColor(g, hexColor);
     return Promise.resolve(g);
   }
-  const url = LDRAW_BASE + 'parts/' + LDRAW_MAPPING[partType];
+  const url = 'parts/' + LDRAW_MAPPING[partType];  // relative to setPath(LDRAW_BASE)
   return new Promise(resolve => {
     _ldrawLoader.load(url, group => {
       group.scale.setScalar(LDRAW_SCALE);
