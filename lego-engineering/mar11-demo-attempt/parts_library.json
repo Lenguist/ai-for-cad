@@ -251,5 +251,47 @@
     "bl_id": "6536",
     "color": "#888888",
     "description": "Perpendicular connector. Joins two beams at 90 degrees."
+  },
+  "motor-m": {
+    "name": "Medium Motor (PF)",
+    "category": "motor",
+    "length": 3,
+    "holes": [],
+    "radius_studs": null,
+    "teeth": null,
+    "bl_id": "8883",
+    "color": "#e94560",
+    "rpm_no_load": 380,
+    "stall_torque_ncm": 4.0,
+    "rated_power_w": 1.5,
+    "description": "LEGO Power Functions Medium Motor. 380 RPM no-load, 4 Ncm stall torque. Output axle on one end."
+  },
+  "motor-l": {
+    "name": "Large Motor (PF)",
+    "category": "motor",
+    "length": 4,
+    "holes": [],
+    "radius_studs": null,
+    "teeth": null,
+    "bl_id": "88003",
+    "color": "#e94560",
+    "rpm_no_load": 220,
+    "stall_torque_ncm": 7.5,
+    "rated_power_w": 2.5,
+    "description": "LEGO Power Functions Large Motor. 220 RPM no-load, 7.5 Ncm stall torque. More torque than M-motor."
+  },
+  "motor-xl": {
+    "name": "XL Motor (PF)",
+    "category": "motor",
+    "length": 5,
+    "holes": [],
+    "radius_studs": null,
+    "teeth": null,
+    "bl_id": "8882",
+    "color": "#e94560",
+    "rpm_no_load": 135,
+    "stall_torque_ncm": 12.0,
+    "rated_power_w": 3.5,
+    "description": "LEGO Power Functions XL Motor. 135 RPM no-load, 12 Ncm stall torque. Highest torque of the three."
   }
 }

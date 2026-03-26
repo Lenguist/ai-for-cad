@@ -286,5 +286,65 @@
     },
     "relevant_parts": ["all"],
     "difficulty_notes": "Intentionally under-constrained. Tests creative mechanism design and whether model understands escapement concept at all. Expected to fail for most models — that's the point."
+  },
+  {
+    "id": "T6-01",
+    "tier": 6,
+    "name": "Motor direct drive (≥ 100 RPM output)",
+    "prompt": "Connect a Medium Motor (motor-m) to a gear train that delivers at least 100 RPM at the output axle. A direct connection without gears also counts. Mount everything on a beam frame.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motor_required": true,
+      "output_rpm_min": 100,
+      "part_categories_required": ["motor", "axle"],
+      "notes": "M-motor is 380 RPM no-load. Any ratio ≤ 3.8:1 gives ≥100 RPM. Direct drive (no gears) is simplest solution."
+    },
+    "relevant_parts": ["motor-m", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "gear-8t", "gear-16t", "gear-24t"],
+    "difficulty_notes": "Easiest Tier 6. Tests whether model knows to include a motor and understands that direct drive is valid."
+  },
+  {
+    "id": "T6-02",
+    "tier": 6,
+    "name": "Power budget: speed + torque balance",
+    "prompt": "Using a Medium Motor (motor-m), build a gear train where the output delivers at least 60 RPM AND at least 10 Ncm of torque simultaneously. Show your gear ratio calculation.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motor_required": true,
+      "output_rpm_min": 60,
+      "output_torque_min": 10,
+      "notes": "M-motor: 380 RPM, 4 Ncm. Need ratio R where 380/R ≥ 60 (R ≤ 6.3) and 4×R×0.85 ≥ 10 (R ≥ 2.9). Valid window: 2.9 ≤ R ≤ 6.3. A 3:1 gives 127 RPM and 10.2 Ncm."
+    },
+    "relevant_parts": ["motor-m", "gear-8t", "gear-24t", "axle-5", "beam-7", "bush"],
+    "difficulty_notes": "Tests understanding of the torque-speed tradeoff. Both constraints must be satisfied simultaneously — forces the model to reason about the operating window, not just maximize one."
+  },
+  {
+    "id": "T6-03",
+    "tier": 6,
+    "name": "Lifting drive: high torque output",
+    "prompt": "Design a powered lifting mechanism using a Medium Motor (motor-m). The output axle must spin slowly (≤ 50 RPM) to provide enough force to lift a load, and must deliver at least 25 Ncm of torque. Use a beam structure to support it.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motor_required": true,
+      "output_rpm_max": 50,
+      "output_torque_min": 25,
+      "notes": "M-motor: 380 RPM, 4 Ncm. Need R ≥ 380/50 = 7.6 and R ≥ 25/(4×0.85) = 7.35. So R ≥ 7.6. A 9:1 compound train gives 42 RPM and 30.6 Ncm. Single-stage 8T+40T (5:1) isn't enough. Needs compound gearing or worm."
+    },
+    "relevant_parts": ["motor-m", "gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"],
+    "difficulty_notes": "Requires a high gear ratio. Forces the model to use compound gearing or a worm gear. Key discriminator: models that just use a single gear pair (max 5:1 with available parts) will fail the torque check."
+  },
+  {
+    "id": "T6-04",
+    "tier": 6,
+    "name": "Motor comparison: M vs XL for same task",
+    "prompt": "You have two motors available: a Medium Motor (motor-m: 380 RPM, 4 Ncm) and an XL Motor (motor-xl: 135 RPM, 12 Ncm). For a task requiring ≥ 30 Ncm output torque and ≤ 80 RPM, which motor requires fewer gear stages to achieve it? Build the more efficient solution and explain why.",
+    "success_criteria": {
+      "valid_assembly": true,
+      "motor_required": true,
+      "output_rpm_max": 80,
+      "output_torque_min": 30,
+      "notes": "M-motor needs R ≥ 30/(4×0.85)=8.8 → 9:1 compound train. XL needs R ≥ 30/(12×0.85)=2.9 → single 3:1 stage (24T/8T). XL is more efficient: 1 stage vs 2+ stages. Tests whether model reasons about motor selection, not just gear math."
+    },
+    "relevant_parts": ["motor-m", "motor-xl", "gear-8t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "axle-8", "beam-9", "bush"],
+    "difficulty_notes": "Motor selection task. The XL motor solution is strictly simpler (fewer parts, fewer stages) for this target spec. Tests whether model can reason comparatively about motor properties rather than always defaulting to the M-motor."
   }
 ]

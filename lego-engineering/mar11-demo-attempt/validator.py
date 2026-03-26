@@ -195,6 +195,26 @@ def compute_kinematics(assembly, parts_library):
     if not gear_pairs and not rack_pinion and gears:
         result["summary"] = "Gears present but no meshing pairs detected. Check positions and axes."
 
+    # Detect motors
+    motors = []
+    for part in parts:
+        pt = part.get("type", "")
+        if pt not in parts_library:
+            continue
+        spec = parts_library[pt]
+        if spec.get("category") == "motor":
+            motors.append({
+                "id": part["id"],
+                "type": pt,
+                "rpm_no_load": spec.get("rpm_no_load", 0),
+                "stall_torque_ncm": spec.get("stall_torque_ncm", 0),
+                "rated_power_w": spec.get("rated_power_w", 0),
+                "pos": part.get("pos", [0, 0, 0]),
+                "axis": part.get("axis", "y"),
+            })
+    if motors:
+        result["motors"] = motors
+
     return result
 
 

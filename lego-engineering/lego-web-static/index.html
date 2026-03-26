@@ -274,6 +274,7 @@
     <div class="viewer-controls">
       <button onclick="resetCamera()">Reset View</button>
       <button onclick="toggleAxes()">Axes</button>
+      <button id="btn-play" onclick="togglePlay()" style="background:#1a3a1a;color:#4caf50;border-color:#4caf50">▶ Play</button>
     </div>
   </div>
 
@@ -357,9 +358,116 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-function animate() {
+// ── Animation system ────────────────────────────────────────────────────────
+
+let isPlaying = false;
+let animGears = [];   // [{mesh, axisKey, omega}]  omega in rad/s (normalized)
+let animRack = null;  // {mesh, axisKey, linearSpeed, t, range, originPos}
+const ANIM_SPEED = 1.5;  // global speed multiplier (visual)
+let lastFrameTime = null;
+
+function buildGearOmegas(gearPairs) {
+  if (!gearPairs || !gearPairs.length) return {};
+  const adj = {};
+  for (const pair of gearPairs) {
+    if (!adj[pair.gear1]) adj[pair.gear1] = [];
+    if (!adj[pair.gear2]) adj[pair.gear2] = [];
+    // Opposite rotation for meshing gears
+    adj[pair.gear1].push({ id: pair.gear2, ratio: -(pair.teeth1 / pair.teeth2) });
+    adj[pair.gear2].push({ id: pair.gear1, ratio: -(pair.teeth2 / pair.teeth1) });
+  }
+  const omegas = {};
+  const start = gearPairs[0].gear1;
+  omegas[start] = 1.0;
+  const queue = [start];
+  const visited = new Set([start]);
+  while (queue.length) {
+    const cur = queue.shift();
+    for (const { id, ratio } of (adj[cur] || [])) {
+      if (!visited.has(id)) {
+        visited.add(id);
+        omegas[id] = omegas[cur] * ratio;
+        queue.push(id);
+      }
+    }
+  }
+  return omegas;
+}
+
+function startAnimation(assembly, kinematics) {
+  animGears = [];
+  animRack = null;
+  const gearPairs = kinematics.gear_pairs || [];
+  if (!gearPairs.length && !kinematics.rack_pinion?.length) return;
+
+  const omegas = buildGearOmegas(gearPairs);
+
+  for (const [partId, omega] of Object.entries(omegas)) {
+    const mesh = partMeshes[partId];
+    if (!mesh) continue;
+    const part = (assembly.parts || []).find(p => p.id === partId);
+    const axisKey = part?.axis || 'y';
+    animGears.push({ mesh, axisKey, omega });
+  }
+
+  if (kinematics.rack_pinion?.length) {
+    const rp = kinematics.rack_pinion[0];
+    const mesh = partMeshes[rp.rack];
+    if (mesh) {
+      const pinionOmega = omegas[rp.gear] || 1.0;
+      const pinionPart = (assembly.parts || []).find(p => p.id === rp.gear);
+      const pinionSpec = PARTS_DATA[pinionPart?.type];
+      const radius = pinionSpec?.radius_studs || 1;
+      const rackPart = (assembly.parts || []).find(p => p.id === rp.rack);
+      const axisKey = rackPart?.axis || 'x';
+      animRack = {
+        mesh,
+        axisKey,
+        linearSpeed: Math.abs(pinionOmega) * radius,
+        t: 0,
+        range: 1.5,
+        originPos: mesh.position.clone(),
+      };
+    }
+  }
+
+  if (animGears.length || animRack) {
+    isPlaying = true;
+    document.getElementById('btn-play').textContent = '⏹ Stop';
+  }
+}
+
+function stopAnimation() {
+  isPlaying = false;
+  animGears = [];
+  animRack = null;
+  lastFrameTime = null;
+  const btn = document.getElementById('btn-play');
+  if (btn) btn.textContent = '▶ Play';
+}
+
+function togglePlay() {
+  if (isPlaying) { stopAnimation(); } else { isPlaying = true; document.getElementById('btn-play').textContent = '⏹ Stop'; }
+}
+
+function animate(t) {
   requestAnimationFrame(animate);
   controls.update();
+
+  if (isPlaying && lastFrameTime !== null) {
+    const dt = Math.min((t - lastFrameTime) / 1000, 0.05) * ANIM_SPEED;
+    for (const ag of animGears) {
+      ag.mesh.rotation[ag.axisKey] += ag.omega * dt;
+    }
+    if (animRack) {
+      animRack.t += dt * animRack.linearSpeed;
+      const offset = Math.sin(animRack.t) * animRack.range;
+      const ax = animRack.axisKey;
+      animRack.mesh.position[ax] = animRack.originPos[ax] + offset;
+    }
+  }
+  lastFrameTime = t;
+
   renderer.render(scene, camera);
 }
 animate();
@@ -373,6 +481,7 @@ const CAT_COLORS = {
   rack:      0xe87722,
   pin:       0x444444,
   connector: 0xaaaaaa,
+  motor:     0xe94560,
 };
 
 function hexColor(cat) {
@@ -522,6 +631,32 @@ function buildPartMesh(part, spec) {
     mesh = new THREE.Mesh(geo, mat);
     applyAxis(mesh, part.axis || 'y');
 
+  } else if (cat === 'motor') {
+    const L = spec.length || 3;
+    const group = new THREE.Group();
+    // Motor body — slightly taller box
+    const bodyGeo = new THREE.BoxGeometry(L, 1.2, 1.2);
+    const bodyMat = new THREE.MeshPhongMaterial({ color: 0xe94560, shininess: 60 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.x = (L - 1) / 2;
+    group.add(body);
+    // Label stripe
+    const stripeMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.21, 1.21), stripeMat);
+    stripe.position.x = (L - 1) / 2 - L / 2 + 0.5;
+    group.add(stripe);
+    // Output axle stub
+    const axleMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+    const axleGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.2, 8);
+    const axleStub = new THREE.Mesh(axleGeo, axleMat);
+    axleStub.rotation.z = Math.PI / 2;
+    axleStub.position.x = (L - 1) / 2 + L / 2 + 0.5;
+    group.add(axleStub);
+    mesh = group;
+    const axis = part.axis || 'x';
+    if (axis === 'y') { mesh.rotation.z = Math.PI / 2; }
+    else if (axis === 'z') { mesh.rotation.y = Math.PI / 2; }
+
   } else {
     const geo = new THREE.SphereGeometry(0.3, 8, 8);
     mesh = new THREE.Mesh(geo, mat);
@@ -533,12 +668,15 @@ function buildPartMesh(part, spec) {
 // ── Render assembly ─────────────────────────────────────────────────────────
 
 let partsLib = {};
+let partMeshes = {};  // partId -> mesh (for animation)
 
 function renderAssembly(assembly) {
   // Clear existing
   while (assemblyGroup.children.length) {
     assemblyGroup.remove(assemblyGroup.children[0]);
   }
+  partMeshes = {};
+  stopAnimation();
 
   const parts = assembly.parts || [];
   const bounds = { min: [Infinity,Infinity,Infinity], max: [-Infinity,-Infinity,-Infinity] };
@@ -552,6 +690,7 @@ function renderAssembly(assembly) {
     mesh.position.set(pos[0], pos[1], pos[2]);
     mesh.userData = { partId: part.id, partType: part.type };
     assemblyGroup.add(mesh);
+    partMeshes[part.id] = mesh;
 
     bounds.min = bounds.min.map((v, i) => Math.min(v, pos[i]));
     bounds.max = bounds.max.map((v, i) => Math.max(v, pos[i]));
@@ -599,6 +738,11 @@ async function compileAssembly() {
   const data = compileLocal(assembly);
   showResults(data);
   switchTab('results');
+
+  // Start animation if there are gear pairs or rack-and-pinion
+  if (data.ok && data.kinematics) {
+    startAnimation(assembly, data.kinematics);
+  }
 }
 
 function showResults(data) {
@@ -683,6 +827,31 @@ function showResults(data) {
       });
       html += `</div>`;
     }
+  }
+
+  // Motor power output
+  if (data.kinematics && data.kinematics.motor_output) {
+    const mo = data.kinematics.motor_output;
+    html += `<div class="result-section"><h3>Motor Output</h3>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-val">${mo.output_rpm.toFixed(0)}</div>
+          <div class="stat-label">RPM out</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${mo.output_torque_ncm.toFixed(1)}</div>
+          <div class="stat-label">Torque (Ncm)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${mo.gear_ratio.toFixed(2)}×</div>
+          <div class="stat-label">Gear ratio</div>
+        </div>
+      </div>
+      <div class="check-item check-ok" style="margin-top:8px;background:#0a2040">
+        <span class="check-icon">⚡</span>
+        <div class="check-msg" style="font-size:11px">${mo.note}</div>
+      </div>
+    </div>`;
   }
 
   // BBox
@@ -861,7 +1030,11 @@ async function generateAssembly() {
           const assemblyStr = JSON.stringify(ev.assembly, null, 2);
           document.getElementById('assembly-editor').value = assemblyStr;
           renderAssembly(ev.assembly);
-          setTimeout(() => { const d = compileLocal(ev.assembly); showResults(d); }, 900);
+          setTimeout(() => {
+            const d = compileLocal(ev.assembly);
+            showResults(d);
+            if (d.ok && d.kinematics) startAnimation(ev.assembly, d.kinematics);
+          }, 900);
 
         } else if (ev.type === 'error') {
           addEntry('agent-error-entry', `✗ ${ev.message}`);
@@ -916,8 +1089,8 @@ function loadTask(task) {
 
 
 // ── Inline data (no server needed) ─────────────────────────────────────────
-const PARTS_DATA = {"beam-3": {"name": "Technic Beam 3", "category": "beam", "length": 3, "holes": [0, 1, 2], "radius_studs": null, "teeth": null, "bl_id": "32523", "color": "#c0c0c0", "description": "Straight beam with 3 holes"}, "beam-5": {"name": "Technic Beam 5", "category": "beam", "length": 5, "holes": [0, 1, 2, 3, 4], "radius_studs": null, "teeth": null, "bl_id": "32316", "color": "#c0c0c0", "description": "Straight beam with 5 holes"}, "beam-7": {"name": "Technic Beam 7", "category": "beam", "length": 7, "holes": [0, 1, 2, 3, 4, 5, 6], "radius_studs": null, "teeth": null, "bl_id": "32524", "color": "#c0c0c0", "description": "Straight beam with 7 holes"}, "beam-9": {"name": "Technic Beam 9", "category": "beam", "length": 9, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8], "radius_studs": null, "teeth": null, "bl_id": "40490", "color": "#c0c0c0", "description": "Straight beam with 9 holes"}, "beam-11": {"name": "Technic Beam 11", "category": "beam", "length": 11, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "radius_studs": null, "teeth": null, "bl_id": "32525", "color": "#c0c0c0", "description": "Straight beam with 11 holes"}, "beam-15": {"name": "Technic Beam 15", "category": "beam", "length": 15, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "radius_studs": null, "teeth": null, "bl_id": "32278", "color": "#c0c0c0", "description": "Straight beam with 15 holes"}, "gear-8t": {"name": "Gear 8 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 8, "bl_id": "3647", "color": "#d4a843", "description": "Small spur gear, 8 teeth. Radius ~1 stud."}, "gear-16t": {"name": "Gear 16 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 2, "teeth": 16, "bl_id": "4019", "color": "#d4a843", "description": "Medium spur gear, 16 teeth. Radius ~2 studs."}, "gear-24t": {"name": "Gear 24 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 3, "teeth": 24, "bl_id": "3648", "color": "#d4a843", "description": "Large spur gear, 24 teeth. Radius ~3 studs."}, "gear-40t": {"name": "Gear 40 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 5, "teeth": 40, "bl_id": "3649", "color": "#d4a843", "description": "Extra-large spur gear, 40 teeth. Radius ~5 studs."}, "gear-worm": {"name": "Worm Gear", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 1, "bl_id": "4716", "color": "#d4a843", "description": "Worm gear. 1 tooth effective. Meshes with spur gears for high reduction."}, "rack-4": {"name": "Rack Gear 1x4", "category": "rack", "length": 4, "holes": [], "radius_studs": null, "teeth": 4, "bl_id": "3743", "color": "#e87722", "description": "Rack gear, 4 studs long. Converts rotation to linear motion with 8T gear."}, "axle-3": {"name": "Axle 3", "category": "axle", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "4519", "color": "#555555", "description": "Cross-section axle, 3 studs long. Grey (no stop)."}, "axle-4": {"name": "Axle 4", "category": "axle", "length": 4, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3705", "color": "#555555", "description": "Cross-section axle, 4 studs long."}, "axle-5": {"name": "Axle 5", "category": "axle", "length": 5, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "32073", "color": "#555555", "description": "Cross-section axle, 5 studs long. Light grey (with stop)."}, "axle-6": {"name": "Axle 6", "category": "axle", "length": 6, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3706", "color": "#555555", "description": "Cross-section axle, 6 studs long."}, "axle-8": {"name": "Axle 8", "category": "axle", "length": 8, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3707", "color": "#555555", "description": "Cross-section axle, 8 studs long."}, "axle-10": {"name": "Axle 10", "category": "axle", "length": 10, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3737", "color": "#555555", "description": "Cross-section axle, 10 studs long."}, "pin": {"name": "Technic Pin (no friction)", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3673", "color": "#333333", "description": "Standard pin, 1 stud long each side. Connects beam holes without friction."}, "pin-friction": {"name": "Technic Pin with Friction", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "2780", "color": "#222222", "description": "Friction pin. Holds axle position. Dark bluish grey."}, "pin-long": {"name": "Technic Pin 3L (Long)", "category": "pin", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6558", "color": "#555555", "description": "Long pin, 3 studs. Connects beams across a gap."}, "bush": {"name": "Technic Bush", "category": "connector", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6590", "color": "#888888", "description": "Axle bush / spacer. Sits on axle to fix gear position."}, "connector-2x2": {"name": "Technic Connector 2\u00d72", "category": "connector", "length": 2, "holes": [0, 1], "radius_studs": null, "teeth": null, "bl_id": "6536", "color": "#888888", "description": "Perpendicular connector. Joins two beams at 90 degrees."}};
-const TASKS_DATA = [{"id": "T1-01", "tier": 1, "name": "Parallel axle frame", "prompt": "Build a Lego Technic frame that holds two parallel axles exactly 4 studs apart, horizontally. The frame should be rigid and use beams as the structure.", "success_criteria": {"valid_assembly": true, "min_parts": 3, "part_categories_required": ["beam", "axle"], "notes": "Check: two axles present, both horizontal (axis=x or z), positions differ by exactly 4 in the perpendicular direction"}, "relevant_parts": ["beam-5", "beam-7", "beam-9", "axle-3", "axle-5", "pin", "bush"], "difficulty_notes": "Tests basic beam + axle assembly. No kinematics required."}, {"id": "T1-02", "name": "Rectangular beam frame", "tier": 1, "prompt": "Build a rectangular Lego Technic frame using beams. The frame should be 9 studs wide and 7 studs tall (outer dimensions), with beams connected at the corners using pins.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "pin"], "bounding_box_max": [9, 7, 2], "notes": "Check: beams present, connected at corners, overall footprint ~9x7"}, "relevant_parts": ["beam-9", "beam-7", "pin", "pin-friction", "connector-2x2"], "difficulty_notes": "Tests corner connection and framing. No kinematics."}, {"id": "T1-03", "name": "Axle through beam", "tier": 1, "prompt": "Mount a single axle horizontally through the center holes of two parallel beams, with the beams spaced 3 studs apart along the axle. Use bushes to prevent the axle from sliding.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "axle", "connector"], "notes": "Check: 1 axle, 2 beams, 2 bushes; axle axis perpendicular to beam axis"}, "relevant_parts": ["beam-5", "beam-7", "axle-5", "axle-8", "bush"], "difficulty_notes": "Tests understanding of axle-through-beam + bush usage."}, {"id": "T2-01", "name": "3:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 3:1 speed reduction. The input gear should spin 3 times for every 1 rotation of the output gear. Mount both gears on separate parallel axles supported by a beam frame.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "part_categories_required": ["gear", "axle", "beam"]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Standard gear ratio task. 8T + 24T = exactly 3:1. Tests basic gear meshing knowledge."}, {"id": "T2-02", "name": "2:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 2:1 speed reduction. Use available gears from the parts library.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 2.0, "gear_ratio_tolerance": 0.05}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model knows 8T:16T or 16T:32T etc. Only 8T+16T works with available parts."}, {"id": "T2-03", "name": "5:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair or simple gear train with a 5:1 speed reduction ratio. The input should rotate 5 times for each output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 5.0, "gear_ratio_tolerance": 0.05, "notes": "No single pair gives 5:1. Requires 8T+40T. Tests whether model knows tooth counts."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Requires 8T+40T. Tests whether model knows exact tooth counts."}, {"id": "T2-04", "name": "Rack and pinion", "tier": 2, "prompt": "Build a rack and pinion mechanism using Lego Technic parts. An input axle with a gear should drive a rack that slides horizontally. The mechanism should convert rotational motion to linear motion.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "part_types_required": ["rack-4"]}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "axle-5", "beam-5", "beam-7", "pin"], "difficulty_notes": "Tests knowledge of rack-and-pinion. The 8T gear meshes correctly with the rack."}, {"id": "T2-05", "name": "Worm gear reduction", "tier": 2, "prompt": "Build a worm gear drive using a worm gear driving a 24-tooth spur gear. Mount both on axles supported by a frame. The worm gear should give a high speed reduction.", "success_criteria": {"valid_assembly": true, "part_types_required": ["gear-worm"], "gear_ratio_min": 20.0, "notes": "worm(1T) + 24T = 24:1 reduction. Axes must be perpendicular."}, "relevant_parts": ["gear-worm", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Tests worm gear knowledge. Requires perpendicular axis understanding."}, {"id": "T3-01", "name": "9:1 compound gear train", "tier": 3, "prompt": "Build a compound gear train that achieves a 9:1 total speed reduction using two gear stages. Each stage should use a separate intermediate axle. The input spins 9 times for every 1 output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.1, "min_gear_count": 4, "notes": "Two 3:1 stages (8T+24T twice) = 9:1. Intermediate axle carries both a 24T and an 8T."}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"], "difficulty_notes": "Requires compound gear understanding \u2014 intermediate axle carries driven + driving gear."}, {"id": "T3-02", "name": "Maximum ratio with 4 gears", "tier": 3, "prompt": "Using exactly 4 gears from the parts library, build the gear train with the highest possible total speed reduction ratio. Explain your gear choices and why this gives the maximum ratio.", "success_criteria": {"valid_assembly": true, "exact_gear_count": 4, "gear_ratio_min": 9.0, "notes": "Optimal: worm + 40T (40:1) or two 8T+24T stages (9:1). Worm counts as 1 gear."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "beam-7"], "difficulty_notes": "Optimization task. Tests whether model reasons about maximizing ratio, not just building a valid one."}, {"id": "T3-03", "name": "Rotation direction reversal", "tier": 3, "prompt": "Build a gear train where the output axle rotates in the OPPOSITE direction to the input axle. Use the minimum number of gears needed to achieve this.", "success_criteria": {"valid_assembly": true, "output_direction": "reversed", "notes": "One spur gear pair reverses direction. Even number of stages = same direction, odd = reversed."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests understanding of gear rotation direction, not just ratio."}, {"id": "T3-04", "name": "Speed increase (overdrive)", "tier": 3, "prompt": "Build a gear pair where the output axle spins FASTER than the input. The output should spin at least 3 times faster than the input.", "success_criteria": {"valid_assembly": true, "gear_ratio_max": 0.34, "notes": "Ratio < 1 means speed increase. 24T driving 8T = 1/3 ratio = output spins 3x faster."}, "relevant_parts": ["gear-8t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model understands that gear ratios work both ways (driving vs. driven)."}, {"id": "T3-05", "name": "Three-axle gear chain", "tier": 3, "prompt": "Build a gear chain connecting three axles in series: axle A drives axle B which drives axle C. Each stage should reduce speed by 3:1, for a total of 9:1 from A to C. Use a beam structure to hold all three axles in alignment.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.15, "min_axle_count": 3}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-11", "beam-15", "bush", "pin"], "difficulty_notes": "Tests spatial arrangement of compound gear train across multiple axles."}, {"id": "T4-01", "name": "Compact 3:1 reduction", "tier": 4, "prompt": "Build a 3:1 gear reduction that fits within a 10\u00d75\u00d75 stud bounding box. All parts must be within this volume. The assembly should include the frame/support structure.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "bounding_box_max": [10, 5, 5]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "pin"], "difficulty_notes": "Adds spatial constraint on top of gear ratio. Tests 3D packing reasoning."}, {"id": "T4-02", "name": "Minimal part count rack-and-pinion", "tier": 4, "prompt": "Build a working rack and pinion mechanism using the fewest possible parts. The mechanism must convert rotation to linear motion. Use no more than 6 parts total.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "max_parts": 6}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "beam-5", "bush"], "difficulty_notes": "Part count constraint forces minimal design. Tests understanding of what's strictly necessary."}, {"id": "T4-03", "name": "9:1 reduction under part budget", "tier": 4, "prompt": "Build a gear train with at least 9:1 speed reduction using no more than 10 parts total (including axles, beams, bushes, and gears).", "success_criteria": {"valid_assembly": true, "gear_ratio_min": 9.0, "max_parts": 10}, "relevant_parts": ["gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Worm + 40T (40:1) uses fewer parts than 2-stage spur train. Tests optimization under budget."}, {"id": "T4-04", "name": "Symmetric dual-output drivetrain", "tier": 4, "prompt": "Build a drivetrain where one input axle drives two output axles simultaneously, both spinning at the same speed. The two output axles should be parallel and symmetric around the input.", "success_criteria": {"valid_assembly": true, "min_axle_count": 3, "notes": "Two identical gear pairs from the same input gear. Tests symmetry and multi-output reasoning."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush", "pin"], "difficulty_notes": "Multi-output topology. Tests whether model can reason about branching power transmission."}, {"id": "T5-01", "name": "Highest ratio from any 6 parts", "tier": 5, "prompt": "Using any 6 parts from the parts library, design a mechanism that achieves the highest possible speed reduction ratio. You may use any combination of gears, axles, beams, pins, or connectors. State the ratio your design achieves and explain why it is optimal.", "success_criteria": {"valid_assembly": true, "exact_part_count": 6, "gear_ratio_min": 24.0, "notes": "Optimal: worm(1) + gear-24t(1) + 2 axles + 2 beams = 24:1. Or worm + 40T = 40:1 with right support."}, "relevant_parts": ["all"], "difficulty_notes": "Open optimization. Requires knowing worm gear gives highest ratio. Also tests whether model can reason about what support is minimally needed."}, {"id": "T5-02", "name": "Motion conversion chain", "tier": 5, "prompt": "Build a mechanism with three stages: (1) a 3:1 gear reduction, then (2) conversion from rotational to linear motion via rack and pinion, then (3) the rack drives a second axle via a pin connection. The full chain: rotation in \u2192 reduced rotation \u2192 linear motion \u2192 rotation out.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "motion_type": "rotational_to_linear", "notes": "Complex chain requiring multiple mechanism types. Full pass requires all three stages present."}, "relevant_parts": ["gear-8t", "gear-24t", "rack-4", "axle-3", "axle-5", "beam-7", "beam-9", "pin", "bush"], "difficulty_notes": "Multi-stage mechanism. Tests whether model can chain different mechanism types correctly."}, {"id": "T5-03", "name": "Differential concept", "tier": 5, "prompt": "Describe and build a differential mechanism using Lego Technic parts: one input axle drives two output axles, but the two outputs can rotate at different speeds (e.g., for a vehicle turning). Approximate a differential using available gears and axles.", "success_criteria": {"valid_assembly": true, "min_gear_count": 4, "notes": "No true differential part available \u2014 model must approximate with bevel-style arrangement or explain limitation. Partial credit for correct description even if geometry is incomplete."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "bush", "connector-2x2"], "difficulty_notes": "Hard. No differential part in library. Tests whether model recognizes constraint, explains it, and attempts best approximation. Failure mode reveals mechanical reasoning depth."}, {"id": "T5-04", "name": "Free design: mechanical clock escapement", "tier": 5, "prompt": "Design a Lego Technic mechanism that simulates the escapement of a mechanical clock: an oscillating or stepping motion that releases one tooth at a time from a gear, creating a controlled tick-tick rotation. Use any available parts.", "success_criteria": {"valid_assembly": true, "notes": "No ground truth \u2014 scored by: (1) gear present, (2) some stop/release mechanism described, (3) reasoning quality. Primarily a qualitative eval task."}, "relevant_parts": ["all"], "difficulty_notes": "Intentionally under-constrained. Tests creative mechanism design and whether model understands escapement concept at all. Expected to fail for most models \u2014 that's the point."}];
+const PARTS_DATA = {"beam-3": {"name": "Technic Beam 3", "category": "beam", "length": 3, "holes": [0, 1, 2], "radius_studs": null, "teeth": null, "bl_id": "32523", "color": "#c0c0c0", "description": "Straight beam with 3 holes"}, "beam-5": {"name": "Technic Beam 5", "category": "beam", "length": 5, "holes": [0, 1, 2, 3, 4], "radius_studs": null, "teeth": null, "bl_id": "32316", "color": "#c0c0c0", "description": "Straight beam with 5 holes"}, "beam-7": {"name": "Technic Beam 7", "category": "beam", "length": 7, "holes": [0, 1, 2, 3, 4, 5, 6], "radius_studs": null, "teeth": null, "bl_id": "32524", "color": "#c0c0c0", "description": "Straight beam with 7 holes"}, "beam-9": {"name": "Technic Beam 9", "category": "beam", "length": 9, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8], "radius_studs": null, "teeth": null, "bl_id": "40490", "color": "#c0c0c0", "description": "Straight beam with 9 holes"}, "beam-11": {"name": "Technic Beam 11", "category": "beam", "length": 11, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "radius_studs": null, "teeth": null, "bl_id": "32525", "color": "#c0c0c0", "description": "Straight beam with 11 holes"}, "beam-15": {"name": "Technic Beam 15", "category": "beam", "length": 15, "holes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "radius_studs": null, "teeth": null, "bl_id": "32278", "color": "#c0c0c0", "description": "Straight beam with 15 holes"}, "gear-8t": {"name": "Gear 8 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 8, "bl_id": "3647", "color": "#d4a843", "description": "Small spur gear, 8 teeth. Radius ~1 stud."}, "gear-16t": {"name": "Gear 16 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 2, "teeth": 16, "bl_id": "4019", "color": "#d4a843", "description": "Medium spur gear, 16 teeth. Radius ~2 studs."}, "gear-24t": {"name": "Gear 24 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 3, "teeth": 24, "bl_id": "3648", "color": "#d4a843", "description": "Large spur gear, 24 teeth. Radius ~3 studs."}, "gear-40t": {"name": "Gear 40 Tooth", "category": "gear", "length": null, "holes": [], "radius_studs": 5, "teeth": 40, "bl_id": "3649", "color": "#d4a843", "description": "Extra-large spur gear, 40 teeth. Radius ~5 studs."}, "gear-worm": {"name": "Worm Gear", "category": "gear", "length": null, "holes": [], "radius_studs": 1, "teeth": 1, "bl_id": "4716", "color": "#d4a843", "description": "Worm gear. 1 tooth effective. Meshes with spur gears for high reduction."}, "rack-4": {"name": "Rack Gear 1x4", "category": "rack", "length": 4, "holes": [], "radius_studs": null, "teeth": 4, "bl_id": "3743", "color": "#e87722", "description": "Rack gear, 4 studs long. Converts rotation to linear motion with 8T gear."}, "axle-3": {"name": "Axle 3", "category": "axle", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "4519", "color": "#555555", "description": "Cross-section axle, 3 studs long. Grey (no stop)."}, "axle-4": {"name": "Axle 4", "category": "axle", "length": 4, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3705", "color": "#555555", "description": "Cross-section axle, 4 studs long."}, "axle-5": {"name": "Axle 5", "category": "axle", "length": 5, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "32073", "color": "#555555", "description": "Cross-section axle, 5 studs long. Light grey (with stop)."}, "axle-6": {"name": "Axle 6", "category": "axle", "length": 6, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3706", "color": "#555555", "description": "Cross-section axle, 6 studs long."}, "axle-8": {"name": "Axle 8", "category": "axle", "length": 8, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3707", "color": "#555555", "description": "Cross-section axle, 8 studs long."}, "axle-10": {"name": "Axle 10", "category": "axle", "length": 10, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3737", "color": "#555555", "description": "Cross-section axle, 10 studs long."}, "pin": {"name": "Technic Pin (no friction)", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "3673", "color": "#333333", "description": "Standard pin, 1 stud long each side. Connects beam holes without friction."}, "pin-friction": {"name": "Technic Pin with Friction", "category": "pin", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "2780", "color": "#222222", "description": "Friction pin. Holds axle position. Dark bluish grey."}, "pin-long": {"name": "Technic Pin 3L (Long)", "category": "pin", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6558", "color": "#555555", "description": "Long pin, 3 studs. Connects beams across a gap."}, "bush": {"name": "Technic Bush", "category": "connector", "length": 1, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "6590", "color": "#888888", "description": "Axle bush / spacer. Sits on axle to fix gear position."}, "connector-2x2": {"name": "Technic Connector 2\u00d72", "category": "connector", "length": 2, "holes": [0, 1], "radius_studs": null, "teeth": null, "bl_id": "6536", "color": "#888888", "description": "Perpendicular connector. Joins two beams at 90 degrees."}, "motor-m": {"name": "Medium Motor (PF)", "category": "motor", "length": 3, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "8883", "color": "#e94560", "rpm_no_load": 380, "stall_torque_ncm": 4.0, "rated_power_w": 1.5, "description": "LEGO PF Medium Motor. 380 RPM no-load, 4 Ncm stall torque. Output axle on one end."}, "motor-l": {"name": "Large Motor (PF)", "category": "motor", "length": 4, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "88003", "color": "#e94560", "rpm_no_load": 220, "stall_torque_ncm": 7.5, "rated_power_w": 2.5, "description": "LEGO PF Large Motor. 220 RPM no-load, 7.5 Ncm stall torque."}, "motor-xl": {"name": "XL Motor (PF)", "category": "motor", "length": 5, "holes": [], "radius_studs": null, "teeth": null, "bl_id": "8882", "color": "#e94560", "rpm_no_load": 135, "stall_torque_ncm": 12.0, "rated_power_w": 3.5, "description": "LEGO PF XL Motor. 135 RPM no-load, 12 Ncm stall torque. Highest torque."}};
+const TASKS_DATA = [{"id": "T1-01", "tier": 1, "name": "Parallel axle frame", "prompt": "Build a Lego Technic frame that holds two parallel axles exactly 4 studs apart, horizontally. The frame should be rigid and use beams as the structure.", "success_criteria": {"valid_assembly": true, "min_parts": 3, "part_categories_required": ["beam", "axle"], "notes": "Check: two axles present, both horizontal (axis=x or z), positions differ by exactly 4 in the perpendicular direction"}, "relevant_parts": ["beam-5", "beam-7", "beam-9", "axle-3", "axle-5", "pin", "bush"], "difficulty_notes": "Tests basic beam + axle assembly. No kinematics required."}, {"id": "T1-02", "name": "Rectangular beam frame", "tier": 1, "prompt": "Build a rectangular Lego Technic frame using beams. The frame should be 9 studs wide and 7 studs tall (outer dimensions), with beams connected at the corners using pins.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "pin"], "bounding_box_max": [9, 7, 2], "notes": "Check: beams present, connected at corners, overall footprint ~9x7"}, "relevant_parts": ["beam-9", "beam-7", "pin", "pin-friction", "connector-2x2"], "difficulty_notes": "Tests corner connection and framing. No kinematics."}, {"id": "T1-03", "name": "Axle through beam", "tier": 1, "prompt": "Mount a single axle horizontally through the center holes of two parallel beams, with the beams spaced 3 studs apart along the axle. Use bushes to prevent the axle from sliding.", "success_criteria": {"valid_assembly": true, "part_categories_required": ["beam", "axle", "connector"], "notes": "Check: 1 axle, 2 beams, 2 bushes; axle axis perpendicular to beam axis"}, "relevant_parts": ["beam-5", "beam-7", "axle-5", "axle-8", "bush"], "difficulty_notes": "Tests understanding of axle-through-beam + bush usage."}, {"id": "T2-01", "name": "3:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 3:1 speed reduction. The input gear should spin 3 times for every 1 rotation of the output gear. Mount both gears on separate parallel axles supported by a beam frame.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "part_categories_required": ["gear", "axle", "beam"]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Standard gear ratio task. 8T + 24T = exactly 3:1. Tests basic gear meshing knowledge."}, {"id": "T2-02", "name": "2:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair that produces a 2:1 speed reduction. Use available gears from the parts library.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 2.0, "gear_ratio_tolerance": 0.05}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model knows 8T:16T or 16T:32T etc. Only 8T+16T works with available parts."}, {"id": "T2-03", "name": "5:1 gear reduction", "tier": 2, "prompt": "Build a Lego Technic gear pair or simple gear train with a 5:1 speed reduction ratio. The input should rotate 5 times for each output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 5.0, "gear_ratio_tolerance": 0.05, "notes": "No single pair gives 5:1. Requires 8T+40T. Tests whether model knows tooth counts."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Requires 8T+40T. Tests whether model knows exact tooth counts."}, {"id": "T2-04", "name": "Rack and pinion", "tier": 2, "prompt": "Build a rack and pinion mechanism using Lego Technic parts. An input axle with a gear should drive a rack that slides horizontally. The mechanism should convert rotational motion to linear motion.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "part_types_required": ["rack-4"]}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "axle-5", "beam-5", "beam-7", "pin"], "difficulty_notes": "Tests knowledge of rack-and-pinion. The 8T gear meshes correctly with the rack."}, {"id": "T2-05", "name": "Worm gear reduction", "tier": 2, "prompt": "Build a worm gear drive using a worm gear driving a 24-tooth spur gear. Mount both on axles supported by a frame. The worm gear should give a high speed reduction.", "success_criteria": {"valid_assembly": true, "part_types_required": ["gear-worm"], "gear_ratio_min": 20.0, "notes": "worm(1T) + 24T = 24:1 reduction. Axes must be perpendicular."}, "relevant_parts": ["gear-worm", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush"], "difficulty_notes": "Tests worm gear knowledge. Requires perpendicular axis understanding."}, {"id": "T3-01", "name": "9:1 compound gear train", "tier": 3, "prompt": "Build a compound gear train that achieves a 9:1 total speed reduction using two gear stages. Each stage should use a separate intermediate axle. The input spins 9 times for every 1 output rotation.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.1, "min_gear_count": 4, "notes": "Two 3:1 stages (8T+24T twice) = 9:1. Intermediate axle carries both a 24T and an 8T."}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"], "difficulty_notes": "Requires compound gear understanding \u2014 intermediate axle carries driven + driving gear."}, {"id": "T3-02", "name": "Maximum ratio with 4 gears", "tier": 3, "prompt": "Using exactly 4 gears from the parts library, build the gear train with the highest possible total speed reduction ratio. Explain your gear choices and why this gives the maximum ratio.", "success_criteria": {"valid_assembly": true, "exact_gear_count": 4, "gear_ratio_min": 9.0, "notes": "Optimal: worm + 40T (40:1) or two 8T+24T stages (9:1). Worm counts as 1 gear."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "beam-7"], "difficulty_notes": "Optimization task. Tests whether model reasons about maximizing ratio, not just building a valid one."}, {"id": "T3-03", "name": "Rotation direction reversal", "tier": 3, "prompt": "Build a gear train where the output axle rotates in the OPPOSITE direction to the input axle. Use the minimum number of gears needed to achieve this.", "success_criteria": {"valid_assembly": true, "output_direction": "reversed", "notes": "One spur gear pair reverses direction. Even number of stages = same direction, odd = reversed."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests understanding of gear rotation direction, not just ratio."}, {"id": "T3-04", "name": "Speed increase (overdrive)", "tier": 3, "prompt": "Build a gear pair where the output axle spins FASTER than the input. The output should spin at least 3 times faster than the input.", "success_criteria": {"valid_assembly": true, "gear_ratio_max": 0.34, "notes": "Ratio < 1 means speed increase. 24T driving 8T = 1/3 ratio = output spins 3x faster."}, "relevant_parts": ["gear-8t", "gear-24t", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Tests whether model understands that gear ratios work both ways (driving vs. driven)."}, {"id": "T3-05", "name": "Three-axle gear chain", "tier": 3, "prompt": "Build a gear chain connecting three axles in series: axle A drives axle B which drives axle C. Each stage should reduce speed by 3:1, for a total of 9:1 from A to C. Use a beam structure to hold all three axles in alignment.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 9.0, "gear_ratio_tolerance": 0.15, "min_axle_count": 3}, "relevant_parts": ["gear-8t", "gear-24t", "axle-5", "axle-8", "beam-11", "beam-15", "bush", "pin"], "difficulty_notes": "Tests spatial arrangement of compound gear train across multiple axles."}, {"id": "T4-01", "name": "Compact 3:1 reduction", "tier": 4, "prompt": "Build a 3:1 gear reduction that fits within a 10\u00d75\u00d75 stud bounding box. All parts must be within this volume. The assembly should include the frame/support structure.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "gear_ratio_tolerance": 0.05, "bounding_box_max": [10, 5, 5]}, "relevant_parts": ["gear-8t", "gear-24t", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "pin"], "difficulty_notes": "Adds spatial constraint on top of gear ratio. Tests 3D packing reasoning."}, {"id": "T4-02", "name": "Minimal part count rack-and-pinion", "tier": 4, "prompt": "Build a working rack and pinion mechanism using the fewest possible parts. The mechanism must convert rotation to linear motion. Use no more than 6 parts total.", "success_criteria": {"valid_assembly": true, "motion_type": "rotational_to_linear", "max_parts": 6}, "relevant_parts": ["rack-4", "gear-8t", "axle-3", "beam-5", "bush"], "difficulty_notes": "Part count constraint forces minimal design. Tests understanding of what's strictly necessary."}, {"id": "T4-03", "name": "9:1 reduction under part budget", "tier": 4, "prompt": "Build a gear train with at least 9:1 speed reduction using no more than 10 parts total (including axles, beams, bushes, and gears).", "success_criteria": {"valid_assembly": true, "gear_ratio_min": 9.0, "max_parts": 10}, "relevant_parts": ["gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-3", "axle-5", "beam-5", "bush"], "difficulty_notes": "Worm + 40T (40:1) uses fewer parts than 2-stage spur train. Tests optimization under budget."}, {"id": "T4-04", "name": "Symmetric dual-output drivetrain", "tier": 4, "prompt": "Build a drivetrain where one input axle drives two output axles simultaneously, both spinning at the same speed. The two output axles should be parallel and symmetric around the input.", "success_criteria": {"valid_assembly": true, "min_axle_count": 3, "notes": "Two identical gear pairs from the same input gear. Tests symmetry and multi-output reasoning."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "beam-11", "bush", "pin"], "difficulty_notes": "Multi-output topology. Tests whether model can reason about branching power transmission."}, {"id": "T5-01", "name": "Highest ratio from any 6 parts", "tier": 5, "prompt": "Using any 6 parts from the parts library, design a mechanism that achieves the highest possible speed reduction ratio. You may use any combination of gears, axles, beams, pins, or connectors. State the ratio your design achieves and explain why it is optimal.", "success_criteria": {"valid_assembly": true, "exact_part_count": 6, "gear_ratio_min": 24.0, "notes": "Optimal: worm(1) + gear-24t(1) + 2 axles + 2 beams = 24:1. Or worm + 40T = 40:1 with right support."}, "relevant_parts": ["all"], "difficulty_notes": "Open optimization. Requires knowing worm gear gives highest ratio. Also tests whether model can reason about what support is minimally needed."}, {"id": "T5-02", "name": "Motion conversion chain", "tier": 5, "prompt": "Build a mechanism with three stages: (1) a 3:1 gear reduction, then (2) conversion from rotational to linear motion via rack and pinion, then (3) the rack drives a second axle via a pin connection. The full chain: rotation in \u2192 reduced rotation \u2192 linear motion \u2192 rotation out.", "success_criteria": {"valid_assembly": true, "gear_ratio_target": 3.0, "motion_type": "rotational_to_linear", "notes": "Complex chain requiring multiple mechanism types. Full pass requires all three stages present."}, "relevant_parts": ["gear-8t", "gear-24t", "rack-4", "axle-3", "axle-5", "beam-7", "beam-9", "pin", "bush"], "difficulty_notes": "Multi-stage mechanism. Tests whether model can chain different mechanism types correctly."}, {"id": "T5-03", "name": "Differential concept", "tier": 5, "prompt": "Describe and build a differential mechanism using Lego Technic parts: one input axle drives two output axles, but the two outputs can rotate at different speeds (e.g., for a vehicle turning). Approximate a differential using available gears and axles.", "success_criteria": {"valid_assembly": true, "min_gear_count": 4, "notes": "No true differential part available \u2014 model must approximate with bevel-style arrangement or explain limitation. Partial credit for correct description even if geometry is incomplete."}, "relevant_parts": ["gear-8t", "gear-16t", "gear-24t", "axle-5", "axle-8", "beam-9", "bush", "connector-2x2"], "difficulty_notes": "Hard. No differential part in library. Tests whether model recognizes constraint, explains it, and attempts best approximation. Failure mode reveals mechanical reasoning depth."}, {"id": "T5-04", "name": "Free design: mechanical clock escapement", "tier": 5, "prompt": "Design a Lego Technic mechanism that simulates the escapement of a mechanical clock: an oscillating or stepping motion that releases one tooth at a time from a gear, creating a controlled tick-tick rotation. Use any available parts.", "success_criteria": {"valid_assembly": true, "notes": "No ground truth \u2014 scored by: (1) gear present, (2) some stop/release mechanism described, (3) reasoning quality. Primarily a qualitative eval task."}, "relevant_parts": ["all"], "difficulty_notes": "Intentionally under-constrained. Tests creative mechanism design and whether model understands escapement concept at all. Expected to fail for most models \u2014 that's the point."}, {"id": "T6-01", "tier": 6, "name": "Motor direct drive (\u2265 100 RPM output)", "prompt": "Connect a Medium Motor (motor-m) to a gear train that delivers at least 100 RPM at the output axle. A direct connection without gears also counts. Mount everything on a beam frame.", "success_criteria": {"valid_assembly": true, "motor_required": true, "output_rpm_min": 100, "part_categories_required": ["motor", "axle"]}, "relevant_parts": ["motor-m", "axle-3", "axle-5", "beam-5", "beam-7", "bush", "gear-8t", "gear-16t", "gear-24t"], "difficulty_notes": "Easiest Tier 6. Tests whether model knows to include a motor and understands that direct drive is valid."}, {"id": "T6-02", "tier": 6, "name": "Power budget: speed + torque balance", "prompt": "Using a Medium Motor (motor-m), build a gear train where the output delivers at least 60 RPM AND at least 10 Ncm of torque simultaneously. Show your gear ratio calculation.", "success_criteria": {"valid_assembly": true, "motor_required": true, "output_rpm_min": 60, "output_torque_min": 10}, "relevant_parts": ["motor-m", "gear-8t", "gear-24t", "axle-5", "beam-7", "bush"], "difficulty_notes": "Tests understanding of the torque-speed tradeoff. Both constraints must be satisfied simultaneously."}, {"id": "T6-03", "tier": 6, "name": "Lifting drive: high torque output", "prompt": "Design a powered lifting mechanism using a Medium Motor (motor-m). The output axle must spin slowly (\u2264 50 RPM) to provide enough force to lift a load, and must deliver at least 25 Ncm of torque. Use a beam structure to support it.", "success_criteria": {"valid_assembly": true, "motor_required": true, "output_rpm_max": 50, "output_torque_min": 25}, "relevant_parts": ["motor-m", "gear-8t", "gear-24t", "gear-worm", "gear-40t", "axle-5", "axle-8", "beam-9", "beam-11", "bush"], "difficulty_notes": "Requires a high gear ratio. Forces the model to use compound gearing or a worm gear."}, {"id": "T6-04", "tier": 6, "name": "Motor comparison: M vs XL for same task", "prompt": "You have two motors available: a Medium Motor (motor-m: 380 RPM, 4 Ncm) and an XL Motor (motor-xl: 135 RPM, 12 Ncm). For a task requiring \u2265 30 Ncm output torque and \u2264 80 RPM, which motor requires fewer gear stages to achieve it? Build the more efficient solution and explain why.", "success_criteria": {"valid_assembly": true, "motor_required": true, "output_rpm_max": 80, "output_torque_min": 30}, "relevant_parts": ["motor-m", "motor-xl", "gear-8t", "gear-24t", "gear-40t", "gear-worm", "axle-5", "axle-8", "beam-9", "bush"], "difficulty_notes": "Motor selection task. XL motor needs only 1 stage vs M-motor needing 2+. Tests motor selection reasoning."}];
 
 // ── Client-side validation (ported from Python) ─────────────────────────────
 
@@ -951,7 +1124,7 @@ function validateAssembly(assembly, lib) {
 
 function computeKinematics(assembly, lib) {
   const parts = assembly.parts || [], result = {};
-  const gears = [], racks = [];
+  const gears = [], racks = [], motors = [];
   for (const p of parts) {
     if (!lib[p.type]) continue;
     const spec = lib[p.type];
@@ -959,7 +1132,10 @@ function computeKinematics(assembly, lib) {
       gears.push({id:p.id, teeth:spec.teeth, radius:spec.radius_studs, pos:p.pos, axis:p.axis||'y'});
     else if (spec.category === 'rack')
       racks.push({id:p.id, pos:p.pos, axis:p.axis||'x'});
+    else if (spec.category === 'motor')
+      motors.push({id:p.id, type:p.type, rpm_no_load:spec.rpm_no_load, stall_torque_ncm:spec.stall_torque_ncm, rated_power_w:spec.rated_power_w});
   }
+  if (motors.length) result.motors = motors;
   const gearPairs = [];
   for (let i = 0; i < gears.length; i++) {
     for (let j = i+1; j < gears.length; j++) {
@@ -980,7 +1156,64 @@ function computeKinematics(assembly, lib) {
       rackPinion.push({gear:gear.id, rack:rack.id, note:`Gear '${gear.id}' (${gear.teeth}T) drives rack '${rack.id}' → rotation→linear`});
   }
   if (rackPinion.length) { result.rack_pinion = rackPinion; result.motion_type = 'Rotational → Linear'; }
+
+  // Motor power computation
+  if (motors.length && gearPairs.length) {
+    const motor = motors[0];
+    const totalRatio = computeChainRatio(gearPairs);
+    result.motor_output = {
+      motor_id: motor.id,
+      gear_ratio: Math.round(totalRatio * 100) / 100,
+      output_rpm: Math.round(motor.rpm_no_load / totalRatio * 10) / 10,
+      output_torque_ncm: Math.round(motor.stall_torque_ncm * totalRatio * 0.85 * 10) / 10,
+      note: `${motor.rpm_no_load} RPM ÷ ${totalRatio.toFixed(2)} = ${(motor.rpm_no_load/totalRatio).toFixed(1)} RPM out, torque × ${totalRatio.toFixed(2)} × 0.85 = ${(motor.stall_torque_ncm * totalRatio * 0.85).toFixed(1)} Ncm`,
+    };
+  } else if (motors.length && !gearPairs.length) {
+    const motor = motors[0];
+    result.motor_output = {
+      motor_id: motor.id,
+      gear_ratio: 1.0,
+      output_rpm: motor.rpm_no_load,
+      output_torque_ncm: motor.stall_torque_ncm * 0.85,
+      note: `Direct drive: ${motor.rpm_no_load} RPM, ${(motor.stall_torque_ncm * 0.85).toFixed(1)} Ncm`,
+    };
+  }
+
   return result;
+}
+
+function computeChainRatio(gearPairs) {
+  if (!gearPairs.length) return 1.0;
+  if (gearPairs.length === 1) return gearPairs[0].ratio;
+  // BFS to find longest chain from endpoint to endpoint
+  const adj = {};
+  for (const p of gearPairs) {
+    if (!adj[p.gear1]) adj[p.gear1] = [];
+    if (!adj[p.gear2]) adj[p.gear2] = [];
+    adj[p.gear1].push({id: p.gear2, r: p.ratio});
+    adj[p.gear2].push({id: p.gear1, r: 1/p.ratio});
+  }
+  // Degree map to find endpoints
+  const deg = {};
+  for (const p of gearPairs) {
+    deg[p.gear1] = (deg[p.gear1]||0)+1;
+    deg[p.gear2] = (deg[p.gear2]||0)+1;
+  }
+  const endpoints = Object.entries(deg).filter(([,d])=>d===1).map(([id])=>id);
+  if (endpoints.length < 2) {
+    // Loop or single pair — just multiply all ratios > 1
+    return gearPairs.reduce((acc, p) => p.ratio > 1 ? acc * p.ratio : acc, 1.0);
+  }
+  // DFS from first endpoint
+  let best = 1.0, bestLen = 0;
+  function dfs(node, visited, cur, depth) {
+    if (depth > bestLen) { bestLen = depth; best = cur; }
+    for (const {id, r} of (adj[node]||[])) {
+      if (!visited.has(id)) { dfs(id, new Set([...visited, id]), cur*r, depth+1); }
+    }
+  }
+  dfs(endpoints[0], new Set([endpoints[0]]), 1.0, 0);
+  return Math.round(best * 10000) / 10000;
 }
 
 function checkConnectionsLocal(assembly, lib) {

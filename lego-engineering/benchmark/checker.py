@@ -167,6 +167,44 @@ def check_task(task, assembly, validation_errors, kinematics, parts_library):
             note = f"BBox {actual_bbox} (max allowed {bbox})"
         checks.append({"name": "bounding_box", "passed": passed, "note": note})
 
+    # --- 10. Motor checks ---
+    motors_in_kin = kinematics.get("motors", [])
+
+    if criteria.get("motor_required"):
+        passed = len(motors_in_kin) > 0
+        checks.append({"name": "motor_required", "passed": passed,
+                        "note": "Motor detected" if passed else "No motor in assembly"})
+        if not passed:
+            # Can't compute RPM/torque without a motor
+            for k in ("output_rpm_min", "output_rpm_max", "output_torque_min"):
+                if k in criteria:
+                    checks.append({"name": k, "passed": False, "note": "No motor — cannot compute output"})
+            return (0 if not any(c["passed"] for c in checks) else 1), checks
+
+    if motors_in_kin and any(k in criteria for k in ("output_rpm_min", "output_rpm_max", "output_torque_min")):
+        motor = motors_in_kin[0]
+        total_ratio = compute_chain_ratio(kinematics.get("gear_pairs", []), parts) or 1.0
+        output_rpm = motor["rpm_no_load"] / total_ratio
+        output_torque = motor["stall_torque_ncm"] * total_ratio * 0.85  # 85% efficiency
+
+        if "output_rpm_min" in criteria:
+            mn = criteria["output_rpm_min"]
+            passed = output_rpm >= mn
+            checks.append({"name": "output_rpm_min", "passed": passed,
+                            "note": f"Output: {output_rpm:.1f} RPM (need ≥{mn})"})
+
+        if "output_rpm_max" in criteria:
+            mx = criteria["output_rpm_max"]
+            passed = output_rpm <= mx
+            checks.append({"name": "output_rpm_max", "passed": passed,
+                            "note": f"Output: {output_rpm:.1f} RPM (need ≤{mx})"})
+
+        if "output_torque_min" in criteria:
+            mn = criteria["output_torque_min"]
+            passed = output_torque >= mn
+            checks.append({"name": "output_torque_min", "passed": passed,
+                            "note": f"Output torque: {output_torque:.1f} Ncm (need ≥{mn})"})
+
     # --- Score ---
     all_checks = [c["passed"] for c in checks]
     if not all_checks:
