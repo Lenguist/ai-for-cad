@@ -32,22 +32,17 @@ def get_footprint(part_def: dict, pos: list, rot: int) -> set[tuple]:
     sx, sy = pos[0], pos[1]
     cells = set()
 
-    if rot == 0:
+    # pos is always the min-stud corner regardless of rotation.
+    # rot=0/180: w studs in X, d studs in Y
+    # rot=90/270: d studs in X, w studs in Y (axes swap)
+    if rot in (0, 180):
         for dx in range(w):
             for dy in range(d):
                 cells.add((sx + dx, sy + dy))
-    elif rot == 90:
+    else:  # rot == 90 or rot == 270
         for dx in range(w):
             for dy in range(d):
-                cells.add((sx + dy, sy - dx))
-    elif rot == 180:
-        for dx in range(w):
-            for dy in range(d):
-                cells.add((sx - dx, sy - dy))
-    elif rot == 270:
-        for dx in range(w):
-            for dy in range(d):
-                cells.add((sx - dy, sy + dx))
+                cells.add((sx + dy, sy + dx))
 
     return cells
 

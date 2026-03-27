@@ -118,9 +118,13 @@ def compile_assembly(assembly_spec: dict) -> str:
         half_d = (d - 1) / 2 * STUD
 
         rot_rad = math.radians(rot)
-        # Rotate offset vector (half_w, half_d) by rot around Y
-        offset_x = half_w * math.cos(rot_rad) + half_d * math.sin(rot_rad)
-        offset_z = -half_w * math.sin(rot_rad) + half_d * math.cos(rot_rad)
+        # Use absolute trig values so pos is always the min-stud corner regardless of rotation.
+        # rot=0/180: brick is w studs in X, d studs in Z → center at (half_w, half_d)
+        # rot=90/270: brick is d studs in X, w studs in Z → center at (half_d, half_w)
+        cos_r = abs(math.cos(rot_rad))
+        sin_r = abs(math.sin(rot_rad))
+        offset_x = half_w * cos_r + half_d * sin_r
+        offset_z = half_d * cos_r + half_w * sin_r
 
         center_x = ldraw_x + offset_x
         center_z = ldraw_z + offset_z

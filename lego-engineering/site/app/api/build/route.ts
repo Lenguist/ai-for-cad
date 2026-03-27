@@ -126,8 +126,13 @@ ${partsStr}
 
 ## Coordinate system:
 - pos = [stud_x, stud_y, layer]. Layer 0 = ground. Layer increases upward.
+- pos is ALWAYS the minimum-stud corner (min stud_x, min stud_y) regardless of rotation.
 - Each stud = 1 unit. Bricks connect when studs align.
 - rot = 0/90/180/270 (rotation around vertical axis)
+- rot=0: brick spans [pos_x .. pos_x+width-1] in X and [pos_y .. pos_y+depth-1] in Y
+- rot=90/270: axes swap — brick spans [pos_x .. pos_x+depth-1] in X and [pos_y .. pos_y+width-1] in Y
+- rot=180: same footprint as rot=0 (just flipped)
+- Example: 2x4 brick at pos=[0,0], rot=90 spans stud_x 0..3 and stud_y 0..1
 
 ## Standard brick sizes (width_studs × depth_studs):
 - 1x1, 1x2, 1x3, 1x4, 1x6, 1x8
