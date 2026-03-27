@@ -4,6 +4,54 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Nav from "../components/Nav";
 
+// ─── Drag-to-resize divider ───────────────────────────────────────────────────
+
+function HDivider({ onDrag }: { onDrag: (dx: number) => void }) {
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    let lastX = e.clientX;
+    const move = (ev: MouseEvent) => { onDrag(ev.clientX - lastX); lastX = ev.clientX; };
+    const up = () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      style={{
+        width: 5, cursor: "col-resize", flexShrink: 0,
+        background: "var(--border)", transition: "background 0.15s",
+        zIndex: 10,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--border)")}
+    />
+  );
+}
+
+function VDivider({ onDrag }: { onDrag: (dy: number) => void }) {
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    let lastY = e.clientY;
+    const move = (ev: MouseEvent) => { onDrag(ev.clientY - lastY); lastY = ev.clientY; };
+    const up = () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      style={{
+        height: 5, cursor: "row-resize", flexShrink: 0,
+        background: "var(--border)", transition: "background 0.15s",
+        zIndex: 10,
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "var(--border)")}
+    />
+  );
+}
+
 const AssemblyViewer = dynamic(() => import("../components/AssemblyViewer"), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -220,6 +268,14 @@ export default function BuildPage() {
   const [ldrExists, setLdrExists] = useState(false);
   const prevSimRef = useRef("");
 
+  // Panel sizes
+  const [col1W, setCol1W] = useState(220);
+  const [col3W, setCol3W] = useState(380);
+  const [jsonH, setJsonH] = useState(180);
+  const col1WRef = useRef(220);
+  const col3WRef = useRef(380);
+  const jsonHRef = useRef(180);
+
   // Load all part IDs for "select all"
   useEffect(() => {
     Promise.all([
@@ -318,8 +374,8 @@ export default function BuildPage() {
 
         {/* ── Col 1: Parts selector ─────────────────────────────── */}
         <div style={{
-          width: 220, background: "var(--panel)", borderRight: "1px solid var(--border)",
-          display: "flex", flexDirection: "column", flexShrink: 0,
+          width: col1W, background: "var(--panel)",
+          display: "flex", flexDirection: "column", flexShrink: 0, minWidth: 120,
         }}>
           <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>parts</span>
@@ -331,6 +387,11 @@ export default function BuildPage() {
             onClearAll={clearAll}
           />
         </div>
+
+        <HDivider onDrag={(dx) => {
+          col1WRef.current = Math.max(120, Math.min(500, col1WRef.current + dx));
+          setCol1W(col1WRef.current);
+        }} />
 
         {/* ── Col 2: Prompt + Terminal ──────────────────────────── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
@@ -375,10 +436,15 @@ export default function BuildPage() {
           </div>
         </div>
 
+        <HDivider onDrag={(dx) => {
+          col3WRef.current = Math.max(200, Math.min(800, col3WRef.current - dx));
+          setCol3W(col3WRef.current);
+        }} />
+
         {/* ── Col 3: 3D viewer + status ─────────────────────────── */}
         <div style={{
-          width: 380, borderLeft: "1px solid var(--border)",
-          display: "flex", flexDirection: "column", flexShrink: 0,
+          width: col3W,
+          display: "flex", flexDirection: "column", flexShrink: 0, minWidth: 200,
         }}>
           {/* 3D Viewer */}
           <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
@@ -407,8 +473,13 @@ export default function BuildPage() {
             </div>
           </div>
 
+          <VDivider onDrag={(dy) => {
+            jsonHRef.current = Math.max(60, Math.min(500, jsonHRef.current - dy));
+            setJsonH(jsonHRef.current);
+          }} />
+
           {/* Assembly JSON */}
-          <div style={{ height: 180, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column" }}>
+          <div style={{ height: jsonH, display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "5px 10px", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--muted)", fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               assembly json
             </div>
