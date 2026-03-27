@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { LDrawLoader } from "three/examples/jsm/loaders/LDrawLoader.js";
+import { LDrawConditionalLineMaterial } from "three/examples/jsm/materials/LDrawConditionalLineMaterial.js";
 
 interface Props {
   ldrUrl: string;
@@ -111,46 +112,52 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     let cancelled = false;
 
     const loader = new LDrawLoader();
+    loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     loader.setPartsLibraryPath("/ldraw/");
 
     const url = `${ldrUrl}?v=${version}`;
 
-    loader.load(
-      url,
-      (group) => {
-        if (cancelled) return;
+    // Load color definitions first, then load the assembly
+    (loader as any).preloadMaterials("/ldraw/LDConfig.ldr").then(() => {
+      if (cancelled) return;
 
-        const box = new THREE.Box3().setFromObject(group);
-        if (box.isEmpty()) {
-          setStatus("empty");
-          return;
+      loader.load(
+        url,
+        (group) => {
+          if (cancelled) return;
+
+          const box = new THREE.Box3().setFromObject(group);
+          if (box.isEmpty()) {
+            setStatus("empty");
+            return;
+          }
+
+          const center = box.getCenter(new THREE.Vector3());
+          group.position.sub(center);
+
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          group.scale.setScalar(120 / maxDim);
+          group.rotation.x = Math.PI;
+
+          three.scene.add(group);
+          three.currentGroup = group;
+
+          three.camera.position.set(150, 150, 350);
+          three.controls.target.set(0, 0, 0);
+          three.controls.update();
+
+          setStatus("ok");
+        },
+        undefined,
+        (err) => {
+          if (cancelled) return;
+          console.error("AssemblyViewer load error", err);
+          setErrorMsg(String(err));
+          setStatus("error");
         }
-
-        const center = box.getCenter(new THREE.Vector3());
-        group.position.sub(center);
-
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        group.scale.setScalar(120 / maxDim);
-        group.rotation.x = Math.PI;
-
-        three.scene.add(group);
-        three.currentGroup = group;
-
-        three.camera.position.set(150, 150, 350);
-        three.controls.target.set(0, 0, 0);
-        three.controls.update();
-
-        setStatus("ok");
-      },
-      undefined,
-      (err) => {
-        if (cancelled) return;
-        console.error("AssemblyViewer load error", err);
-        setErrorMsg(String(err));
-        setStatus("error");
-      }
-    );
+      );
+    });
 
     return () => {
       cancelled = true;
