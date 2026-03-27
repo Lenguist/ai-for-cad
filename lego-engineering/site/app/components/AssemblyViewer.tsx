@@ -16,6 +16,9 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
   const [status, setStatus] = useState<"loading" | "ok" | "error" | "empty">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Auto-rotate toggle
+  const [autoRotate, setAutoRotate] = useState(true);
+
   // Step replay state
   const [stepMode, setStepMode] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -188,7 +191,14 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     };
   }, [ldrUrl, version]);
 
-  // ── Effect 3: toggle brick visibility based on step ──────────────────────
+  // ── Effect 3: sync autoRotate with controls ──────────────────────────────
+  useEffect(() => {
+    const three = threeRef.current;
+    if (!three) return;
+    three.controls.autoRotate = autoRotate;
+  }, [autoRotate]);
+
+  // ── Effect 4: toggle brick visibility based on step ──────────────────────
   useEffect(() => {
     const group = threeRef.current?.currentGroup;
     if (!group) return;
@@ -197,7 +207,7 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     });
   }, [stepMode, currentStep]);
 
-  // ── Effect 4: auto-play ───────────────────────────────────────────────────
+  // ── Effect 5: auto-play ───────────────────────────────────────────────────
   useEffect(() => {
     if (!playing) return;
     if (currentStep >= totalSteps) {
@@ -258,6 +268,12 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
           display: "flex", alignItems: "center", gap: 6,
           background: "rgba(10,22,40,0.85)", borderRadius: 6, padding: "6px 8px",
         }}>
+          <button style={{ ...btnStyle, color: autoRotate ? "#4a80b4" : "#666" }}
+            onClick={() => setAutoRotate((r) => !r)}
+            title="Toggle auto-rotate">
+            ↻
+          </button>
+
           <button style={btnStyle} onClick={() => {
             const next = !stepMode;
             setStepMode(next);
