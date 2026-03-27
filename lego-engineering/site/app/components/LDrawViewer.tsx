@@ -72,6 +72,8 @@ export default function LDrawViewer({ partId }: Props) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 3;
 
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -102,8 +104,8 @@ export default function LDrawViewer({ partId }: Props) {
 
         scene.add(group);
 
-        // Fit camera
-        camera.position.set(0, 60, 160);
+        // Fit camera at a 3D angle
+        camera.position.set(80, 80, 160);
         controls.target.set(0, 0, 0);
         controls.update();
 
