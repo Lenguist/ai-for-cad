@@ -1,0 +1,10 @@
+0 Stud Group 4
+0 Name: stug-1x4.dat
+0 !LDRAW_ORG Primitive
+
+0 BFC CERTIFY CCW
+
+1 16 0 0 -30 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 0 0 -10 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 0 0 10 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 0 0 30 1 0 0 0 1 0 0 0 1 stud.dat

@@ -207,14 +207,38 @@ function Terminal({ events }: { events: TraceEvent[] }) {
             {ev.text}
           </div>
         );
-        if (ev.type === "tool_call") return (
-          <div key={i} style={{ marginBottom: 4 }}>
-            <span style={{ color: "#4caf50" }}>⚙ {ev.name}</span>
-            <span style={{ color: "var(--muted)", marginLeft: 8 }}>
-              {JSON.stringify(ev.input).slice(0, 120)}
-            </span>
-          </div>
-        );
+        if (ev.type === "tool_call") {
+          const inp = ev.input as any;
+          if (ev.name === "place") {
+            const bricks: any[] = Array.isArray(inp.spec) ? inp.spec : [inp.spec];
+            const COLOR_NAMES: Record<number, string> = { 0: "black", 1: "blue", 2: "green", 4: "red", 7: "lgray", 14: "yellow", 15: "white", 25: "orange", 72: "dgray" };
+            return (
+              <div key={i} style={{ marginBottom: 6 }}>
+                <span style={{ color: "#4caf50" }}>⚙ place</span>
+                <span style={{ color: "var(--muted)", marginLeft: 6, fontSize: 10 }}>{bricks.length} brick{bricks.length !== 1 ? "s" : ""}</span>
+                <div style={{ marginTop: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+                  {bricks.map((b: any, bi: number) => (
+                    <div key={bi} style={{ display: "flex", gap: 12, padding: "2px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 2, fontSize: 11 }}>
+                      <span style={{ color: "var(--blue)", minWidth: 80 }}>{b.id}</span>
+                      <span style={{ color: "#e0e0e0", minWidth: 60 }}>{b.type}</span>
+                      <span style={{ color: "var(--muted)" }}>pos [{b.pos?.join(", ")}]</span>
+                      {b.rot ? <span style={{ color: "var(--muted)" }}>rot {b.rot}°</span> : null}
+                      <span style={{ color: "var(--muted)" }}>{COLOR_NAMES[b.color] ?? `color ${b.color}`}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ marginBottom: 4 }}>
+              <span style={{ color: "#4caf50" }}>⚙ {ev.name}</span>
+              <span style={{ color: "var(--muted)", marginLeft: 8, fontSize: 11 }}>
+                {Object.keys(inp).length > 0 ? JSON.stringify(inp) : ""}
+              </span>
+            </div>
+          );
+        }
         if (ev.type === "tool_result") {
           const result = ev.result as any;
           const isOk = result?.ok !== false && !result?.error;
@@ -495,16 +519,34 @@ export default function BuildPage() {
 // ─── Assembly JSON viewer ─────────────────────────────────────────────────────
 
 function AssemblyJSON({ events }: { events: TraceEvent[] }) {
-  // Extract the last place call's input as the "code"
-  const placeCalls = events.filter((e) => e.type === "tool_call" && (e as any).name === "place");
-  const saveCalls = events.filter((e) => e.type === "tool_call" && (e as any).name === "save");
-  const inspectResults = events.filter((e) => e.type === "tool_result" && (e as any).name === "inspect");
+  // Accumulate all successfully placed bricks from place call pairs
+  const bricks: any[] = [];
+  const clearedAt: number[] = [];
 
-  // Show the last inspect result (full assembly state) if save was called
-  const lastInspect = inspectResults[inspectResults.length - 1] as any;
-  const hasSave = saveCalls.length > 0;
+  events.forEach((ev, i) => {
+    if (ev.type === "tool_call" && (ev as any).name === "clear") clearedAt.push(i);
+  });
 
-  if (!hasSave && placeCalls.length === 0) {
+  const lastClear = clearedAt[clearedAt.length - 1] ?? -1;
+
+  events.forEach((ev, i) => {
+    if (i <= lastClear) return;
+    if (ev.type === "tool_result" && (ev as any).name === "place") {
+      const result = (ev as any).result;
+      if (!result?.ok) return;
+      // Find the matching place call just before this result
+      const callIdx = events.slice(0, i).map((e, j) => ({ e, j })).reverse()
+        .find(({ e }) => e.type === "tool_call" && (e as any).name === "place")?.j;
+      if (callIdx == null) return;
+      const spec = ((events[callIdx] as any).input as any).spec;
+      const newBricks = Array.isArray(spec) ? spec : [spec];
+      bricks.push(...newBricks);
+    }
+  });
+
+  const hasSave = events.some((e) => e.type === "tool_call" && (e as any).name === "save");
+
+  if (bricks.length === 0) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontFamily: "monospace", fontSize: 11 }}>
         assembly code appears here
@@ -512,17 +554,13 @@ function AssemblyJSON({ events }: { events: TraceEvent[] }) {
     );
   }
 
-  const displayData = hasSave && lastInspect?.result
-    ? { bricks: (lastInspect.result as any).bricks }
-    : { last_place: (placeCalls[placeCalls.length - 1] as any)?.input };
-
   return (
     <pre style={{
       flex: 1, overflowY: "auto", margin: 0, padding: "8px 10px",
       fontSize: 10, color: "var(--muted-light)", fontFamily: "monospace",
       background: "transparent", lineHeight: 1.5,
     }}>
-      {JSON.stringify(displayData, null, 2)}
+      {JSON.stringify({ bricks, saved: hasSave }, null, 2)}
     </pre>
   );
 }
