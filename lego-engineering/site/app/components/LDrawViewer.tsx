@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { LDrawLoader } from "three/examples/jsm/loaders/LDrawLoader.js";
+import { LDrawConditionalLineMaterial } from "three/examples/jsm/materials/LDrawConditionalLineMaterial.js";
 
 // Map from our semantic part IDs to LDraw filenames
 const LDRAW_MAP: Record<string, string> = {
@@ -80,6 +81,7 @@ export default function LDrawViewer({ partId }: Props) {
 
     // Load LDraw part
     const loader = new LDrawLoader();
+    loader.setConditionalLineMaterial(new LDrawConditionalLineMaterial());
     loader.setPath("/ldraw/");
     loader.load(
       `parts/${ldrawFile}`,
