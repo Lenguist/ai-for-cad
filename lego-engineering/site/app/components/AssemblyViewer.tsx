@@ -16,6 +16,12 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
   const [status, setStatus] = useState<"loading" | "ok" | "error" | "empty">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Step replay state
+  const [stepMode, setStepMode] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
   // Three.js objects that persist for the lifetime of this component.
   const threeRef = useRef<{
     renderer: THREE.WebGLRenderer;
@@ -111,6 +117,10 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
 
     setStatus("loading");
     setErrorMsg("");
+    setStepMode(false);
+    setPlaying(false);
+    setCurrentStep(0);
+    setTotalSteps(0);
 
     // Remove previous model
     if (three.currentGroup) {
@@ -156,6 +166,11 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
           three.controls.target.set(0, 0, 0);
           three.controls.update();
 
+          // Each top-level child of the group = one brick (one `1 ... file.dat` line)
+          const n = group.children.length;
+          setTotalSteps(n);
+          setCurrentStep(n); // default: show all
+
           setStatus("ok");
         },
         undefined,
@@ -173,9 +188,41 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     };
   }, [ldrUrl, version]);
 
+  // ── Effect 3: toggle brick visibility based on step ──────────────────────
+  useEffect(() => {
+    const group = threeRef.current?.currentGroup;
+    if (!group) return;
+    group.children.forEach((child, i) => {
+      child.visible = !stepMode || i < currentStep;
+    });
+  }, [stepMode, currentStep]);
+
+  // ── Effect 4: auto-play ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!playing) return;
+    if (currentStep >= totalSteps) {
+      setPlaying(false);
+      return;
+    }
+    const timer = setTimeout(() => setCurrentStep((s) => s + 1), 700);
+    return () => clearTimeout(timer);
+  }, [playing, currentStep, totalSteps]);
+
+  const btnStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    color: "#ccc",
+    borderRadius: 4,
+    padding: "2px 8px",
+    fontSize: 11,
+    cursor: "pointer",
+    fontFamily: "monospace",
+  };
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
+
       {status === "loading" && (
         <div style={{
           position: "absolute", inset: 0, display: "flex", alignItems: "center",
@@ -201,6 +248,49 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
           justifyContent: "center", background: "var(--panel)",
         }}>
           <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--muted)" }}>empty assembly</span>
+        </div>
+      )}
+
+      {/* Step replay controls */}
+      {status === "ok" && totalSteps > 0 && (
+        <div style={{
+          position: "absolute", bottom: 8, left: 8, right: 8,
+          display: "flex", alignItems: "center", gap: 6,
+          background: "rgba(10,22,40,0.85)", borderRadius: 6, padding: "6px 8px",
+        }}>
+          <button style={btnStyle} onClick={() => {
+            const next = !stepMode;
+            setStepMode(next);
+            setPlaying(false);
+            if (next) setCurrentStep(0);
+            else setCurrentStep(totalSteps);
+          }}>
+            {stepMode ? "final" : "replay"}
+          </button>
+
+          {stepMode && (
+            <>
+              <button style={btnStyle} onClick={() => { setPlaying(false); setCurrentStep(0); }}>⏮</button>
+              <button style={btnStyle} onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}>◀</button>
+              <button style={{ ...btnStyle, color: playing ? "#4caf50" : "#ccc" }}
+                onClick={() => {
+                  if (playing) { setPlaying(false); }
+                  else { if (currentStep >= totalSteps) setCurrentStep(0); setPlaying(true); }
+                }}>
+                {playing ? "⏸" : "▶"}
+              </button>
+              <button style={btnStyle} onClick={() => setCurrentStep((s) => Math.min(totalSteps, s + 1))}>▶</button>
+              <button style={btnStyle} onClick={() => { setPlaying(false); setCurrentStep(totalSteps); }}>⏭</button>
+              <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--muted)", marginLeft: 4 }}>
+                {currentStep} / {totalSteps}
+              </span>
+              <input
+                type="range" min={0} max={totalSteps} value={currentStep}
+                onChange={(e) => { setPlaying(false); setCurrentStep(Number(e.target.value)); }}
+                style={{ flex: 1, accentColor: "#4a80b4" }}
+              />
+            </>
+          )}
         </div>
       )}
     </div>
