@@ -81,7 +81,7 @@ export default function LDrawViewer({ partId }: Props) {
 
     // Load LDraw part
     const loader = new LDrawLoader();
-    loader.setConditionalLineMaterial(new LDrawConditionalLineMaterial());
+    loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     loader.setPath("/ldraw/");
     loader.load(
       `parts/${ldrawFile}`,
