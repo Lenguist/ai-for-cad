@@ -1,0 +1,142 @@
+{
+  "1x1": {
+    "ldraw_id": "3005",
+    "width_studs": 1,
+    "depth_studs": 1,
+    "height_type": "brick",
+    "description": "Brick 1x1"
+  },
+  "1x2": {
+    "ldraw_id": "3004",
+    "width_studs": 1,
+    "depth_studs": 2,
+    "height_type": "brick",
+    "description": "Brick 1x2"
+  },
+  "1x3": {
+    "ldraw_id": "3622",
+    "width_studs": 1,
+    "depth_studs": 3,
+    "height_type": "brick",
+    "description": "Brick 1x3"
+  },
+  "1x4": {
+    "ldraw_id": "3010",
+    "width_studs": 1,
+    "depth_studs": 4,
+    "height_type": "brick",
+    "description": "Brick 1x4"
+  },
+  "1x6": {
+    "ldraw_id": "3009",
+    "width_studs": 1,
+    "depth_studs": 6,
+    "height_type": "brick",
+    "description": "Brick 1x6"
+  },
+  "1x8": {
+    "ldraw_id": "3008",
+    "width_studs": 1,
+    "depth_studs": 8,
+    "height_type": "brick",
+    "description": "Brick 1x8"
+  },
+  "2x2": {
+    "ldraw_id": "3003",
+    "width_studs": 2,
+    "depth_studs": 2,
+    "height_type": "brick",
+    "description": "Brick 2x2"
+  },
+  "2x3": {
+    "ldraw_id": "3002",
+    "width_studs": 2,
+    "depth_studs": 3,
+    "height_type": "brick",
+    "description": "Brick 2x3"
+  },
+  "2x4": {
+    "ldraw_id": "3001",
+    "width_studs": 2,
+    "depth_studs": 4,
+    "height_type": "brick",
+    "description": "Brick 2x4"
+  },
+  "2x6": {
+    "ldraw_id": "2456",
+    "width_studs": 2,
+    "depth_studs": 6,
+    "height_type": "brick",
+    "description": "Brick 2x6"
+  },
+  "2x8": {
+    "ldraw_id": "3007",
+    "width_studs": 2,
+    "depth_studs": 8,
+    "height_type": "brick",
+    "description": "Brick 2x8"
+  },
+  "plate-1x1": {
+    "ldraw_id": "3024",
+    "width_studs": 1,
+    "depth_studs": 1,
+    "height_type": "plate",
+    "description": "Plate 1x1"
+  },
+  "plate-1x2": {
+    "ldraw_id": "3023",
+    "width_studs": 1,
+    "depth_studs": 2,
+    "height_type": "plate",
+    "description": "Plate 1x2"
+  },
+  "plate-1x4": {
+    "ldraw_id": "3710",
+    "width_studs": 1,
+    "depth_studs": 4,
+    "height_type": "plate",
+    "description": "Plate 1x4"
+  },
+  "plate-1x6": {
+    "ldraw_id": "3666",
+    "width_studs": 1,
+    "depth_studs": 6,
+    "height_type": "plate",
+    "description": "Plate 1x6"
+  },
+  "plate-1x8": {
+    "ldraw_id": "3460",
+    "width_studs": 1,
+    "depth_studs": 8,
+    "height_type": "plate",
+    "description": "Plate 1x8"
+  },
+  "plate-2x2": {
+    "ldraw_id": "3022",
+    "width_studs": 2,
+    "depth_studs": 2,
+    "height_type": "plate",
+    "description": "Plate 2x2"
+  },
+  "plate-2x4": {
+    "ldraw_id": "3020",
+    "width_studs": 2,
+    "depth_studs": 4,
+    "height_type": "plate",
+    "description": "Plate 2x4"
+  },
+  "plate-2x6": {
+    "ldraw_id": "3795",
+    "width_studs": 2,
+    "depth_studs": 6,
+    "height_type": "plate",
+    "description": "Plate 2x6"
+  },
+  "plate-2x8": {
+    "ldraw_id": "3034",
+    "width_studs": 2,
+    "depth_studs": 8,
+    "height_type": "plate",
+    "description": "Plate 2x8"
+  }
+}

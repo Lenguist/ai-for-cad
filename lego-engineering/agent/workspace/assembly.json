@@ -1,44 +1,70 @@
 {
   "bricks": [
     {
-      "id": "s1a",
+      "id": "step1_l0",
       "type": "2x4",
       "pos": [
         0,
         0,
         0
       ],
-      "color": 4
+      "rot": 0,
+      "color": 14
     },
     {
-      "id": "s1b",
+      "id": "step2_l0",
       "type": "2x4",
       "pos": [
         0,
         4,
         0
       ],
+      "rot": 0,
+      "color": 25
+    },
+    {
+      "id": "step2_l1",
+      "type": "2x4",
+      "pos": [
+        0,
+        4,
+        1
+      ],
+      "rot": 0,
+      "color": 25
+    },
+    {
+      "id": "step3_l0",
+      "type": "2x4",
+      "pos": [
+        0,
+        8,
+        0
+      ],
+      "rot": 0,
       "color": 4
     },
     {
-      "id": "s2",
+      "id": "step3_l1",
       "type": "2x4",
       "pos": [
         0,
-        0,
+        8,
         1
       ],
-      "color": 1
+      "rot": 0,
+      "color": 4
     },
     {
-      "id": "s3",
+      "id": "step3_l2",
       "type": "2x4",
       "pos": [
         0,
-        0,
+        8,
         2
       ],
-      "color": 14
+      "rot": 0,
+      "color": 4
     }
   ]
 }

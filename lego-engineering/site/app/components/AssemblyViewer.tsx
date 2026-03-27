@@ -58,6 +58,11 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     dir.position.set(200, 400, 200);
     scene.add(dir);
 
+    // Ground grid
+    const grid = new THREE.GridHelper(400, 20, 0x1a3a5a, 0x1a3a5a);
+    grid.position.y = 0;
+    scene.add(grid);
+
     const obj = { renderer, scene, camera, controls, currentGroup: null, raf: 0, stopped: false };
     threeRef.current = obj;
 
