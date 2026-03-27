@@ -53,7 +53,8 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
 
     const loader = new LDrawLoader();
     loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
-    loader.setPath("/ldraw/");
+    // No setPath — ldrUrl is absolute so it doesn't need a prefix.
+    // partsLibraryPath handles sub-file resolution (3001.dat → /ldraw/parts/3001.dat).
     loader.setPartsLibraryPath("/ldraw/");
 
     // Append cache-buster to URL
