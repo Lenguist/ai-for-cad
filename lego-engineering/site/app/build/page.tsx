@@ -65,6 +65,7 @@ type TraceEvent =
   | { type: "tool_result"; name: string; result: unknown }
   | { type: "done"; text: string }
   | { type: "error"; text: string };
+// ldr / sim events are intercepted in the SSE loop and never added to events[]
 
 type SimResult = { ok: boolean; brick_count: number; error_count: number; summary: string };
 
@@ -291,6 +292,9 @@ export default function BuildPage() {
   const [sim, setSim] = useState<SimResult | null>(null);
   const [ldrExists, setLdrExists] = useState(false);
   const prevSimRef = useRef("");
+  // Blob URL for LDR content received via SSE (Modal/Vercel path)
+  const [ldrBlobUrl, setLdrBlobUrl] = useState<string | null>(null);
+  const ldrBlobRef = useRef<string | null>(null);
 
   // Panel sizes
   const [col1W, setCol1W] = useState(220);
@@ -379,7 +383,20 @@ export default function BuildPage() {
           if (line.startsWith("data: ")) {
             try {
               const ev = JSON.parse(line.slice(6));
-              setEvents((prev) => [...prev, ev]);
+              // Intercept ldr/sim — update viewer state directly, don't add to trace
+              if (ev.type === "ldr" && ev.content) {
+                const blob = new Blob([ev.content], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                if (ldrBlobRef.current) URL.revokeObjectURL(ldrBlobRef.current);
+                ldrBlobRef.current = url;
+                setLdrBlobUrl(url);
+                setLdrExists(true);
+                setVersion((v) => v + 1);
+              } else if (ev.type === "sim" && ev.result) {
+                setSim(ev.result as SimResult);
+              } else {
+                setEvents((prev) => [...prev, ev]);
+              }
             } catch { /* skip malformed */ }
           }
         }
@@ -473,7 +490,10 @@ export default function BuildPage() {
           {/* 3D Viewer */}
           <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
             {ldrExists ? (
-              <AssemblyViewer ldrUrl="/workspace/assembly.ldr" version={version} />
+              <AssemblyViewer
+                ldrUrl={ldrBlobUrl ?? "/workspace/assembly.ldr"}
+                version={version}
+              />
             ) : (
               <div style={{
                 width: "100%", height: "100%", display: "flex", alignItems: "center",

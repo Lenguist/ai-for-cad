@@ -1,19 +1,47 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { spawn } from "child_process";
 import { appendFileSync, mkdirSync, readFileSync } from "fs";
 import path from "path";
 
 const PROJECT_ROOT = path.resolve(process.cwd(), "..");
-const TOOL_RUNNER = path.join(PROJECT_ROOT, "agent", "tool_runner.py");
 const LOGS_DIR = path.join(PROJECT_ROOT, "agent", "logs");
 const BUILDS_LOG = path.join(LOGS_DIR, "builds.jsonl");
-const ASSEMBLY_JSON = path.join(PROJECT_ROOT, "agent", "workspace", "assembly.json");
+
+// If MODAL_TOOL_URL is set, use Modal (Vercel-compatible).
+// Otherwise fall back to spawning python3 locally (dev / Railway).
+const MODAL_TOOL_URL = process.env.MODAL_TOOL_URL;
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Run a Python tool and return the result
-async function runTool(fn: string, args: Record<string, unknown> = {}): Promise<unknown> {
+// ── Tool execution ─────────────────────────────────────────────────────────────
+
+type ToolResponse = {
+  result: unknown;
+  assembly: { bricks: unknown[] };
+  ldr_content: string | null;
+  sim_result: unknown | null;
+};
+
+async function runModalTool(
+  fn: string,
+  args: Record<string, unknown>,
+  assembly: { bricks: unknown[] },
+): Promise<ToolResponse> {
+  const res = await fetch(MODAL_TOOL_URL!, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fn, args, assembly }),
+  });
+  if (!res.ok) throw new Error(`Modal tool error: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function runLocalTool(
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { spawn } = await import("child_process");
+  const TOOL_RUNNER = path.join(PROJECT_ROOT, "agent", "tool_runner.py");
   return new Promise((resolve, reject) => {
     const command = JSON.stringify({ fn, args });
     const proc = spawn("python3", [TOOL_RUNNER], { cwd: PROJECT_ROOT });
@@ -37,16 +65,17 @@ async function runTool(fn: string, args: Record<string, unknown> = {}): Promise<
   });
 }
 
+// ── Logging ────────────────────────────────────────────────────────────────────
+
 function writeBuildLog(entry: object) {
   try {
     mkdirSync(LOGS_DIR, { recursive: true });
     appendFileSync(BUILDS_LOG, JSON.stringify(entry) + "\n", "utf8");
-  } catch (e) {
-    console.error("Failed to write build log:", e);
-  }
+  } catch { /* best-effort */ }
 }
 
-// Tool definitions for Claude
+// ── Tool definitions for Claude ───────────────────────────────────────────────
+
 const TOOLS: Anthropic.Tool[] = [
   {
     name: "search_parts",
@@ -79,10 +108,7 @@ const TOOLS: Anthropic.Tool[] = [
               },
               required: ["id", "type", "pos"],
             },
-            {
-              type: "array",
-              items: { type: "object" },
-            },
+            { type: "array", items: { type: "object" } },
           ],
         },
       },
@@ -169,23 +195,27 @@ ${partsStr}
 - Always save() at the end so the user sees the result`;
 }
 
+// ── POST handler ───────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   const { prompt, selectedParts } = await req.json();
+  if (!prompt) return new Response("Missing prompt", { status: 400 });
 
-  if (!prompt) {
-    return new Response("Missing prompt", { status: 400 });
-  }
-
-  // Clear assembly at start of each build
-  await runTool("clear");
-
+  const useModal = !!MODAL_TOOL_URL;
   const buildId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const tsStart = Date.now();
+
+  // In-memory assembly state (valid for the lifetime of this request)
+  let assembly: { bricks: unknown[] } = { bricks: [] };
+
+  // For local mode: clear the shared workspace file
+  if (!useModal) {
+    await runLocalTool("clear", {});
+  }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // Collect all events for logging
       const events: object[] = [];
 
       const send = (event: object) => {
@@ -193,17 +223,12 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
-      // Full Anthropic message history for LLM trace
-      const messages: Anthropic.MessageParam[] = [
-        { role: "user", content: prompt },
-      ];
-
+      const messages: Anthropic.MessageParam[] = [{ role: "user", content: prompt }];
       let succeeded = false;
 
       try {
         send({ type: "start", text: `Building: "${prompt}"` });
 
-        // Agentic loop
         let iterations = 0;
         const MAX_ITERATIONS = 20;
 
@@ -218,22 +243,19 @@ export async function POST(req: NextRequest) {
             messages,
           });
 
-          // Stream text blocks
           for (const block of response.content) {
             if (block.type === "text" && block.text) {
               send({ type: "text", text: block.text });
             }
           }
 
-          // If no tool calls, we're done
           const toolUseBlocks = response.content.filter((b) => b.type === "tool_use");
-          if (toolUseBlocks.length === 0 || (response.stop_reason as string) === "end_turn") {
+          if (toolUseBlocks.length === 0 || response.stop_reason === "end_turn") {
             succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
           }
 
-          // Execute tool calls
           const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
           for (const block of toolUseBlocks) {
@@ -241,28 +263,47 @@ export async function POST(req: NextRequest) {
 
             send({ type: "tool_call", name: block.name, input: block.input });
 
-            let result: unknown;
+            let toolResult: unknown;
             try {
-              result = await runTool(block.name, block.input as Record<string, unknown>);
+              if (useModal) {
+                const modalResp = await runModalTool(
+                  block.name,
+                  block.input as Record<string, unknown>,
+                  assembly,
+                );
+                assembly = modalResp.assembly;
+                toolResult = modalResp.result;
+
+                // If save() returned LDR content, stream it to the client
+                if (block.name === "save" && modalResp.ldr_content) {
+                  send({ type: "ldr", content: modalResp.ldr_content });
+                }
+                if (modalResp.sim_result) {
+                  send({ type: "sim", result: modalResp.sim_result });
+                }
+              } else {
+                toolResult = await runLocalTool(
+                  block.name,
+                  block.input as Record<string, unknown>,
+                );
+              }
             } catch (err) {
-              result = { error: String(err) };
+              toolResult = { error: String(err) };
             }
 
-            send({ type: "tool_result", name: block.name, result });
+            send({ type: "tool_result", name: block.name, result: toolResult });
 
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
-              content: JSON.stringify(result),
+              content: JSON.stringify(toolResult),
             });
           }
 
-          // Add assistant turn + tool results to conversation
           messages.push({ role: "assistant", content: response.content });
           messages.push({ role: "user", content: toolResults });
 
-          // If done
-          if ((response.stop_reason as string) === "end_turn") {
+          if (response.stop_reason === "end_turn") {
             succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
@@ -277,26 +318,25 @@ export async function POST(req: NextRequest) {
       } finally {
         controller.close();
 
-        // Read final assembly for the log
-        let finalAssembly: unknown = null;
-        try {
-          finalAssembly = JSON.parse(readFileSync(ASSEMBLY_JSON, "utf8"));
-        } catch { /* ok if missing */ }
+        // Read final assembly for log (local mode only; Modal mode has it in-memory)
+        let finalAssembly: unknown = useModal ? assembly : null;
+        if (!useModal) {
+          try {
+            const ASSEMBLY_JSON = path.join(PROJECT_ROOT, "agent", "workspace", "assembly.json");
+            finalAssembly = JSON.parse(readFileSync(ASSEMBLY_JSON, "utf8"));
+          } catch { /* ok */ }
+        }
 
         writeBuildLog({
           id: buildId,
           ts: tsStart,
           duration_ms: Date.now() - tsStart,
+          mode: useModal ? "modal" : "local",
           prompt,
           selected_parts: selectedParts || [],
           succeeded,
           final_assembly: finalAssembly,
-          // Full Anthropic conversation: system prompt + all turns with tool calls/results
-          llm_trace: {
-            system: buildSystemPrompt(selectedParts || []),
-            messages,
-          },
-          // Condensed event stream (what the UI saw)
+          llm_trace: { system: buildSystemPrompt(selectedParts || []), messages },
           events,
         });
       }
