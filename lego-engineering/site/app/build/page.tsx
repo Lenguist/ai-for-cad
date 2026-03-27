@@ -164,7 +164,6 @@ export default function BuildPage() {
         <div style={{ flex: 1, position: "relative" }}>
           {ldrExists ? (
             <AssemblyViewer
-              key={version}
               ldrUrl="/workspace/assembly.ldr"
               version={version}
             />

@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { LDrawLoader } from "three/examples/jsm/loaders/LDrawLoader.js";
 import { LDrawConditionalLineMaterial } from "three/examples/jsm/materials/LDrawConditionalLineMaterial.js";
 
 interface Props {
-  /** URL to the .ldr file to render. Re-renders on change. */
   ldrUrl: string;
-  /** Cache-bust key — increment to force reload even if url is same */
   version?: number;
 }
 
@@ -18,12 +16,21 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
   const [status, setStatus] = useState<"loading" | "ok" | "error" | "empty">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Three.js objects that persist for the lifetime of this component.
+  const threeRef = useRef<{
+    renderer: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    controls: OrbitControls;
+    currentGroup: THREE.Group | null;
+    raf: number;
+    stopped: boolean;
+  } | null>(null);
+
+  // ── Effect 1: initialize Three.js once ──────────────────────────────────
   useEffect(() => {
     const el = mountRef.current;
-    if (!el) return;
-
-    setStatus("loading");
-    setErrorMsg("");
+    if (!el || threeRef.current) return;
 
     const w = el.clientWidth || 600;
     const h = el.clientHeight || 400;
@@ -51,54 +58,12 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     dir.position.set(200, 400, 200);
     scene.add(dir);
 
-    const loader = new LDrawLoader();
-    loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
-    // No setPath — ldrUrl is absolute so it doesn't need a prefix.
-    // partsLibraryPath handles sub-file resolution (3001.dat → /ldraw/parts/3001.dat).
-    loader.setPartsLibraryPath("/ldraw/");
+    const obj = { renderer, scene, camera, controls, currentGroup: null, raf: 0, stopped: false };
+    threeRef.current = obj;
 
-    // Append cache-buster to URL
-    const url = `${ldrUrl}?v=${version}`;
-
-    loader.load(
-      url,
-      (group) => {
-        const box = new THREE.Box3().setFromObject(group);
-        if (box.isEmpty()) {
-          setStatus("empty");
-          return;
-        }
-
-        const center = box.getCenter(new THREE.Vector3());
-        group.position.sub(center);
-
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 120 / maxDim;
-        group.scale.setScalar(scale);
-
-        // LDraw Y is flipped
-        group.rotation.x = Math.PI;
-
-        scene.add(group);
-        camera.position.set(150, 150, 350);
-        controls.target.set(0, 0, 0);
-        controls.update();
-        setStatus("ok");
-      },
-      undefined,
-      (err) => {
-        console.error("AssemblyViewer load error", err);
-        setErrorMsg(String(err));
-        setStatus("error");
-      }
-    );
-
-    let raf: number;
-    let stopped = false;
     const animate = () => {
-      if (stopped) return;
-      raf = requestAnimationFrame(animate);
+      if (obj.stopped) return;
+      obj.raf = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     };
@@ -114,13 +79,76 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     window.addEventListener("resize", onResize);
 
     return () => {
-      stopped = true;
-      cancelAnimationFrame(raf);
+      obj.stopped = true;
+      cancelAnimationFrame(obj.raf);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
-      if (el.contains(renderer.domElement)) {
-        el.removeChild(renderer.domElement);
+      if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
+      threeRef.current = null;
+    };
+  }, []); // only run once
+
+  // ── Effect 2: reload LDraw content when ldrUrl or version changes ────────
+  useEffect(() => {
+    const three = threeRef.current;
+    if (!three) return;
+
+    setStatus("loading");
+    setErrorMsg("");
+
+    // Remove previous model
+    if (three.currentGroup) {
+      three.scene.remove(three.currentGroup);
+      three.currentGroup = null;
+    }
+
+    let cancelled = false;
+
+    const loader = new LDrawLoader();
+    loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
+    loader.setPartsLibraryPath("/ldraw/");
+
+    const url = `${ldrUrl}?v=${version}`;
+
+    loader.load(
+      url,
+      (group) => {
+        if (cancelled) return;
+
+        const box = new THREE.Box3().setFromObject(group);
+        if (box.isEmpty()) {
+          setStatus("empty");
+          return;
+        }
+
+        const center = box.getCenter(new THREE.Vector3());
+        group.position.sub(center);
+
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        group.scale.setScalar(120 / maxDim);
+        group.rotation.x = Math.PI;
+
+        three.scene.add(group);
+        three.currentGroup = group;
+
+        three.camera.position.set(150, 150, 350);
+        three.controls.target.set(0, 0, 0);
+        three.controls.update();
+
+        setStatus("ok");
+      },
+      undefined,
+      (err) => {
+        if (cancelled) return;
+        console.error("AssemblyViewer load error", err);
+        setErrorMsg(String(err));
+        setStatus("error");
       }
+    );
+
+    return () => {
+      cancelled = true;
     };
   }, [ldrUrl, version]);
 
