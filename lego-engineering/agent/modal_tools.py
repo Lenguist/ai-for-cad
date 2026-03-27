@@ -20,19 +20,17 @@ app = modal.App("brickgpt-tools")
 
 ROOT = Path(__file__).parent.parent  # lego-engineering/
 
-# Mount compiler logic and parts DB into the container
-compiler_mount = modal.Mount.from_local_dir(
-    str(ROOT / "compiler"),
-    remote_path="/app/compiler",
-)
-parts_mount = modal.Mount.from_local_dir(
-    str(ROOT / "parts"),
-    remote_path="/app/parts",
+# Bake compiler logic and parts DB into the image at deploy time
+image = (
+    modal.Image.debian_slim()
+    .pip_install("fastapi[standard]")
+    .add_local_dir(str(ROOT / "compiler"), remote_path="/app/compiler")
+    .add_local_dir(str(ROOT / "parts"), remote_path="/app/parts")
 )
 
 
-@app.function(mounts=[compiler_mount, parts_mount], keep_warm=1)
-@modal.web_endpoint(method="POST")
+@app.function(image=image, min_containers=1)
+@modal.fastapi_endpoint(method="POST")
 def run_tool(request: dict) -> dict:
     """
     Stateless tool execution. Assembly state is passed in and returned out —
