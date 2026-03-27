@@ -438,7 +438,7 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => { resize(); renderer.render(scene, camera); });
 resize();
 
 // ── Animation system ────────────────────────────────────────────────────────
@@ -535,7 +535,7 @@ function togglePlay() {
 
 function animate(t) {
   requestAnimationFrame(animate);
-  controls.update();
+  const moved = controls.update();
 
   if (isPlaying && lastFrameTime !== null) {
     const dt = Math.min((t - lastFrameTime) / 1000, 0.05) * ANIM_SPEED;
@@ -548,10 +548,12 @@ function animate(t) {
       const ax = animRack.axisKey;
       animRack.mesh.position[ax] = animRack.originPos[ax] + offset;
     }
+    lastFrameTime = t;
+    renderer.render(scene, camera);
+  } else {
+    lastFrameTime = t;
+    if (moved) renderer.render(scene, camera);  // only render when camera moves
   }
-  lastFrameTime = t;
-
-  renderer.render(scene, camera);
 }
 animate();
 
@@ -795,6 +797,7 @@ async function renderAssembly(assembly) {
     camera.position.set(cx + dist * 0.6, cy + dist * 0.5, cz + dist * 0.8);
     controls.update();
   }
+  renderer.render(scene, camera);  // render once after assembly loads
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
@@ -1753,10 +1756,7 @@ function initLibViewer() {
   libScene.add(libPartGroup);
 }
 
-function animateLib() {
-  if (!libAnimating) return;
-  requestAnimationFrame(animateLib);
-  libControls.update();
+function renderLib() {
   const canvas = document.getElementById('lib-canvas');
   const w = canvas.clientWidth, h = canvas.clientHeight;
   if (w > 0 && h > 0) {
@@ -1765,6 +1765,13 @@ function animateLib() {
     libCamera.updateProjectionMatrix();
   }
   libRenderer.render(libScene, libCamera);
+}
+
+function animateLib() {
+  // demand rendering: only render when controls are moving
+  if (!libAnimating) return;
+  requestAnimationFrame(animateLib);
+  if (libControls.update()) renderLib();  // update() returns true if camera moved
 }
 
 async function showLibraryPart(type, pushState) {
@@ -1788,6 +1795,7 @@ async function showLibraryPart(type, pushState) {
   libCamera.position.copy(center).add(new THREE.Vector3(size, size * 0.8, size * 1.2));
   libControls.target.copy(center);
   libControls.update();
+  renderLib();  // render once after loading
 
   document.getElementById('lib-hint').style.display = 'none';
 
