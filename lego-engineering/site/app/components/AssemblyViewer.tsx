@@ -95,7 +95,9 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     );
 
     let raf: number;
+    let stopped = false;
     const animate = () => {
+      if (stopped) return;
       raf = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
@@ -112,6 +114,7 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     window.addEventListener("resize", onResize);
 
     return () => {
+      stopped = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       renderer.dispose();

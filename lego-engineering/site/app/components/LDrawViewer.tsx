@@ -121,7 +121,9 @@ export default function LDrawViewer({ partId }: Props) {
 
     // Animate
     let raf: number;
+    let stopped = false;
     const animate = () => {
+      if (stopped) return;
       raf = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
@@ -139,10 +141,13 @@ export default function LDrawViewer({ partId }: Props) {
     window.addEventListener("resize", onResize);
 
     return () => {
+      stopped = true;
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
-      el.removeChild(renderer.domElement);
+      if (el.contains(renderer.domElement)) {
+        el.removeChild(renderer.domElement);
+      }
     };
   }, [partId]);
 
