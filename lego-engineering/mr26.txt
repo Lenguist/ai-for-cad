@@ -1,0 +1,39 @@
+# Session Notes — 2026-03-26
+
+## What we built
+- physics.py: geometry-driven kinematic compiler (no semantic labels, contact from geometry)
+- test_physics.py: 13 tests all passing
+- server.py: local dev server (port 8765), threaded, serves HTML + /physics API + /ldraw/ files
+- Library page: /library/{part-id} URL routing, shows parts from partsLib with 3D preview
+- Downloaded 23 LDraw .dat parts + 70+ primitives + s/ subparts + 48/ hi-res primitives
+- Bundle endpoint /ldraw-bundle: serves all primitives + subparts as single JSON for cache preloading
+- Demand rendering: only re-render on camera move or assembly change (not 60fps loop)
+
+## Problems encountered
+- LDraw in browser (Three.js r128 LDrawLoader) is slow and heavy
+  - setPartsLibraryPath doesn't exist in r128, it's setPath
+  - Server returning 200 placeholder for missing files broke sub-part resolution (loader stops at first 200)
+  - Single-threaded server caused 86s waits when bundle was being sent
+  - 48/ hi-res primitive subdir not included in bundle → 404 spam
+  - LDraw format has many sub-parts/primitives → many HTTP round trips even with caching
+  - Continuous 60fps render loop was heavy even when nothing was moving
+
+## Root problem
+LDraw is a desktop CAD format from the 90s. Not designed for real-time WebGL.
+We're fighting the format, not building the tool.
+
+## Principled solutions to consider
+A) Pre-bake geometry offline: run LDraw→Three.js conversion once, export each part as .glb
+   Browser just loads GLTFLoader('gear-8t.glb') — one request, binary, instant
+   One-time Node.js script using three + LDrawLoader server-side
+
+B) Use existing LDraw web renderer libraries (ldraw-web, proper npm packages)
+
+C) Use BrickLink Studio / Mecabricks — already have optimized web-ready meshes for every part
+
+D) Drop visual fidelity: parametric shapes with correct dimensions (beam = right-aspect rectangle,
+   gear = cylinder with right radius). Focus on mechanical accuracy not visual. Schematic not photo.
+
+## Recommendation
+Option A (pre-bake to .glb) — run once offline, serve binary, fast browser load.
+Check if Node.js available, use three npm package to load .dat and export .glb per part.
