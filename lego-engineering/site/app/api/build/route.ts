@@ -1,10 +1,14 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { spawn } from "child_process";
+import { appendFileSync, mkdirSync, readFileSync } from "fs";
 import path from "path";
 
 const PROJECT_ROOT = path.resolve(process.cwd(), "..");
 const TOOL_RUNNER = path.join(PROJECT_ROOT, "agent", "tool_runner.py");
+const LOGS_DIR = path.join(PROJECT_ROOT, "agent", "logs");
+const BUILDS_LOG = path.join(LOGS_DIR, "builds.jsonl");
+const ASSEMBLY_JSON = path.join(PROJECT_ROOT, "agent", "workspace", "assembly.json");
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -31,6 +35,15 @@ async function runTool(fn: string, args: Record<string, unknown> = {}): Promise<
       }
     });
   });
+}
+
+function writeBuildLog(entry: object) {
+  try {
+    mkdirSync(LOGS_DIR, { recursive: true });
+    appendFileSync(BUILDS_LOG, JSON.stringify(entry) + "\n", "utf8");
+  } catch (e) {
+    console.error("Failed to write build log:", e);
+  }
 }
 
 // Tool definitions for Claude
@@ -166,18 +179,28 @@ export async function POST(req: NextRequest) {
   // Clear assembly at start of each build
   await runTool("clear");
 
+  const buildId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const tsStart = Date.now();
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      // Collect all events for logging
+      const events: object[] = [];
+
       const send = (event: object) => {
+        events.push(event);
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
-      try {
-        const messages: Anthropic.MessageParam[] = [
-          { role: "user", content: prompt },
-        ];
+      // Full Anthropic message history for LLM trace
+      const messages: Anthropic.MessageParam[] = [
+        { role: "user", content: prompt },
+      ];
 
+      let succeeded = false;
+
+      try {
         send({ type: "start", text: `Building: "${prompt}"` });
 
         // Agentic loop
@@ -205,6 +228,7 @@ export async function POST(req: NextRequest) {
           // If no tool calls, we're done
           const toolUseBlocks = response.content.filter((b) => b.type === "tool_use");
           if (toolUseBlocks.length === 0 || (response.stop_reason as string) === "end_turn") {
+            succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
           }
@@ -239,6 +263,7 @@ export async function POST(req: NextRequest) {
 
           // If done
           if ((response.stop_reason as string) === "end_turn") {
+            succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
           }
@@ -251,6 +276,29 @@ export async function POST(req: NextRequest) {
         send({ type: "error", text: String(err) });
       } finally {
         controller.close();
+
+        // Read final assembly for the log
+        let finalAssembly: unknown = null;
+        try {
+          finalAssembly = JSON.parse(readFileSync(ASSEMBLY_JSON, "utf8"));
+        } catch { /* ok if missing */ }
+
+        writeBuildLog({
+          id: buildId,
+          ts: tsStart,
+          duration_ms: Date.now() - tsStart,
+          prompt,
+          selected_parts: selectedParts || [],
+          succeeded,
+          final_assembly: finalAssembly,
+          // Full Anthropic conversation: system prompt + all turns with tool calls/results
+          llm_trace: {
+            system: buildSystemPrompt(selectedParts || []),
+            messages,
+          },
+          // Condensed event stream (what the UI saw)
+          events,
+        });
       }
     },
   });

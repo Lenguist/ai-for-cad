@@ -1,0 +1,9 @@
+site/node_modules
+site/.next
+agent/logs/
+agent/workspace/assembly.json
+agent/workspace/assembly.ldr
+agent/workspace/sim_result.json
+site/public/workspace/
+__pycache__/
+*.pyc

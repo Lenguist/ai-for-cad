@@ -1,0 +1,13 @@
+site/node_modules
+site/.next
+brickgpt
+benchmark
+mar11-demo-attempt
+lego-web
+lego-web-static
+lego-assembly-compiler
+agent/logs
+agent/workspace/*.ldr
+.git
+*.pyc
+__pycache__
