@@ -1,34 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0d0d0d;
-  --fg: #e8e8e8;
-  --accent: #f97316;
-  --accent-dim: rgba(249, 115, 22, 0.15);
-  --muted: #666;
-  --muted-light: #999;
-  --border: #252525;
-  --card: #141414;
-  --card-hover: #1a1a1a;
+  --bg: #1a1a2e;
+  --panel: #16213e;
+  --panel-dark: #0f1f3d;
+  --border: #0f3460;
+  --border-light: #1a4a80;
+  --accent: #e94560;
+  --blue: #7eb8e8;
+  --fg: #e0e0e0;
+  --muted: #888;
+  --muted-light: #aaa;
 }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-geist), Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.65;
+  font-family: 'Segoe UI', var(--font-geist), sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 .mono {
-  font-family: var(--font-geist-mono), monospace;
-}
-
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(249, 115, 22, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(249, 115, 22, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
 }
