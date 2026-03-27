@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { LDrawLoader } from "three/examples/jsm/loaders/LDrawLoader.js";
-import { LDrawConditionalLineMaterial } from "three/examples/jsm/materials/LDrawConditionalLineMaterial.js";
 
 interface Props {
   ldrUrl: string;
@@ -65,7 +64,14 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
       if (obj.stopped) return;
       obj.raf = requestAnimationFrame(animate);
       controls.update();
-      renderer.render(scene, camera);
+      // Filter out any null children LDrawLoader may have transiently introduced
+      scene.children = scene.children.filter(Boolean);
+      try {
+        renderer.render(scene, camera);
+      } catch {
+        // Renderer disposed or scene not yet ready — stop loop
+        obj.stopped = true;
+      }
     };
     animate();
 
@@ -105,7 +111,6 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     let cancelled = false;
 
     const loader = new LDrawLoader();
-    loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     loader.setPartsLibraryPath("/ldraw/");
 
     const url = `${ldrUrl}?v=${version}`;
