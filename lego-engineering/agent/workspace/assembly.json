@@ -1,7 +1,7 @@
 {
   "bricks": [
     {
-      "id": "step1_l0",
+      "id": "brick_1",
       "type": "2x4",
       "pos": [
         0,
@@ -9,62 +9,7 @@
         0
       ],
       "rot": 0,
-      "color": 14
-    },
-    {
-      "id": "step2_l0",
-      "type": "2x4",
-      "pos": [
-        0,
-        4,
-        0
-      ],
-      "rot": 0,
-      "color": 25
-    },
-    {
-      "id": "step2_l1",
-      "type": "2x4",
-      "pos": [
-        0,
-        4,
-        1
-      ],
-      "rot": 0,
-      "color": 25
-    },
-    {
-      "id": "step3_l0",
-      "type": "2x4",
-      "pos": [
-        0,
-        8,
-        0
-      ],
-      "rot": 0,
-      "color": 4
-    },
-    {
-      "id": "step3_l1",
-      "type": "2x4",
-      "pos": [
-        0,
-        8,
-        1
-      ],
-      "rot": 0,
-      "color": 4
-    },
-    {
-      "id": "step3_l2",
-      "type": "2x4",
-      "pos": [
-        0,
-        8,
-        2
-      ],
-      "rot": 0,
-      "color": 4
+      "color": 1
     }
   ]
 }

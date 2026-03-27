@@ -34,6 +34,8 @@ PARTS_PATH = ROOT / "parts" / "bricks.json"
 # Also write LDraw to site public dir so website can serve it directly
 SITE_PUBLIC_LDR = ROOT / "site" / "public" / "workspace" / "assembly.ldr"
 SITE_PUBLIC_SIM = ROOT / "site" / "public" / "workspace" / "sim_result.json"
+# Written by save() AFTER the LDR — this is what the website polls to refresh
+SITE_PUBLIC_READY = ROOT / "site" / "public" / "workspace" / "ready.json"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -274,6 +276,14 @@ def save(filename: str = "assembly.ldr") -> dict:
     # Mirror to site public dir so website auto-refreshes
     SITE_PUBLIC_LDR.parent.mkdir(parents=True, exist_ok=True)
     SITE_PUBLIC_LDR.write_text(ldr_content)
+
+    # Write ready.json AFTER the LDR — this is what the website polls
+    import time as _time
+    ready = {
+        "ts": int(_time.time() * 1000),
+        "brick_count": len(assembly["bricks"]),
+    }
+    SITE_PUBLIC_READY.write_text(json.dumps(ready))
 
     return {
         "ok": True,

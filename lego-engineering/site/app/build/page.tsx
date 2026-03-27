@@ -243,24 +243,27 @@ export default function BuildPage() {
   const selectAll = () => setSelected(new Set(allPartIds));
   const clearAll = () => setSelected(new Set());
 
-  // Poll sim results
+  // Poll ready.json (written by save() AFTER the LDR is flushed) to trigger viewer refresh
   useEffect(() => {
     const poll = async () => {
       try {
-        const r = await fetch(`/workspace/sim_result.json?t=${Date.now()}`);
+        // ready.json is written by save() only after assembly.ldr is written
+        const r = await fetch(`/workspace/ready.json?t=${Date.now()}`);
         if (!r.ok) return;
-        const data = await r.json();
-        const json = JSON.stringify(data);
-        if (json !== prevSimRef.current) {
-          prevSimRef.current = json;
-          setSim(data);
+        const ready = await r.json();
+        const key = String(ready.ts);
+        if (key !== prevSimRef.current) {
+          prevSimRef.current = key;
           setVersion((v) => v + 1);
           setLdrExists(true);
+          // Also fetch sim_result for display
+          const sr = await fetch(`/workspace/sim_result.json?t=${Date.now()}`);
+          if (sr.ok) setSim(await sr.json());
         }
       } catch { /* no file yet */ }
     };
     poll();
-    const id = setInterval(poll, 2000);
+    const id = setInterval(poll, 1000);
     return () => clearInterval(id);
   }, []);
 

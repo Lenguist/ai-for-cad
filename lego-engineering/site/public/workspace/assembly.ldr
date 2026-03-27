@@ -2,17 +2,7 @@
 0 Name: assembly.ldr
 0 Author: MechE-Claude
 
-0 STEP  // brick step1_l0
-1 14 10.00 0.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick step2_l0
-1 25 10.00 0.00 110.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick step2_l1
-1 25 10.00 -24.00 110.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick step3_l0
-1 4 10.00 0.00 190.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick step3_l1
-1 4 10.00 -24.00 190.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick step3_l2
-1 4 10.00 -48.00 190.00 1 0 0 0 1 0 0 0 1 3001.dat
+0 STEP  // brick brick_1
+1 1 10.00 0.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
 
 0 NOFILE
