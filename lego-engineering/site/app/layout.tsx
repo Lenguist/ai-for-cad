@@ -7,25 +7,20 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lego Engineering — Open Benchmark for AI-Generated Brick Assemblies",
+  title: "Meche — AI LEGO Assembly Agent",
   description:
-    "The first open benchmark comparing AI models on LEGO and brick assembly generation. Reproduce academic results, test frontier models, track progress.",
+    "Describe a LEGO mechanism in plain english. Meche finds the parts, assembles them, and simulates the result.",
   openGraph: {
-    title: "Lego Engineering — Open Benchmark for AI-Generated Brick Assemblies",
-    description: "Open benchmark comparing AI models on LEGO and brick assembly generation.",
+    title: "Meche — AI LEGO Assembly Agent",
+    description: "Describe a LEGO mechanism. Meche builds it.",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Lego Engineering — Open Benchmark for AI-Generated Brick Assemblies",
-    description: "Open benchmark comparing AI models on LEGO and brick assembly generation.",
   },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${geist.variable} ${geistMono.variable} font-[family-name:var(--font-geist)] antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable}`}>
         {children}
         <Analytics />
       </body>
