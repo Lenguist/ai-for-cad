@@ -6,50 +6,50 @@ const steps = [
     num: "00",
     title: "Parts Library",
     href: "/parts",
-    status: "LIVE",
-    statusColor: "#4caf50",
-    statusBg: "#0a2a0a",
-    description: "26 Technic parts + 20 standard bricks. Search, filter by category, view specs.",
-    userSees: "Search box + part list with specs table",
+    status: "BUILDING",
+    statusColor: "#d4a843",
+    statusBg: "#3a2a00",
+    description: "Index LDraw parts with connection points, dimensions, categories. Search and filter.",
+    userSees: "Search box + part grid with specs",
   },
   {
     num: "01",
     title: "Renderer",
     href: "/viewer",
-    status: "LIVE",
-    statusColor: "#4caf50",
-    statusBg: "#0a2a0a",
-    description: "LDraw part ID → Three.js 3D render. Orbit controls, auto-rotation.",
-    userSees: "Select part → interactive 3D view",
+    status: "BUILDING",
+    statusColor: "#d4a843",
+    statusBg: "#3a2a00",
+    description: "Part ID or assembly JSON in → PNG render out. Programmatic pipeline.",
+    userSees: "Input a part ID, get back an image of the brick",
   },
   {
     num: "02",
-    title: "Compiler + Validator",
-    href: "/build",
-    status: "LIVE",
-    statusColor: "#4caf50",
-    statusBg: "#0a2a0a",
-    description: "DSL JSON → L1 semantic + L2 physical validation → LDraw file. Agent tools: place, remove, save.",
-    userSees: "Live assembly viewer — auto-refreshes as agent builds",
+    title: "Assembly Sandbox",
+    href: "/sandbox",
+    status: "UPCOMING",
+    statusColor: "#7eb8e8",
+    statusBg: "#1a2a3a",
+    description: "JSON assembly spec → compiler validates connections + overlaps → renders result.",
+    userSees: "JSON editor left, render + errors right",
   },
   {
     num: "03",
-    title: "Agent Build Loop",
+    title: "Build",
     href: "/build",
     status: "UPCOMING",
     statusColor: "#7eb8e8",
     statusBg: "#1a2a3a",
-    description: "Text prompt → Claude Code agent searches parts, places bricks, iterates on errors.",
-    userSees: "Prompt → streaming agent log → live 3D render",
+    description: "Text prompt → agent searches parts, writes assembly, compiles, iterates on errors.",
+    userSees: "Prompt input → streaming agent log → final render",
   },
   {
     num: "04",
-    title: "Kinematic Simulator",
+    title: "Simulator",
     href: "/simulate",
     status: "UPCOMING",
     statusColor: "#7eb8e8",
     statusBg: "#1a2a3a",
-    description: "Technic phase: motor → gear train → L3 kinematic sim → RPM, direction, stall detection.",
+    description: "Apply motor to assembly → rigid body sim → output RPM, torque, motion check.",
     userSees: "Motor inputs → results table (does the mechanism work?)",
   },
 ];
@@ -144,8 +144,8 @@ export default function Home() {
               current focus
             </div>
             <p style={{ fontSize: 13, color: "var(--muted-light)", lineHeight: 1.7 }}>
-              Phase 1 done: parts DB, compiler, L1+L2 validators, agent tools.
-              Next: Phase 2 — Technic parts, gear kinematics, agent prompt loop.
+              Steps 00 + 01 in parallel: build the parts index and get a single brick rendering
+              correctly. Everything else depends on these.
             </p>
           </div>
 

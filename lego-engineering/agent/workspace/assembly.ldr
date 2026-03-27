@@ -1,0 +1,14 @@
+0 Compiled by MechE-Claude compiler
+0 Name: assembly.ldr
+0 Author: MechE-Claude
+
+0 STEP  // brick s1a
+1 4 10.00 0.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
+0 STEP  // brick s1b
+1 4 10.00 0.00 110.00 1 0 0 0 1 0 0 0 1 3001.dat
+0 STEP  // brick s2
+1 1 10.00 -24.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
+0 STEP  // brick s3
+1 14 10.00 -48.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
+
+0 NOFILE
