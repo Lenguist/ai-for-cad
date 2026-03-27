@@ -84,15 +84,19 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     const onResize = () => {
       const w2 = el.clientWidth;
       const h2 = el.clientHeight;
+      if (!w2 || !h2) return;
       camera.aspect = w2 / h2;
       camera.updateProjectionMatrix();
       renderer.setSize(w2, h2);
     };
+    const ro = new ResizeObserver(onResize);
+    ro.observe(el);
     window.addEventListener("resize", onResize);
 
     return () => {
       obj.stopped = true;
       cancelAnimationFrame(obj.raf);
+      ro.disconnect();
       window.removeEventListener("resize", onResize);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
