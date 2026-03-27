@@ -104,8 +104,8 @@ export default function LDrawViewer({ partId }: Props) {
 
         scene.add(group);
 
-        // Fit camera at a 3D angle
-        camera.position.set(80, 80, 160);
+        // Fit camera at a 3D angle, zoomed out
+        camera.position.set(120, 120, 280);
         controls.target.set(0, 0, 0);
         controls.update();
 
