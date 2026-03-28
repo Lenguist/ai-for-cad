@@ -1,8 +1,8 @@
 {
   "bricks": [
     {
-      "id": "layer0",
-      "type": "2x4",
+      "id": "base_1",
+      "type": "2x2",
       "pos": [
         0,
         0,
@@ -12,26 +12,26 @@
       "color": 4
     },
     {
-      "id": "layer1",
-      "type": "2x2",
+      "id": "mid_1",
+      "type": "1x2",
       "pos": [
         0,
-        1,
+        0,
         1
       ],
       "rot": 0,
       "color": 14
     },
     {
-      "id": "layer2",
-      "type": "1x2",
+      "id": "top_1",
+      "type": "1x1",
       "pos": [
         0,
-        2,
+        0,
         2
       ],
       "rot": 0,
-      "color": 2
+      "color": 15
     }
   ]
 }

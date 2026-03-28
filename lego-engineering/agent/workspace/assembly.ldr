@@ -2,11 +2,11 @@
 0 Name: assembly.ldr
 0 Author: MechE-Claude
 
-0 STEP  // brick layer0
-1 4 10.00 0.00 30.00 1 0 0 0 1 0 0 0 1 3001.dat
-0 STEP  // brick layer1
-1 14 10.00 -24.00 30.00 1 0 0 0 1 0 0 0 1 3003.dat
-0 STEP  // brick layer2
-1 2 0.00 -48.00 50.00 1 0 0 0 1 0 0 0 1 3004.dat
+0 STEP  // brick base_1
+1 4 10.00 0.00 10.00 1 0 0 0 1 0 0 0 1 3003.dat
+0 STEP  // brick mid_1
+1 14 0.00 -24.00 10.00 1 0 0 0 1 0 0 0 1 3004.dat
+0 STEP  // brick top_1
+1 15 0.00 -48.00 0.00 1 0 0 0 1 0 0 0 1 3005.dat
 
 0 NOFILE
