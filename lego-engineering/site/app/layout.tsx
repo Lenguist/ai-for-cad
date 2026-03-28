@@ -7,12 +7,12 @@ const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Meche — AI LEGO Assembly Agent",
+  title: "BrickGPT — AI LEGO Assembly Demo",
   description:
-    "Describe a LEGO mechanism in plain english. Meche finds the parts, assembles them, and simulates the result.",
+    "Describe a LEGO structure in plain English. BrickGPT plans, places, and validates the assembly in real time.",
   openGraph: {
-    title: "Meche — AI LEGO Assembly Agent",
-    description: "Describe a LEGO mechanism. Meche builds it.",
+    title: "BrickGPT — AI LEGO Assembly Demo",
+    description: "Describe a LEGO structure. BrickGPT builds it.",
     type: "website",
   },
 };
