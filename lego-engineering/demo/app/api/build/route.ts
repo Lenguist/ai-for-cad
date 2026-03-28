@@ -255,7 +255,7 @@ export async function POST(req: NextRequest) {
           }
 
           const toolUseBlocks = response.content.filter((b) => b.type === "tool_use");
-          if (toolUseBlocks.length === 0 || response.stop_reason === "end_turn") {
+          if (toolUseBlocks.length === 0 || (response.stop_reason as string) === "end_turn") {
             succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
           messages.push({ role: "assistant", content: response.content });
           messages.push({ role: "user", content: toolResults });
 
-          if (response.stop_reason === "end_turn") {
+          if ((response.stop_reason as string) === "end_turn") {
             succeeded = true;
             send({ type: "done", text: "Build complete." });
             break;
