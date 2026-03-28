@@ -137,7 +137,8 @@ export default function AssemblyViewer({ ldrUrl, version = 0 }: Props) {
     loader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
     loader.setPartsLibraryPath("/ldraw/");
 
-    const url = `${ldrUrl}?v=${version}`;
+    // Blob URLs are already unique per creation — don't append query params (breaks them)
+    const url = ldrUrl.startsWith("blob:") ? ldrUrl : `${ldrUrl}?v=${version}`;
 
     // Load color definitions first, then load the assembly
     (loader as any).preloadMaterials("/ldraw/LDConfig.ldr").then(() => {
