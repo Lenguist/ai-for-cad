@@ -1,11 +1,5 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { appendFileSync, mkdirSync, readFileSync } from "fs";
-import path from "path";
-
-const PROJECT_ROOT = path.resolve(process.cwd(), "..");
-const LOGS_DIR = path.join(PROJECT_ROOT, "agent", "logs");
-const BUILDS_LOG = path.join(LOGS_DIR, "builds.jsonl");
 
 // If MODAL_TOOL_URL is set, use Modal (Vercel-compatible).
 // Otherwise fall back to spawning python3 locally (dev / Railway).
@@ -41,6 +35,8 @@ async function runLocalTool(
   args: Record<string, unknown>,
 ): Promise<unknown> {
   const { spawn } = await import("child_process");
+  const path = await import("path");
+  const PROJECT_ROOT = path.resolve(process.cwd(), "..");
   const TOOL_RUNNER = path.join(PROJECT_ROOT, "agent", "tool_runner.py");
   return new Promise((resolve, reject) => {
     const command = JSON.stringify({ fn, args });
@@ -68,10 +64,19 @@ async function runLocalTool(
 // ── Logging ────────────────────────────────────────────────────────────────────
 
 function writeBuildLog(entry: object) {
-  try {
-    mkdirSync(LOGS_DIR, { recursive: true });
-    appendFileSync(BUILDS_LOG, JSON.stringify(entry) + "\n", "utf8");
-  } catch { /* best-effort */ }
+  // On Vercel: log to console (no persistent fs). Locally: write to file.
+  if (!process.env.MODAL_TOOL_URL) {
+    try {
+      const path = require("path");
+      const fs = require("fs");
+      const root = path.resolve(process.cwd(), "..");
+      const dir = path.join(root, "agent", "logs");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.appendFileSync(path.join(dir, "builds.jsonl"), JSON.stringify(entry) + "\n", "utf8");
+    } catch { /* best-effort */ }
+  } else {
+    console.log("[build-log]", JSON.stringify(entry).slice(0, 200));
+  }
 }
 
 // ── Tool definitions for Claude ───────────────────────────────────────────────
@@ -322,8 +327,10 @@ export async function POST(req: NextRequest) {
         let finalAssembly: unknown = useModal ? assembly : null;
         if (!useModal) {
           try {
-            const ASSEMBLY_JSON = path.join(PROJECT_ROOT, "agent", "workspace", "assembly.json");
-            finalAssembly = JSON.parse(readFileSync(ASSEMBLY_JSON, "utf8"));
+            const path = require("path");
+            const fs = require("fs");
+            const root = path.resolve(process.cwd(), "..");
+            finalAssembly = JSON.parse(fs.readFileSync(path.join(root, "agent", "workspace", "assembly.json"), "utf8"));
           } catch { /* ok */ }
         }
 
