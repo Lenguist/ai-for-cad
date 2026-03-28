@@ -1,0 +1,165 @@
+DEPLOYMENT REVIEW — March 27, 2026
+MechE-Claude / LEGO Engineering Demo
+=====================================
+
+## Summary
+Full deployment of the MechE-Claude demo site to Vercel with Modal-based Python
+tool execution. Went from local-only dev setup to a live, cloud-hosted agentic
+LEGO assembly builder.
+
+---
+
+## 1. Rotation Bug Fix (compiler + validator)
+
+Problem: bricks placed with rot=90/270 were appearing at wrong positions in the
+3D viewer because the compiler was using a "rotating anchor" convention instead
+of always treating pos as the min-stud corner.
+
+Fix in compiler/compiler.py:
+- Changed signed trig to absolute values so the LDraw center offset is always
+  positive regardless of rotation:
+    cos_r = abs(math.cos(rot_rad))
+    sin_r = abs(math.sin(rot_rad))
+
+Fix in compiler/validator_physical.py:
+- Corrected footprint cell generation for rot=90/270:
+    cells.add((sx + dy, sy + dx))  # axes swapped
+
+Commit: d2470efa
+
+---
+
+## 2. 3D Viewer Upgrades (AssemblyViewer.tsx)
+
+Step replay mode:
+- LDrawLoader creates one child Group per brick. Added stepMode state that
+  controls child.visible to animate placement order.
+- UI: replay/final toggle, ⏮◀▶▶⏭ controls, slider, 700ms auto-play timer.
+
+Auto-rotate toggle:
+- Small ↻ button in the viewer corner toggles OrbitControls.autoRotate.
+
+Commit: 2d7d0106
+
+---
+
+## 3. Build Logging
+
+On every completed build, the route logs a full JSONL entry to agent/logs/builds.jsonl
+containing:
+- build ID, timestamp, duration
+- prompt + selected_parts
+- succeeded flag
+- final assembly JSON
+- full LLM trace (system prompt + all messages)
+- all SSE events
+
+On Vercel (where filesystem writes aren't persistent), it logs a truncated version
+to console instead. Controlled by presence of MODAL_TOOL_URL env var.
+
+Commit: 2d7d0106
+
+---
+
+## 4. Folder Reorganization
+
+Old structure: lego-engineering/site/
+New structure: lego-engineering/demo/  ← Vercel root directory
+
+Old sites moved to: lego-engineering/website-archives/
+- lego-web
+- lego-web-static
+- lego-assembly-compiler
+- brickgpt (original)
+
+Vercel is configured to deploy from lego-engineering/demo/.
+
+---
+
+## 5. Modal Offload (stateless Python tool execution)
+
+Problem: Vercel serverless functions can't spawn python3 subprocesses.
+
+Solution: agent/modal_tools.py — a Modal web endpoint that accepts
+{fn, args, assembly} and returns {result, assembly, ldr_content, sim_result}.
+
+- Assembly state is passed in and out of every call (fully stateless).
+- save() returns LDR content as a string (no filesystem writes).
+- Deployed at: https://maksym-d-bondarenko--brickgpt-tools-run-tool.modal.run
+- Uses min_containers=1 to avoid cold start latency.
+- Modal 1.4 API (three deprecations fixed during deploy):
+    modal.Mount → image.add_local_dir()
+    keep_warm=1 → min_containers=1
+    @modal.web_endpoint → @modal.fastapi_endpoint
+
+Dual-mode route (demo/app/api/build/route.ts):
+- If MODAL_TOOL_URL is set → call Modal endpoint (Vercel mode)
+- Else → spawn python3 locally (dev/Railway mode)
+- When save() returns ldr_content, emits {type:"ldr", content} SSE event
+- Frontend creates Blob URL and passes directly to AssemblyViewer (no filesystem)
+
+Commit: bf7b584c, 774a2506
+
+---
+
+## 6. Vercel Deployment — Build Errors Fixed
+
+Error 1: Turbopack bundling 36,080 files
+  Cause: path.resolve(process.cwd(), "..") at module level caused Turbopack
+         to traverse and attempt to bundle the entire parent directory.
+  Fix: removed all module-level path/fs imports; moved inside function bodies
+       using require() (lazy, not analyzed at build time).
+  Commit: 03957285
+
+Error 2: TypeScript stop_reason type mismatch
+  Cause: Vercel's TS strict mode rejected response.stop_reason === "end_turn"
+         because the SDK's type union didn't include "end_turn".
+  Fix: cast as string → (response.stop_reason as string) === "end_turn"
+  Commit: 3ea1f50d
+
+Error 3: 532MB function bundle exceeds 300MB Vercel limit
+  Cause: outputFileTracingRoot was not set; Vercel traced parent dirs
+         (compiler, parts, agent, brickgpt, website-archives) into the bundle.
+  Fix: added next.config.ts with outputFileTracingRoot: path.join(__dirname)
+       to constrain tracing to the demo/ directory only.
+  Commit: e6519ff9
+
+---
+
+## 7. Vercel Analytics
+
+Added @vercel/analytics to demo/app/layout.tsx as requested.
+
+---
+
+## 8. Blob URL Fix
+
+Bug: AssemblyViewer was appending ?v=2 to blob: URLs for cache busting.
+     Blob URLs don't support query parameters → ERR_FILE_NOT_FOUND.
+Fix: only append ?v= to regular file URLs:
+     const url = ldrUrl.startsWith("blob:") ? ldrUrl : `${ldrUrl}?v=${version}`;
+Commit: 9ce6d6d2
+
+---
+
+## 9. Vercel Env Vars Set
+
+ANTHROPIC_API_KEY   — all environments
+MODAL_TOOL_URL      — https://maksym-d-bondarenko--brickgpt-tools-run-tool.modal.run
+
+---
+
+## Current Status (end of Mar 27)
+
+- Site deployed to Vercel, latest commit: 9ce6d6d2
+- Build should be clean (TypeScript OK, bundle < 300MB)
+- Blob URL fix deployed — viewer should load after builds
+- Env vars set — API calls to Anthropic + Modal should work
+
+## Remaining Known Issues
+
+- LDraw sub-part 404s (3003s01.dat etc.): cosmetic, bricks still render.
+  Root cause: LDrawLoader tries to load internal geometry primitives that may
+  have path resolution quirks. Not blocking.
+- public/ldraw/ is 588MB / 35,596 files tracked in git — slow clone.
+  Long term: serve from CDN instead.
